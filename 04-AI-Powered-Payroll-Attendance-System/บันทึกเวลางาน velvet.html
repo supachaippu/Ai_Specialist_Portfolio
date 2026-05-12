@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบลงเวลา (Soundabout Compatible)</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1E21; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .header-title { font-size: 1.5rem; font-weight: 800; color: #333; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .app-card { background: var(--card); width: 100%; max-width: 400px; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); text-align: center; margin-bottom: 20px; position: relative; }
+        
+        .btn { border: none; padding: 14px; border-radius: 12px; width: 100%; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+        .btn-primary:disabled { background: #d1d1d6; color: #8e8e93; cursor: not-allowed; box-shadow: none; }
+        .btn-edit { background: #f0f0f0; border: 1px solid #ddd; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; color: #555; }
+
+        .upload-box { border: 2px dashed #c7c7cc; border-radius: 16px; height: 240px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f9f9f9; margin-bottom: 20px; cursor: pointer; transition: 0.2s; }
+        .upload-box:hover { background: #eef7ff; border-color: var(--primary); }
+        .upload-box img { width: 100%; height: 100%; object-fit: contain; display: none; }
+        
+        .locked-input { 
+            background: #E9ECEF; border: 1px solid #CED4DA; color: #495057; 
+            font-weight: bold; cursor: not-allowed; pointer-events: none; 
+            padding: 12px; border-radius: 8px; width: 100%; 
+            font-family: 'Sarabun'; font-size: 1.1rem; text-align: center; 
+            box-sizing: border-box; margin-top: 5px;
+        }
+        .label-text { font-size: 0.85rem; color: #666; font-weight: 600; display: block; text-align: left; margin-bottom: 5px; }
+
+        .loader-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 16px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 85%; max-width: 320px; text-align: left; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Sarabun'; box-sizing: border-box; }
+        .hint { font-size: 0.8rem; color: #666; margin-top: 4px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="header-title"><i class="fa-solid fa-fingerprint"></i> ระบบเข้างาน</div>
+
+    <div class="app-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <div style="text-align:left;">
+                <h3 id="displayName" style="margin:0; font-size: 1.2rem;">Guest User</h3>
+                <span style="font-size:0.8rem; color:#888;" id="uidDisplay">ID: -</span>
+            </div>
+            <button onclick="openRegister()" class="btn-edit"><i class="fa-solid fa-pen"></i> ตั้งค่าพนักงาน</button>
+        </div>
+
+        <input type="file" id="fileInput" hidden accept="image/*">
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <div id="placeholder">
+                <i class="fa-solid fa-camera" style="font-size:40px; color:#ccc; margin-bottom: 10px;"></i>
+                <p style="color:#888; margin:0; font-size: 0.9rem;">แตะเพื่อถ่ายรูป Timestamp</p>
+            </div>
+            <img id="previewImg">
+            
+            <div class="loader-overlay" id="loader">
+                <div class="spinner"></div>
+                <span style="font-size:0.9rem; font-weight: 600;">ระบบกำลังตรวจสอบเวลา...</span>
+            </div>
+        </div>
+
+        <div id="resultSection" style="display:none; text-align: left; margin-top: 20px;">
+            <div>
+                <span class="label-text"><i class="fa-solid fa-clock"></i> เวลาที่ตรวจพบ (ห้ามแก้ไข):</span>
+                <input type="text" id="detectedTime" class="locked-input" readonly value="--:--">
+            </div>
+        </div>
+
+        <div id="statusMsg" style="margin-top:10px; font-size:0.9rem;"></div>
+
+        <button class="btn btn-primary" id="submitBtn" disabled onclick="saveLog()">ยืนยันการลงเวลา</button>
+    </div>
+
+    <div style="text-align: center;">
+        <button onclick="dlPDF()" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.9rem; text-decoration:underline;">
+            <i class="fa-solid fa-file-pdf"></i> ดาวน์โหลดรายงาน (สำหรับระบบเงินเดือน)
+        </button>
+    </div>
+
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">ตั้งค่าพนักงาน</h3>
+            <div class="form-group">
+                <label>รหัสพนักงาน (ID)</label>
+                <input type="number" id="regId" placeholder="เช่น 33, 52">
+                <span class="hint">*ต้องตรงกับฐานข้อมูลเงินเดือน</span>
+            </div>
+            <div class="form-group">
+                <label>ชื่อเล่น (ภาษาอังกฤษ)</label>
+                <input type="text" id="regName" placeholder="เช่น Top, Kron">
+                <span class="hint">*ภาษาอังกฤษเท่านั้น ห้ามมีเว้นวรรค</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="background:#eee; color:#333; margin-top:0;" onclick="closeRegister()">ปิด</button>
+                <button class="btn btn-primary" style="margin-top:0;" onclick="saveRegister()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. ข้อมูล (ปรับปรุงโครงสร้างให้มี ID) ---
+        let currentUser = { id: "", name: "Guest" };
+        let logs = []; 
+
+        function init() {
+            const savedUser = localStorage.getItem('velvet_user');
+            if(savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+            document.getElementById('displayName').innerText = currentUser.name;
+            document.getElementById('uidDisplay').innerText = "ID: " + (currentUser.id || "-");
+        }
+        init();
+
+        // --- 2. ลงทะเบียน (เพิ่มการบันทึก ID) ---
+        function openRegister() { 
+            document.getElementById('regId').value = currentUser.id;
+            document.getElementById('regName').value = currentUser.name === "Guest" ? "" : currentUser.name;
+            document.getElementById('registerModal').classList.add('active'); 
+        }
+        function closeRegister() { document.getElementById('registerModal').classList.remove('active'); }
+        
+        function saveRegister() {
+            const id = document.getElementById('regId').value;
+            const name = document.getElementById('regName').value;
+            if(id && name) {
+                currentUser.id = id;
+                currentUser.name = name;
+                localStorage.setItem('velvet_user', JSON.stringify(currentUser));
+                init();
+                closeRegister();
+            } else {
+                alert("กรุณากรอกทั้ง ID และชื่อ");
+            }
+        }
+
+        // --- 3. จำลองการอ่านภาพ ---
+        const fileInput = document.getElementById('fileInput');
+        fileInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            document.getElementById('previewImg').src = URL.createObjectURL(file);
+            document.getElementById('previewImg').style.display = 'block';
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('statusMsg').innerHTML = "";
+            document.getElementById('loader').style.display = 'flex';
+            
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('resultSection').style.display = 'block';
+
+                // Format: dd/mm/yyyy HH:mm (เพื่อให้ตรงกับ Regex)
+                const now = new Date();
+                const d = String(now.getDate()).padStart(2, '0');
+                const m = String(now.getMonth()+1).padStart(2, '0');
+                const y = now.getFullYear();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mm = String(now.getMinutes()).padStart(2, '0');
+                
+                // เก็บเป็น string เต็มไว้แสดงผล
+                const timeStr = `${d}/${m}/${y} ${hh}:${mm}`;
+
+                document.getElementById('detectedTime').value = timeStr;
+                document.getElementById('statusMsg').innerHTML = "<span style='color:green'><i class='fa-solid fa-circle-check'></i> ตรวจพบเวลาถูกต้อง</span>";
+                document.getElementById('submitBtn').disabled = false;
+
+            }, 1000); 
+        };
+
+        // --- 4. บันทึก ---
+        function saveLog() {
+            if(!currentUser.id) return alert("⚠️ กรุณาตั้งค่า 'รหัสพนักงาน (ID)' ก่อนบันทึกเวลา");
+
+            const timeVal = document.getElementById('detectedTime').value; // "dd/mm/yyyy HH:mm"
+            
+            // เพิ่มข้อมูลลง Log
+            logs.push({ 
+                id: currentUser.id, 
+                name: currentUser.name, 
+                fullTime: timeVal 
+            });
+
+            alert("✅ บันทึกเวลาสำเร็จ!");
+            
+            // Reset
+            document.getElementById('previewImg').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('fileInput').value = "";
+            document.getElementById('statusMsg').innerHTML = "";
+        }
+
+        // --- 5. สร้าง PDF (Soundabout Compatible Format) ---
+        // จุดสำคัญ: ต้องเรียงเป็น ID | Name | Date | Time
+        function dlPDF() {
+            if(logs.length === 0) {
+                 return alert("ยังไม่มีข้อมูลบันทึกเวลา");
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Set Font Support (ใช้ Default font ก็พอได้ เพราะเราเน้นตัวเลขกับอังกฤษ)
+            doc.setFontSize(14);
+            doc.text("Soundabout Time Log", 14, 15);
+            doc.setFontSize(10);
+            doc.text("Generated by Velvet System", 14, 22);
+
+            // แปลงข้อมูลให้เป็น 4 คอลัมน์ เพื่อให้ Regex ของ index.html อ่านเจอ
+            // Regex: (\d+) ([^\s]+) (\d{1,2})[-/](\d{1,2})[-/](\d{2,4}) (\d{1,2}):(\d{2})
+            let bodyData = logs.map(l => {
+                // l.fullTime = "15/02/2026 08:30"
+                const parts = l.fullTime.split(' '); 
+                const datePart = parts[0]; // 15/02/2026
+                const timePart = parts[1]; // 08:30
+                
+                return [l.id, l.name, datePart, timePart];
+            });
+
+            doc.autoTable({
+                head: [['ID', 'Name', 'Date', 'Time']],
+                body: bodyData,
+                startY: 30,
+                theme: 'plain', // ใช้แบบ plain เพื่อลดเส้นรบกวนการอ่าน text (optional แต่ปลอดภัยกว่า)
+                styles: { fontSize: 11, cellPadding: 3 },
+                columnStyles: {
+                    0: { fontStyle: 'bold' }, // ID
+                    1: { fontStyle: 'bold' }, // Name
+                }
+            });
+
+            doc.save("TimeLog_Soundabout.pdf");
+        }
+    </script>
+</body>
+</html>

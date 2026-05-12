@@ -1,0 +1,15 @@
+name = "v91-worker"
+main = "worker.js"
+compatibility_date = "2023-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "v91_db"
+database_id = "__D1_ID__"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "v91-photos"
+
+[triggers]
+crons = ["0 2 * * *"]

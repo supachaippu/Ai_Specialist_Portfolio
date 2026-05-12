@@ -1,0 +1,623 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Shop Name Payroll</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&display=swap');
+        
+        body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #334155; }
+        .container { max-width: 1250px; margin: 0 auto; background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        h1 { margin-bottom: 20px; text-align: center; color: #0f172a; font-weight: 800; }
+        
+        /* Tabs */
+        .tab-buttons { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; color: #64748b; font-weight: 600; border-radius: 6px; }
+        .tab-btn:hover { background-color: #f8fafc; color: #2563eb; }
+        .tab-btn.active { background-color: #eff6ff; color: #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Upload */
+        .upload-row { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .upload-card { 
+            border: 2px dashed #cbd5e1; padding: 25px; border-radius: 10px; width: 42%; text-align: center; 
+            cursor: pointer; transition: 0.2s; background: #f8fafc; position: relative;
+        }
+        .upload-card:hover { border-color: #2563eb; background: #eff6ff; }
+        .upload-card.active { border-color: #16a34a; background: #f0fdf4; border-style: solid; }
+        .icon { font-size: 30px; margin-bottom: 5px; display: block; }
+
+        /* Buttons */
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-primary:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        
+        .btn-excel { background-color: #16a34a; color: white; display: none; margin-left: 10px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-excel:hover { background-color: #15803d; transform: translateY(-1px); }
+
+        .btn-print { background-color: #ea580c; color: white; display: none; margin-left: 10px; }
+        .btn-print:hover { background-color: #c2410c; }
+
+        .btn-outline { background: white; border: 1px solid #2563eb; color: #2563eb; padding: 6px 12px; font-size: 14px; margin-top: 8px; }
+        .btn-red { background-color: #ef4444; color: white; font-size: 12px; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; background: white; }
+        th, td { border-bottom: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background-color: #f8fafc; font-weight: 600; color: #475569; white-space: nowrap; }
+        tr:hover { background-color: #f1f5f9; }
+
+        .error-report { display: none; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        .error-box { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-width: 300px; }
+        .bg-red-light { background-color: #fef2f2; border-color: #fecaca; }
+        .bg-yellow-light { background-color: #fffbeb; border-color: #fcd34d; }
+        .badge-count { background: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 800; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-content { background-color: white; margin: 10% auto; padding: 25px; border-radius: 12px; width: 320px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-btn { display: block; width: 100%; margin: 10px 0; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💰 My Shop Name Payroll</h1>
+
+    <div id="main-content">
+        <div style="background:#eff6ff; padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; border:1px solid #bfdbfe;">
+            <span style="font-size:18px;">👥 พนักงานในระบบ: <b id="dbCount">0</b> คน</span>
+            <div style="font-size:12px; color:#64748b;">(โหลดข้อมูลจาก Excel ก่อน แล้วค่อยโหลดไฟล์ PDF สแกนนิ้ว)</div>
+        </div>
+
+        <div class="upload-row">
+            <label class="upload-card" id="box-db">
+                <span class="icon">📂</span>
+                <b>1. อัปเดตรายชื่อ (Excel)</b>
+                <div style="font-size:13px; color:#64748b; margin-top:5px;">(ID, ชื่อเล่น, ตำแหน่ง, เงินเดือน)</div>
+                <input type="file" id="fileDB" accept=".xlsx, .xls" style="display:none;">
+                <span id="name-db" style="display:block; margin-top:8px; color:#16a34a; font-weight:bold;"></span>
+                <button class="btn-outline" onclick="event.preventDefault(); downloadTemplate()">📥 โหลดฟอร์ม</button>
+            </label>
+
+            <label class="upload-card" id="box-pdf">
+                <span class="icon">📄</span>
+                <b>2. ไฟล์สแกนนิ้ว (PDF)</b>
+                <div style="font-size:13px; color:#64748b; margin-top:5px;">(ฟอร์ม Standard / Velvet)</div>
+                <input type="file" id="filePDF" accept=".pdf" style="display:none;">
+                <span id="name-pdf" style="display:block; margin-top:8px; color:#16a34a; font-weight:bold;"></span>
+            </label>
+        </div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <button id="calcBtn" class="btn btn-primary" onclick="startCalculation()" disabled>🚀 เริ่มคำนวณเงินเดือน</button>
+            <button id="exportBtn" class="btn btn-excel" onclick="exportFullExcel()">📥 ดาวน์โหลด Excel (รวมทุกแบบ)</button>
+            <button id="printBtn" class="btn btn-print" onclick="printEmployeeReport()">📄 พิมพ์ใบแจ้งเวลา (PDF)</button>
+        </div>
+        
+        <div id="statusMsg" style="text-align:center; margin-top:10px; font-weight:bold; color:#16a34a; min-height:24px;"></div>
+
+        <!-- Debug Area for Missing Names -->
+        <div id="debugNames" style="display:none; margin-top:20px; padding:15px; background:#fff1f2; border:1px solid #fecaca; border-radius:8px;">
+            <div style="color:#b91c1c; font-weight:bold; margin-bottom:8px;">⚠️ ตรวจพบชื่อใน PDF แต่หาในฐานข้อมูลไม่เจอ:</div>
+            <div id="missingList" style="font-size:13px; color:#7f1d1d; display:flex; gap:5px; flex-wrap:wrap;"></div>
+            <div style="font-size:11px; color:#991b1b; margin-top:8px;">*วิธีแก้: แก้ชื่อใน Excel ให้ตรงกับชื่อข้างต้น (หรือให้ชื่อใน Excel เป็นส่วนหนึ่งของชื่อใน PDF)</div>
+        </div>
+
+        <div id="errorSection" class="error-report">
+            <div class="error-box bg-red-light">
+                <div style="font-weight:bold; color:#b91c1c; margin-bottom:10px;">❌ ลืมสแกนออก (ปรับ 500) <span id="countOut" class="badge-count">0</span></div>
+                <div class="table-responsive" style="max-height:200px;"><table id="tableForgotOut"><thead><tr><th>วันที่</th><th>ชื่อ</th><th>เวลาที่มี</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="error-box bg-yellow-light">
+                <div style="font-weight:bold; color:#b45309; margin-bottom:10px;">⚠️ ลืมสแกนเข้า (หักค่าแรง) <span id="countIn" class="badge-count">0</span></div>
+                <div class="table-responsive" style="max-height:200px;"><table id="tableForgotIn"><thead><tr><th>วันที่</th><th>ชื่อ</th><th>เวลาที่มี</th></tr></thead><tbody></tbody></table></div>
+            </div>
+        </div>
+
+        <div id="resultArea" style="display:none; margin-top:40px;">
+            <h3 style="border-left:5px solid #2563eb; padding-left:10px; color:#0f172a;">📝 รายละเอียดรายวัน</h3>
+            <p style="color:#64748b; font-size:14px; margin-bottom:15px;">*กดปุ่ม <b>"✏️ แก้ไข"</b> ที่ท้ายแถว เพื่อเปลี่ยนสถานะได้</p>
+            <div class="table-responsive">
+                <table id="dailyTable">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>เข้า</th><th>ออก</th>
+                            <th style="color:#b91c1c;">สาย</th><th style="color:#b91c1c;">ออกก่อน</th><th style="color:#b91c1c;">หัก</th>
+                            <th style="color:#15803d;">OT</th><th style="color:#15803d;">ได้</th>
+                            <th>หมายเหตุ</th><th>แก้ไข</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">✏️ แก้ไขสถานะ</h3>
+        <div id="modalInfo" style="color:#64748b; margin-bottom:20px; font-size:14px;"></div>
+        <button class="modal-btn" style="background:#f1f5f9; color:#334155;" onclick="setEditType('normal')">✅ ปกติ (คำนวณอัตโนมัติ)</button>
+        <button class="modal-btn" style="background:#fee2e2; color:#991b1b;" onclick="setEditType('forgot_out')">❌ ลืมสแกนออก (ปรับ 500)</button>
+        <button class="modal-btn" style="background:#fef3c7; color:#92400e;" onclick="setEditType('forgot_in')">⚠️ ลืมสแกนเข้า (หักค่าแรง 1 วัน)</button>
+        <button class="modal-btn" style="background:#dcfce7; color:#166534;" onclick="setEditType('clear')">🛡️ ยกเว้นโทษ (ไม่หักเงิน)</button>
+        <button class="modal-btn" style="border:1px solid #e2e8f0; background:white; margin-top:15px;" onclick="closeModal()">ยกเลิก</button>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'PAYROLL_DB_my_shop';
+    const RULES = {"Service": {"start": "16:00", "end": "02:00", "late": 20, "early": 20, "ot_rate": 0}, "Kitchen": {"start": "16:00", "end": "01:00", "late": 20, "early": 20, "ot_rate": 0}, "PR": {"start": "19:00", "end": "02:00", "late": 20, "early": 20, "ot_rate": 0}, "Security": {"start": "19:10", "end": "02:00", "late": 20, "early": 20, "ot_rate": 0.694}, "Manager": {"start": "00:00", "end": "00:00", "late": 0, "early": 0, "ot_rate": 0}};
+    const DEFAULT_DB = {"9": {"name": "Bart content", "thai_name": "Bart (Test PDF)", "role": "Service", "salary": 15000.0}};
+
+    let LOCAL_DB = {};
+    let UPLOADED_DB = null;
+    let pdfFile = null;
+    let DAILY_DATA = [];
+
+    function init() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if(stored) {
+            const parsed = JSON.parse(stored);
+            LOCAL_DB = (Object.keys(parsed).length < 1) ? JSON.parse(JSON.stringify(DEFAULT_DB)) : parsed;
+        } else {
+            LOCAL_DB = JSON.parse(JSON.stringify(DEFAULT_DB));
+        }
+        updateDbUI();
+    }
+    
+    function updateDbUI() {
+        const db = UPLOADED_DB || LOCAL_DB;
+        document.getElementById('dbCount').innerText = Object.keys(db).length;
+    }
+
+    function downloadTemplate() {
+        const arr = [{ID:9, NickName:'Bart content', ThaiName:'Bart (Test)', Role:'Service', Salary:15000}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(arr), "Template"); XLSX.writeFile(wb, "Template.xlsx");
+    }
+
+    document.getElementById('fileDB').addEventListener('change', function(e) {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            const db = {};
+            arr.forEach(r => {
+                // รองรับหัวตารางหลายแบบ: ID/id, NickName/Name/ชื่อเล่น, Role/ตำแหน่ง, Salary/เงินเดือน
+                const id = r.ID || r.id || r['ไอดี'];
+                const nick = r.NickName || r.Name || r['ชื่อเล่น'] || r['ชื่อ'];
+                const thai = r.ThaiName || r['ชื่อจริง'] || nick;
+                const role = r.Role || r['ตำแหน่ง'] || 'Service';
+                const salary = r.Salary || r['เงินเดือน'] || r['ค่าแรง'] || 0;
+                if(id) db[id] = {name: nick, thai_name: thai, role: role, salary: salary};
+            });
+            UPLOADED_DB = db;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            document.getElementById('box-db').classList.add('active');
+            document.getElementById('name-db').innerText = file.name;
+            updateDbUI();
+            checkReady();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('filePDF').addEventListener('change', function(e) {
+        pdfFile = e.target.files[0];
+        if(pdfFile) {
+            document.getElementById('box-pdf').classList.add('active');
+            document.getElementById('name-pdf').innerText = pdfFile.name;
+            checkReady();
+        }
+    });
+
+    function checkReady() { document.getElementById('calcBtn').disabled = !pdfFile; }
+
+    async function startCalculation() {
+        document.getElementById('statusMsg').innerHTML = '<div class="loader"></div> กำลังอ่าน PDF...';
+        document.getElementById('debugNames').style.display = 'none';
+        document.getElementById('missingList').innerHTML = '';
+        try {
+            await processPDF();
+            document.getElementById('statusMsg').innerHTML = '✅ เรียบร้อย!';
+            document.getElementById('exportBtn').style.display = 'inline-block';
+            document.getElementById('printBtn').style.display = 'inline-block';
+            document.getElementById('errorSection').style.display = 'flex';
+            document.getElementById('resultArea').style.display = 'block';
+        } catch(err) {
+            document.getElementById('statusMsg').innerHTML = '❌ ' + err.message;
+            console.error(err);
+        }
+    }
+
+    async function processPDF() {
+        const data = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data}).promise;
+        const raw = [];
+        const DB = UPLOADED_DB || LOCAL_DB;
+
+        const nameEntries = [];
+        for(const id in DB) {
+            if(DB[id].name) nameEntries.push({ id: id, name: String(DB[id].name).toLowerCase().trim() });
+        }
+        
+        const missingNames = new Set();
+
+        for(let pageNum=1; pageNum<=pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const content = await page.getTextContent();
+            
+            const lines = {};
+            content.items.forEach(item => {
+                const y = Math.round(item.transform[5]);
+                if(!lines[y]) lines[y] = [];
+                lines[y].push({x: item.transform[4], text: item.str});
+            });
+
+            const sortedY = Object.keys(lines).map(Number).sort((a,b)=>b-a);
+            for(const y of sortedY) {
+                lines[y].sort((a,b)=>a.x-b.x);
+                const textLine = lines[y].map(i=>i.text).join(' ').trim();
+                const timeMatch = textLine.match(/(\d{1,2})[-/](\d{2})[-/](\d{2,4})\s+(\d{1,2}):(\d{2})/);
+                
+                if(timeMatch) {
+                    const fullTS = timeMatch[0];
+                    const nameCell = textLine.split(fullTS)[0].trim();
+                    const searchName = nameCell.toLowerCase();
+
+                    if(!searchName) continue;
+
+                    let matchedID = null;
+                    const exact = nameEntries.find(e => e.name === searchName);
+                    if(exact) {
+                        matchedID = exact.id;
+                    } else {
+                        // Fuzzy Match: "Bart content" matches "Bart"
+                        const partial = nameEntries.find(e => searchName.startsWith(e.name) || e.name.startsWith(searchName));
+                        if(partial && partial.name.length >= 2) {
+                            matchedID = partial.id;
+                        }
+                    }
+
+                    if(matchedID) {
+                        const [d, m, yStr, hh, mm] = [
+                            parseInt(timeMatch[1]), parseInt(timeMatch[2]), 
+                            parseInt(timeMatch[3]), parseInt(timeMatch[4]), parseInt(timeMatch[5])
+                        ];
+                        let year = yStr < 100 ? 2000 + yStr : yStr;
+                        raw.push({ ID: parseInt(matchedID), Name: DB[matchedID].name, TS: new Date(year, m-1, d, hh, mm) });
+                    } else {
+                        missingNames.add(nameCell);
+                    }
+                }
+            }
+        }
+        
+        if(missingNames.size > 0) {
+            document.getElementById('debugNames').style.display = 'block';
+            missingNames.forEach(n => {
+                const span = document.createElement('span');
+                span.style.cssText = "background:#fee2e2; padding:2px 8px; border-radius:4px; border:1px solid #fecaca;";
+                span.innerText = n;
+                document.getElementById('missingList').appendChild(span);
+            });
+        }
+
+        if(raw.length === 0) throw new Error("ไม่พบข้อมูลสแกน (ตรวจสอบ Database ว่ามีรายชื่อพนักงานหรือยัง?)");
+        
+        const groups = {};
+        raw.forEach(r => {
+            let sDate = new Date(r.TS);
+            sDate.setHours(sDate.getHours() - 6); 
+            const k = `${r.ID}_${sDate.toISOString().split('T')[0]}`;
+            if(!groups[k]) groups[k] = {ID:r.ID, Date:sDate, Times:[], Manual: null};
+            groups[k].Times.push(r.TS);
+        });
+        
+        DAILY_DATA = [];
+        for(const k in groups) {
+            const validTimes = [];
+            if(groups[k].Times.length > 0) {
+                groups[k].Times.sort((a,b)=>a-b);
+                let lastValid = groups[k].Times[0];
+                validTimes.push(lastValid);
+                for(let i=1; i<groups[k].Times.length; i++) {
+                    const t = groups[k].Times[i];
+                    if(t - lastValid > 1800000) { validTimes.push(t); lastValid = t; }
+                }
+            }
+            groups[k].Times = validTimes;
+            DAILY_DATA.push(calculateOneDay(groups[k], DB));
+        }
+        renderErrorSummary();
+        renderDailyTable();
+    }
+
+    document.getElementById('fileDB').addEventListener('change', function(e) {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            const db = {};
+            arr.forEach(r => db[r.ID] = {name:r.NickName, thai_name:r.ThaiName||'', role:r.Role||'Service', salary:r.Salary||0});
+            UPLOADED_DB = db;
+            document.getElementById('box-db').classList.add('active');
+            document.getElementById('name-db').innerText = file.name;
+            checkReady();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+    document.getElementById('filePDF').addEventListener('change', function(e) {
+        pdfFile = e.target.files[0];
+        if(pdfFile) {
+            document.getElementById('box-pdf').classList.add('active');
+            document.getElementById('name-pdf').innerText = pdfFile.name;
+            checkReady();
+        }
+    });
+    function checkReady() { document.getElementById('calcBtn').disabled = !pdfFile; }
+
+    async function startCalculation() {
+        document.getElementById('statusMsg').innerHTML = '<div class="loader"></div> กำลังอ่าน PDF...';
+        try {
+            await processPDF();
+            document.getElementById('statusMsg').innerHTML = '✅ เรียบร้อย!';
+            document.getElementById('exportBtn').style.display = 'inline-block';
+            document.getElementById('printBtn').style.display = 'inline-block';
+            document.getElementById('errorSection').style.display = 'flex';
+            document.getElementById('resultArea').style.display = 'block';
+        } catch(err) {
+            document.getElementById('statusMsg').innerHTML = '❌ ' + err.message;
+            console.error(err);
+        }
+    }
+
+    async function processPDF() {
+        const data = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data}).promise;
+        const raw = [];
+        const DB = UPLOADED_DB || LOCAL_DB;
+
+        // สร้างรายการชื่อเพื่อใช้เทียบ (Lowercase สำหรับ Case-insensitive)
+        const nameEntries = [];
+        for(const id in DB) {
+            nameEntries.push({ id: id, name: DB[id].name.toLowerCase().trim() });
+        }
+        
+        for(let pageNum=1; pageNum<=pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const content = await page.getTextContent();
+            
+            // จัดการรวม Text ตามบรรทัด (Y coordinate)
+            const lines = {};
+            content.items.forEach(item => {
+                const y = Math.round(item.transform[5]);
+                if(!lines[y]) lines[y] = [];
+                lines[y].push({x: item.transform[4], text: item.str});
+            });
+
+            const sortedY = Object.keys(lines).map(Number).sort((a,b)=>b-a);
+            for(const y of sortedY) {
+                // เรียงจากซ้ายไปขวา
+                lines[y].sort((a,b)=>a.x-b.x);
+                const textLine = lines[y].map(i=>i.text).join(' ').trim();
+                
+                // ค้นหา Timestamp (DD-MM-YYYY HH:mm)
+                const timeMatch = textLine.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})\s+(\d{1,2}):(\d{2})/);
+                
+                if(timeMatch) {
+                    const fullTS = timeMatch[0];
+                    // แยกส่วนชื่อออกจากเวลา (ส่วนใหญ่ชื่อจะอยู่หน้าเวลา)
+                    const nameCell = textLine.split(fullTS)[0].trim();
+                    const searchName = nameCell.toLowerCase();
+
+                    if(!searchName) continue; // ข้ามถ้าไม่มีชื่อก่อนหน้าเวลา
+
+                    let matchedID = null;
+                    // 1. ลอง Match ตรงตัว
+                    const exact = nameEntries.find(e => e.name === searchName);
+                    if(exact) {
+                        matchedID = exact.id;
+                    } 
+                    // 2. ลอง Match แบบ "ชื่อใน PDF เริ่มต้นด้วยชื่อใน DB" (เช่น "Bart content" matches "bart")
+                    else {
+                        const partial = nameEntries.find(e => searchName.startsWith(e.name) || e.name.startsWith(searchName));
+                        if(partial && partial.name.length > 2) {
+                            matchedID = partial.id;
+                        }
+                    }
+
+                    if(matchedID) {
+                        const [d, m, yStr, hh, mm] = [
+                            parseInt(timeMatch[1]), parseInt(timeMatch[2]), 
+                            parseInt(timeMatch[3]), parseInt(timeMatch[4]), parseInt(timeMatch[5])
+                        ];
+                        let year = yStr < 100 ? 2000 + yStr : yStr;
+                        raw.push({
+                            ID: parseInt(matchedID), 
+                            Name: DB[matchedID].name, 
+                            TS: new Date(year, m-1, d, hh, mm)
+                        });
+                    }
+                }
+            }
+        }
+        
+        if(raw.length === 0) throw new Error("ไม่พบข้อมูลสแกน (โปรดตรวจสอบว่าชื่อใน PDF ตรงกับในระบบอย่างน้อยบางส่วน)");
+        
+        // --- ส่วนที่เหลือเหมือนเดิม (Group & Calculate) ---
+        const groups = {};
+        raw.forEach(r => {
+            let sDate = new Date(r.TS);
+            sDate.setHours(sDate.getHours() - 6); 
+            const k = `${r.ID}_${sDate.toISOString().split('T')[0]}`;
+            if(!groups[k]) groups[k] = {ID:r.ID, Date:sDate, Times:[], Manual: null};
+            groups[k].Times.push(r.TS);
+        });
+        
+        DAILY_DATA = [];
+        for(const k in groups) {
+            const validTimes = [];
+            if(groups[k].Times.length > 0) {
+                groups[k].Times.sort((a,b)=>a-b);
+                let lastValid = groups[k].Times[0];
+                validTimes.push(lastValid);
+                for(let i=1; i<groups[k].Times.length; i++) {
+                    const t = groups[k].Times[i];
+                    if(t - lastValid > 1800000) { validTimes.push(t); lastValid = t; }
+                }
+            }
+            groups[k].Times = validTimes;
+            DAILY_DATA.push(calculateOneDay(groups[k], DB));
+        }
+        renderErrorSummary();
+        renderDailyTable();
+    }
+
+    function calculateOneDay(g, DB) {
+        const emp = DB[g.ID] || {name:'Unknown', role:'Service', salary:0};
+        const rule = RULES[emp.role] || RULES['Service'] || {start:'16:00', end:'02:00', late:20, early:20, ot_rate:0};
+        let checkIn = g.Times[0], checkOut = g.Times[g.Times.length-1];
+        let isSingle = g.Times.length === 1 || (checkOut - checkIn < 120000);
+        if(g.Manual) isSingle = (g.Manual === 'single');
+
+        const base = new Date(g.Date);
+        const [sH,sM] = rule.start.split(':').map(Number);
+        const [eH,eM] = rule.end.split(':').map(Number);
+        const start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), sH, sM);
+        let end = new Date(base.getFullYear(), base.getMonth(), base.getDate(), eH, eM);
+        if(eH < 12) end.setDate(end.getDate()+1);
+
+        let late=0, early=0, ot=0, deduct=0, otPay=0, remark=[], errorType=null;
+        const dailyWage = emp.salary > 0 ? (emp.salary/30) : 500;
+        const noFine = ['Manager','Sound','VIP'].includes(emp.role);
+
+        if(g.Manual) {
+            if(g.Manual==='forgot_out') { deduct=500; remark.push('❌ ลืมสแกนออก'); checkOut=null; errorType='forgot_out'; }
+            else if(g.Manual==='forgot_in') { deduct=dailyWage; remark.push('⚠️ ลืมสแกนเข้า'); checkOut=checkIn; checkIn=null; errorType='forgot_in'; }
+            else if(g.Manual==='clear') { deduct=0; remark.push('🛡️ ยกเว้น'); }
+        } else if(isSingle) {
+            if(!noFine) {
+                const th = new Date(start.getTime() + 5*3600000);
+                if(checkIn < th) { deduct=500; remark.push('❌ ลืมสแกนออก'); checkOut=null; errorType='forgot_out'; }
+                else { deduct=dailyWage; remark.push('⚠️ ลืมสแกนเข้า'); checkOut=checkIn; checkIn=null; errorType='forgot_in'; }
+            } else checkOut=null;
+        } else {
+            if(!noFine) {
+                if(checkIn > start) { late = Math.floor((checkIn - start)/60000); deduct += late * rule.late; }
+                if(checkOut < end) { early = Math.floor((end - checkOut)/60000); deduct += early * rule.early; }
+                else if(checkOut > end && rule.ot_rate > 0) { ot = Math.floor((checkOut - end)/60000); otPay += ot * rule.ot_rate; }
+            }
+        }
+
+        return {
+            key: `${g.ID}_${g.Date.getTime()}`, rawGroup:g, dateStr: g.Date.toISOString().split('T')[0],
+            id:g.ID, name:emp.name, role:emp.role, salary:emp.salary,
+            in:checkIn, out:checkOut, late:late, early:early, ot:ot, deduct:Math.round(deduct), otPay:Math.round(otPay),
+            remark:remark.join(', '), errorType:errorType
+        };
+    }
+
+    function renderErrorSummary() {
+        const outB=document.querySelector('#tableForgotOut tbody'); const inB=document.querySelector('#tableForgotIn tbody');
+        outB.innerHTML=''; inB.innerHTML=''; let cO=0, cI=0;
+        DAILY_DATA.forEach(d=>{
+            if(d.errorType==='forgot_out') { cO++; outB.innerHTML+=`<tr><td>${d.dateStr}</td><td>${d.name}</td><td>${fmtTime(d.in)}</td></tr>`; }
+            else if(d.errorType==='forgot_in') { cI++; inB.innerHTML+=`<tr><td>${d.dateStr}</td><td>${d.name}</td><td>${fmtTime(d.out)}</td></tr>`; }
+        });
+        document.getElementById('countOut').innerText=cO; document.getElementById('countIn').innerText=cI;
+        document.querySelector('.bg-red-light').style.display = cO>0?'block':'none';
+        document.querySelector('.bg-yellow-light').style.display = cI>0?'block':'none';
+    }
+
+    function renderDailyTable() {
+        const tb=document.getElementById('dailyBody'); tb.innerHTML='';
+        DAILY_DATA.forEach((r,i)=>{
+            tb.innerHTML+=`<tr>
+                <td>${r.dateStr}</td><td>${r.name}</td><td>${r.role}</td>
+                <td>${fmtTime(r.in)}</td><td>${fmtTime(r.out)}</td>
+                <td style="${r.late>0?'color:red':''}">${r.late||'-'}</td>
+                <td style="${r.early>0?'color:red':''}">${r.early||'-'}</td>
+                <td style="${r.deduct>0?'color:red':''}">${r.deduct||'-'}</td>
+                <td style="${r.ot>0?'color:green':''}">${r.ot||'-'}</td>
+                <td style="${r.otPay>0?'color:green':''}">${r.otPay||'-'}</td>
+                <td>${r.remark}</td>
+                <td><button class="btn-outline" onclick="openEdit(${i})">✏️</button></td>
+            </tr>`;
+        });
+    }
+
+    let curIdx=-1;
+    function openEdit(i) { curIdx=i; document.getElementById('modalInfo').innerHTML=`${DAILY_DATA[i].name} (${DAILY_DATA[i].dateStr})`; document.getElementById('editModal').style.display='block'; }
+    function setEditType(t) { 
+        if(curIdx===-1) return;
+        DAILY_DATA[curIdx].rawGroup.Manual = t;
+        const DB = UPLOADED_DB||LOCAL_DB;
+        DAILY_DATA[curIdx] = calculateOneDay(DAILY_DATA[curIdx].rawGroup, DB);
+        renderErrorSummary(); renderDailyTable(); closeModal();
+    }
+    function closeModal() { document.getElementById('editModal').style.display='none'; curIdx=-1; }
+
+    function exportFullExcel() {
+        if(DAILY_DATA.length === 0) return alert("ไม่มีข้อมูล");
+        const wb = XLSX.utils.book_new();
+        const rows1 = [["My Shop Name - ใบแจ้งเวลาทำงาน"], []];
+        const grp = {}; 
+        DAILY_DATA.sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{
+             if(!grp[d.name]) grp[d.name] = {info:d, rec:[]};
+             grp[d.name].rec.push(d);
+        });
+        for(const k in grp) {
+            const g = grp[k];
+            rows1.push([`${g.info.name} (${g.info.role})`]);
+            rows1.push(["วันที่","เข้า","ออก","สาย","ออกก่อน","OT","หัก","OT_Pay","หมายเหตุ"]);
+            g.rec.forEach(r => rows1.push([r.dateStr, fmtTime(r.in), fmtTime(r.out), r.late, r.early, r.ot, r.deduct, r.otPay, r.remark]));
+            rows1.push([]);
+        }
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows1), "Report");
+        XLSX.writeFile(wb, `Payroll_my_shop.xlsx`);
+    }
+
+    async function printEmployeeReport() {
+        if(DAILY_DATA.length===0) return alert("ไม่มีข้อมูล");
+        const grp={}; 
+        DAILY_DATA.sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{ 
+            if(!grp[d.name]) grp[d.name]={info:d, rec:[], sLate:0, sEarly:0, sOT:0}; 
+            grp[d.name].rec.push(d); grp[d.name].sLate+=d.late; grp[d.name].sEarly+=d.early; grp[d.name].sOT+=d.ot; 
+        });
+        const w=window.open('','_blank');
+        let h=`<html><head><title>Payroll</title><style>body{font-family:sans-serif;padding:20px} table{width:100%;border-collapse:collapse;font-size:12px} th,td{border:1px solid #ccc;padding:5px;text-align:center}</style></head><body><h2>My Shop Name - ใบแจ้งเวลา</h2>`;
+        for(let k in grp){
+            let g=grp[k]; h+=`<h3>${g.info.name} (${g.info.role})</h3><table><tr><th>วันที่</th><th>เข้า</th><th>ออก</th><th>สาย</th><th>ออกก่อน</th><th>OT</th><th>หมายเหตุ</th></tr>`;
+            g.rec.forEach(r=>{ h+=`<tr><td>${r.dateStr}</td><td>${fmtTime(r.in)}</td><td>${fmtTime(r.out)}</td><td>${r.late||'-'}</td><td>${r.early||'-'}</td><td>${r.ot||'-'}</td><td>${r.remark}</td></tr>`; });
+            h+=`<tr><td colspan="3">รวม</td><td>${g.sLate}</td><td>${g.sEarly}</td><td>${g.sOT}</td><td></td></tr></table><hr>`;
+        }
+        h+=`</body></html>`; w.document.write(h); w.document.close(); setTimeout(()=>{w.print()},500);
+    }
+
+    function fmtTime(d) { return d ? `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}` : '-'; }
+    function switchTab(t) {
+        document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+        document.getElementById(`tab-${t}`).classList.add('active');
+        document.querySelector(`.tab-btn[onclick="switchTab('${t}')"]`).classList.add('active');
+    }
+    init();
+</script>
+</body>
+</html>

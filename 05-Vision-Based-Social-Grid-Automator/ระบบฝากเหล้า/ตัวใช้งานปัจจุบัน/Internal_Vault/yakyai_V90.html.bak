@@ -1,0 +1,3536 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <title>เลือกโต๊ะ - ยักษ์ใหญ่แดนใต้ By TN</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4E342E 0%, #8B4513 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --vvip-color: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            --vip-color: linear-gradient(135deg, #a55eea 0%, #8b5cf6 100%);
+            --normal-color: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+            --small-color: linear-gradient(135deg, #26bfde 0%, #20bfba 100%);
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --border-radius: 24px;
+            --border-radius-small: 16px;
+            --text-dark: #1a202c;
+            --text-medium: #4a5568;
+            --text-light: #718096;
+            --bg-overlay: rgba(255, 255, 255, 0.98);
+            --glass-effect: rgba(255, 255, 255, 0.25);
+            --accent-gold: #ffd700;
+        }
+        
+        body {
+            font-family: 'Kanit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 16px;
+            background: var(--bg-overlay);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 32px 24px;
+            background: var(--primary-gradient);
+            border-radius: var(--border-radius);
+            color: white;
+            box-shadow: var(--shadow-strong);
+        }
+        
+        h1 {
+            font-size: clamp(24px, 6vw, 36px);
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: clamp(16px, 3.5vw, 20px);
+            opacity: 0.95;
+        }
+        
+        .loading, .error-display {
+            text-align: center;
+            padding: 100px 20px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(102, 126, 234, 0.1);
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            margin-bottom: 24px;
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        .success-screen {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        
+        .legend {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 32px;
+            padding: 24px;
+            background: var(--glass-effect);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .color-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-soft);
+        }
+        
+        .color-box.vvip { background: var(--vvip-color); }
+        .color-box.vip { background: var(--vip-color); }
+        .color-box.normal { background: var(--normal-color); }
+        
+        /* --- FLOOR SELECTOR STYLE --- */
+        .floor-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 8px;
+            background: var(--glass-effect);
+            backdrop-filter: blur(20px);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-soft);
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .floor-btn {
+            padding: 12px 24px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            color: var(--text-medium);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            min-width: 100px;
+        }
+
+        .floor-btn.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: var(--shadow-medium);
+            transform: translateY(-2px);
+        }
+
+        .layout-wrapper {
+            position: relative;
+            margin-bottom: 40px;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: var(--shadow-strong);
+            background: var(--glass-effect);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #restaurant-layout {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 100 / 75;
+            background: var(--primary-gradient);
+            overflow: auto;
+            touch-action: pan-x pan-y;
+            border-radius: 10px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(100, 1fr);
+            grid-template-rows: repeat(75, 1fr);
+            gap: 1%;
+        }
+        
+        .stage {
+            grid-column: 38 / 62;
+            grid-row: 1 / 16;
+            background: var(--text-medium);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 0 15px 15px;
+            font-weight: 700;
+            font-size: clamp(11px, 2.2vw, 16px);
+            z-index: 10;
+            box-shadow: var(--shadow-medium);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            min-height: 30px;
+        }
+
+        .artist-room {
+            grid-column: 24 / 39;
+            grid-row: 1 / 5;
+            background: var(--text-medium);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: clamp(10px, 2.2vw, 14px);
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            min-height: 30px;
+        }
+
+        .sound-room {
+            grid-column: 61 / 74;
+            grid-row: 1 / 5;
+            background: var(--text-medium);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: clamp(10px, 2.2vw, 14px);
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            min-height: 30px;
+        }
+
+        .line-separator {
+    background: #4E342E;
+    /* คุณสามารถเพิ่มสไตล์อื่นๆ ที่ต้องการให้เหมือนกันทุกเส้นได้ที่นี่ */
+    /* เช่น border-radius: 2px; */
+}
+
+/* === Responsive สำหรับทางเข้า === */
+@media (max-width: 480px) {
+    .artist-room,
+    .sound-room {
+        font-size: 6px;
+    }
+    
+}
+
+/* ตำแหน่ง A: สำหรับเส้นแบ่งตำแหน่งเดิมของคุณ */
+.line-pos-1 {
+    grid-column: 10 / 12;
+    grid-row: 44 / 51;
+}
+
+/* ตำแหน่ง B: (ตัวอย่าง) สำหรับเส้นแบ่งที่อาจจะสร้างในอนาคต */
+.line-pos-2 {
+    grid-column: 1 / 3;
+    grid-row: 44 / 51;
+}
+
+/* ตำแหน่ง A: สำหรับเส้นแบ่งตำแหน่งเดิมของคุณ */
+.line-pos-3 {
+    grid-column: 10 / 12;
+    grid-row: 59 / 64;
+}
+
+/* ตำแหน่ง B: (ตัวอย่าง) สำหรับเส้นแบ่งที่อาจจะสร้างในอนาคต */
+.line-pos-4 {
+    grid-column: 1 / 3;
+    grid-row: 59 / 64;
+}
+
+/* ตำแหน่ง B: (ตัวอย่าง) สำหรับเส้นแบ่งที่อาจจะสร้างในอนาคต */
+.line-pos-5 {
+    grid-column: 1 / 17;
+    grid-row: 63 / 65;
+}
+
+/* ตำแหน่ง B: (ตัวอย่าง) สำหรับเส้นแบ่งที่อาจจะสร้างในอนาคต */
+.line-pos-6 {
+    grid-column: 15 / 17;
+    grid-row: 63 / 74;
+}
+
+/* ตำแหน่ง B: (ตัวอย่าง) สำหรับเส้นแบ่งที่อาจจะสร้างในอนาคต */
+.line-pos-7 {
+    grid-column: 15 / 66;
+    grid-row: 73 / 75;
+}
+
+/* ตำแหน่ง B: (ตัวอย่าง) สำหรับเส้นแบ่งที่อาจจะสร้างในอนาคต */
+.line-pos-8 {
+    grid-column: 64 / 66;
+    grid-row: 69 / 74;
+}
+
+.line-pos-9 {
+    grid-column: 64 / 66;
+    grid-row: 63 / 66;
+}
+
+.line-pos-10 {
+    grid-column: 64 / 101;
+    grid-row: 63 / 65;
+}
+
+.line-pos-11 {
+    grid-column: 65 / 69;
+    grid-row: 73 / 75;
+}
+
+.line-pos-11 {
+    grid-column: 65 / 69;
+    grid-row: 73 / 75;
+}
+
+.line-pos-12 {
+    grid-column: 74 / 80;
+    grid-row: 73 / 75;
+}
+
+.line-pos-13 {
+    grid-column: 78 / 80;
+    grid-row: 63 / 75;
+}
+
+.line-pos-14 {
+    grid-column: 99 / 101;
+    grid-row: 52 / 65;
+}
+
+.line-pos-15 {
+    grid-column: 17 / 30;
+    grid-row: 1 / 3;
+}
+
+.line-pos-16 {
+    grid-column: 17 / 19;
+    grid-row: 1 / 4;
+}
+
+.line-pos-17 {
+    grid-column: 1 / 18;
+    grid-row: 2 / 4;
+}
+
+.line-pos-18 {
+    grid-column: 73 / 78;
+    grid-row: 1 / 3;
+}
+
+.line-pos-19 {
+    grid-column: 85 / 87;
+    grid-row: 1 / 4;
+}
+
+.line-pos-20 {
+    grid-column: 86 / 101;
+    grid-row: 2 / 4;
+}
+
+.line-pos-21 {
+    grid-column: 44 / 46;
+    grid-row: 60 / 74;
+    z-index: 20;
+}
+
+
+/* === Responsive สำหรับทางเข้า === */
+@media (max-width: 480px) {
+    .line-pos-15{
+        grid-row: 1 / 2;
+    }
+
+    .line-pos-16 {
+    grid-row: 1 / 3;
+}
+
+    .line-pos-17 {
+        grid-row: 2 / 3;
+    }
+
+    .line-pos-18 {
+    grid-row: 1 / 2;
+}
+
+.line-pos-19 {
+    grid-row: 1 / 3;
+}
+
+.line-pos-20 {
+    grid-row: 2 / 3;
+}
+}
+
+.rest-room {
+  grid-column: 78 / 85;  /* เริ่มที่ col 80 ไปจน col 95 */
+  grid-row: 1 / 10;      /* เริ่มแถว 2 ไปจนแถว 10 */
+  display: flex;
+  align-items: start;
+  justify-content: center;
+}
+
+.rest-room img {
+  max-width: 100%;
+  height: auto;
+}
+
+.rest-room-left {
+  grid-column: 4 / 10;  /* เริ่มที่ col 80 ไปจน col 95 */
+  grid-row: 57 / 65;      /* เริ่มแถว 2 ไปจนแถว 10 */
+  display: flex;
+  align-items: start;
+  justify-content: center;
+}
+
+.rest-room-left img {
+  max-width: 100%;
+  height: auto;
+}
+
+.elevate-text-1{
+    grid-column: 2/5;
+    grid-row: 5/10;
+}
+
+/* --- FIXED COUNTER BAR WITH VISIBLE LEGS --- */
+.counter-bar {
+    grid-column: 45 / 59;
+    grid-row: 60 / 64;
+    background: #4E342E;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: clamp(8px, 1.8vw, 16px);
+    letter-spacing: clamp(0.2px, 0.5vw, 0.8px);
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8), 
+        0 0 4px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    text-align: center;
+    font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    min-height: clamp(20px, 4vw, 32px);
+    padding: clamp(2px, 1vw, 8px) clamp(4px, 2vw, 12px);
+    overflow: visible; /* === เปลี่ยนจาก hidden เป็น visible === */
+    white-space: nowrap;
+}
+
+/* === ขาตั้งด้านซ้าย - แก้ไขให้แสดงผล === */
+.counter-bar::before {
+    content: '';
+    position: absolute;
+    left: 0; /* === ลบ px === */
+    top: 100%; /* เริ่มจากด้านล่างของ counter bar */
+    width: 32px; /* === เปลี่ยนจาก % เป็น px เพื่อให้แสดงผลชัด === */
+    height: 40px; /* === คงไว้เป็น px === */
+    background: #4E342E;
+    z-index: 4;
+    border-top: none; /* === ไม่ให้มีขอบด้านบน === */
+}
+
+/* === ขาตั้งด้านขวา - แก้ไขให้แสดงผล === */
+.counter-bar::after {
+    content: '';
+    position: absolute;
+    right: 0; /* === ลบ px === */
+    top: 100%; /* เริ่มจากด้านล่างของ counter bar */
+    width: 32px; /* === เปลี่ยนจาก % เป็น px เพื่อให้แสดงผลชัด === */
+    height: 40px; /* === คงไว้เป็น px === */
+    background: #4E342E;
+    z-index: 4;
+    border-top: none; /* === ไม่ให้มีขอบด้านบน === */
+}
+
+/* === RESPONSIVE BREAKPOINTS === */
+@media (max-width: 480px) {
+    .counter-bar {
+        font-size: clamp(4px, 2.5vw, 6px);
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        min-height: 18px;
+        padding: 2px 4px;
+    }
+    
+    .counter-bar::before,
+    .counter-bar::after {
+        width: 12px; /* === ลดขนาดในหน้าจอเล็ก === */
+        height: 12px; /* === ลดความสูงในหน้าจอเล็ก === */
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .counter-bar {
+        font-size: clamp(8px, 2vw, 11px);
+        letter-spacing: 0.5px;
+        min-height: 24px;
+        padding: 4px 8px;
+    }
+    
+    .counter-bar::before,
+    .counter-bar::after {
+        width: 26px;
+        height: 30px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .counter-bar {
+        font-size: clamp(12px, 1.8vw, 15px);
+        letter-spacing: 0.6px;
+        min-height: 28px;
+        padding: 6px 10px;
+    }
+    
+    .counter-bar::before,
+    .counter-bar::after {
+        width: 30px;
+        height: 35px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .counter-bar {
+        font-size: clamp(14px, 1.5vw, 18px);
+        letter-spacing: 0.8px;
+        min-height: 32px;
+        padding: 8px 12px;
+        font-weight: 700;
+    }
+    
+    .counter-bar::before,
+    .counter-bar::after {
+        width: 35px;
+        height: 45px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .counter-bar {
+        font-size: 20px;
+        letter-spacing: 1px;
+        min-height: 36px;
+        padding: 10px 16px;
+    }
+    
+    .counter-bar::before,
+    .counter-bar::after {
+        width: 40px;
+        height: 50px;
+    }
+}
+
+/* --- FIXED COUNTER BAR WITH VISIBLE LEGS --- */
+.counter-bar-2 {
+    grid-column: 45 / 59;
+    grid-row: 56 / 60;
+    background: #67453d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: clamp(8px, 1.8vw, 16px);
+    letter-spacing: clamp(0.2px, 0.5vw, 0.8px);
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8), 
+        0 0 4px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    text-align: center;
+    font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    min-height: clamp(20px, 4vw, 32px);
+    padding: clamp(2px, 1vw, 8px) clamp(4px, 2vw, 12px);
+    overflow: visible; /* === เปลี่ยนจาก hidden เป็น visible === */
+    white-space: nowrap;
+}
+
+/* === ขาตั้งด้านซ้าย - แก้ไขให้แสดงผล === */
+.counter-bar-2::before {
+    content: '';
+    position: absolute;
+    left: 0; /* === ลบ px === */
+    top: 100%; /* เริ่มจากด้านล่างของ counter bar */
+    width: 32px; /* === เปลี่ยนจาก % เป็น px เพื่อให้แสดงผลชัด === */
+    height: 40px; /* === คงไว้เป็น px === */
+    background: #67453d;
+    z-index: 4;
+    border-top: none; /* === ไม่ให้มีขอบด้านบน === */
+}
+
+/* === ขาตั้งด้านขวา - แก้ไขให้แสดงผล === */
+.counter-bar-2::after {
+    content: '';
+    position: absolute;
+    right: 0; /* === ลบ px === */
+    top: 100%; /* เริ่มจากด้านล่างของ counter bar */
+    width: 32px; /* === เปลี่ยนจาก % เป็น px เพื่อให้แสดงผลชัด === */
+    height: 40px; /* === คงไว้เป็น px === */
+    background: #67453d;
+    z-index: 4;
+    border-top: none; /* === ไม่ให้มีขอบด้านบน === */
+}
+
+/* === RESPONSIVE BREAKPOINTS === */
+@media (max-width: 480px) {
+    .counter-bar-2 {
+        font-size: clamp(6px, 2.5vw, 8px);
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        min-height: 18px;
+        padding: 2px 4px;
+    }
+    
+    .counter-bar-2::before,
+    .counter-bar-2::after {
+        width: 12px; /* === ลดขนาดในหน้าจอเล็ก === */
+        height: 20px; /* === ลดความสูงในหน้าจอเล็ก === */
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .counter-bar-2 {
+        font-size: clamp(8px, 2vw, 11px);
+        letter-spacing: 0.5px;
+        min-height: 24px;
+        padding: 4px 8px;
+    }
+    
+    .counter-bar-2::before,
+    .counter-bar-2::after {
+        width: 26px;
+        height: 20px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .counter-bar-2 {
+        font-size: clamp(12px, 1.8vw, 15px);
+        letter-spacing: 0.6px;
+        min-height: 28px;
+        padding: 6px 10px;
+    }
+    
+    .counter-bar-2::before,
+    .counter-bar-2::after {
+        width: 30px;
+        height: 25px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .counter-bar-2 {
+        font-size: clamp(14px, 1.5vw, 18px);
+        letter-spacing: 0.8px;
+        min-height: 32px;
+        padding: 8px 12px;
+        font-weight: 700;
+    }
+    
+    .counter-bar-2::before,
+    .counter-bar-2::after {
+        width: 30px;
+        height: 50px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .counter-bar-2 {
+        font-size: 20px;
+        letter-spacing: 1px;
+        min-height: 36px;
+        padding: 10px 16px;
+    }
+    
+    .counter-bar-2::before,
+    .counter-bar-2::after {
+        width: 40px;
+        height: 50px;
+    }
+}
+
+/* === ป้ายบอกทางชั้น 2 ใต้เคาน์เตอร์บาร์ === */
+
+.floor2-sign {
+    grid-column: 56 / 40; /* ตำแหน่งใต้เคาน์เตอร์บาร์ */
+    grid-row: 82 / 72;    /* ใต้เคาน์เตอร์บาร์ */
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* พื้นหลังลายไม้ */
+.floor2-sign::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            #ffffff 0px,
+            #7d7d7d 8px,
+            #505050 8px,
+            #000000 9px
+        );
+    border: 2px solid #808080;
+    border-radius: 4px;
+    z-index: -2;
+}
+
+/* ป้ายลูกศรสีน้ำตาล */
+.floor2-sign::after {
+    content: '';
+    position: absolute;
+    top: 25%;
+    left: 8%;
+    right: 0%;
+    bottom: 25%;
+    background: #8B4513;
+    z-index: -1;
+    /* สร้างรูปลูกศรชี้ซ้าย */
+    clip-path: polygon(
+        15% 0%, 
+        100% 0%, 
+        100% 40%, 
+        100% 60%, 
+        100% 100%, 
+        15% 100%, 
+        0% 50%
+    );
+}
+
+/* ข้อความ "ชั้น 2" */
+.floor2-sign-text {
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    font-size: clamp(12px, 2.5vw, 18px);
+    font-weight: 700;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 4px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+    position: relative;
+    letter-spacing: 1px;
+    margin-left: 8px; /* เลื่อนข้อความไปขวาเล็กน้อย */
+}
+
+
+/* === Responsive Design === */
+@media (max-width: 480px) {
+    .floor2-sign {
+        grid-column: 45 / 59;
+        grid-row: 68 / 73;
+    }
+    
+    .floor2-sign-text {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        margin-left: 6px;
+    }
+    
+    .floor2-sign::after {
+        left: 10%;
+        right: 20%;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .floor2-sign {
+        grid-column: 44 / 60;
+        grid-row: 67 / 72;
+    }
+    
+    .floor2-sign-text {
+        font-size: 14px;
+        margin-left: 7px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .floor2-sign {
+        grid-column: 44 / 60;
+        grid-row: 68 / 73;
+    }
+    
+    .floor2-sign-text {
+        font-size: 20px;
+        letter-spacing: 1.5px;
+        margin-left: 10px;
+    }
+    
+    .floor2-sign::after {
+        left: 6%;
+        right: 12%;
+    }
+}
+
+/* === เอฟเฟกต์พิเศษเมื่อกำลังอยู่ชั้น 2 === */
+.floor2-sign.current-floor::after {
+    background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.floor2-sign.current-floor .floor2-sign-text {
+    color: #FFFFFF;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(50, 205, 50, 0.6);
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 
+            inset 0 2px 4px rgba(255, 255, 255, 0.2),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+            0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    to {
+        box-shadow: 
+            inset 0 2px 4px rgba(255, 255, 255, 0.3),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+            0 4px 12px rgba(50, 205, 50, 0.6);
+    }
+}
+
+/* === ป้ายชั้น 2 ใหม่ (ลูกศรชี้ขวา) === */
+.floor2-sign-right {
+    grid-column: 70 / 85;
+    grid-row: 30 / 52;
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* พื้นหลังลายไม้ */
+.floor2-sign-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            #ffffff 0px,
+            #7d7d7d 8px,
+            #505050 8px,
+            #000000 9px
+        );
+    border: 2px solid #808080;
+    border-radius: 4px;
+    z-index: -2;
+}
+
+/* ป้ายลูกศรสีน้ำตาล ชี้ขวา */
+.floor2-sign-right::after {
+    content: '';
+    position: absolute;
+    top: 25%;
+    left: 8%;
+    right: 8%;
+    bottom: 25%;
+    background: #8B4513;
+    z-index: -1;
+    /* สร้างรูปลูกศรชี้ขวา */
+    clip-path: polygon(
+        0% 0%, 
+        85% 0%, 
+        100% 50%, 
+        85% 100%, 
+        0% 100%, 
+        0% 60%, 
+        0% 40%
+    );
+}
+
+/* ข้อความ "ชั้น 2" ใหม่ */
+.floor2-sign-right-text {
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    font-size: clamp(12px, 2.5vw, 18px);
+    font-weight: 700;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 4px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+    position: relative;
+    letter-spacing: 1px;
+    margin-right: 8px;
+}
+
+/* เอฟเฟกต์เมื่อกำลังอยู่ชั้น 2 */
+.floor2-sign-right.current-floor::after {
+    background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.floor2-sign-right.current-floor .floor2-sign-right-text {
+    color: #FFFFFF;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(50, 205, 50, 0.6);
+}
+
+/* Hover effect */
+.floor2-sign-right:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+.floor2-sign-right:active {
+    transform: scale(0.95);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .floor2-sign-right {
+        grid-column: 82 / 95;
+        grid-row: 57 / 63;
+    }
+    
+    .floor2-sign-right-text {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        margin-right: 6px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .floor2-sign-right {
+        grid-column: 82 / 95;
+        grid-row: 57 / 63;
+    }
+    
+    .floor2-sign-right-text {
+        font-size: 14px;
+        margin-right: 7px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .floor2-sign-right {
+        grid-column: 82 / 95;
+        grid-row: 57 / 63;
+    }
+    
+    .floor2-sign-right-text {
+        font-size: 20px;
+        letter-spacing: 1.5px;
+        margin-right: 10px;
+    }
+}
+
+
+/* เพิ่ม CSS นี้ */
+.floor-1-only {
+    display: block;
+}
+
+.floor-1-only.hidden-floor {
+    display: none !important;
+}
+
+/* เพิ่ม CSS นี้ */
+.floor-2-only {
+    display: block;
+}
+
+.floor-2-only.hidden-floor {
+    display: none !important;
+}
+
+/* === ป้ายชั้น 2 ใหม่ (ลูกศรชี้ขวา) === */
+.floor2-sign-2-right {
+    grid-column: 70 / 85;
+    grid-row: 20 / 42;
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* พื้นหลังลายไม้ */
+.floor2-sign-2-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            #ffffff 0px,
+            #7d7d7d 8px,
+            #505050 8px,
+            #000000 9px
+        );
+    border: 2px solid #808080;
+    border-radius: 4px;
+    z-index: -2;
+}
+
+/* ป้ายลูกศรสีน้ำตาล ชี้ขวา */
+.floor2-sign-2-right::after {
+    content: '';
+    position: absolute;
+    top: 25%;
+    left: 8%;
+    right: 8%;
+    bottom: 25%;
+    background: #8B4513;
+    z-index: -1;
+    /* สร้างรูปลูกศรชี้ขวา */
+    clip-path: polygon(
+        0% 0%, 
+        85% 0%, 
+        100% 50%, 
+        85% 100%, 
+        0% 100%, 
+        0% 60%, 
+        0% 40%
+    );
+}
+
+/* ข้อความ "ชั้น 2" ใหม่ */
+.floor2-sign-2-right-text {
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    font-size: clamp(12px, 2.5vw, 18px);
+    font-weight: 700;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 4px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+    position: relative;
+    letter-spacing: 1px;
+    margin-right: 8px;
+}
+
+/* เอฟเฟกต์เมื่อกำลังอยู่ชั้น 2 */
+.floor2-sign-2-right.current-floor::after {
+    background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.floor2-sign-2-right.current-floor .floor2-sign-right-text {
+    color: #FFFFFF;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(50, 205, 50, 0.6);
+}
+
+/* Hover effect */
+.floor2-sign-2-right:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+.floor2-sign-2-right:active {
+    transform: scale(0.95);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .floor2-sign-2-right {
+        grid-column: 82 / 95;
+        grid-row: 63 / 69;
+    }
+    
+    .floor2-sign-2-right-text {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        margin-right: 6px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .floor2-sign-2-right {
+        grid-column: 82 / 95;
+        grid-row: 57 / 63;
+    }
+    
+    .floor2-sign-2-right-text {
+        font-size: 14px;
+        margin-right: 7px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .floor2-sign-2-right {
+        grid-column: 82 / 95;
+        grid-row: 57 / 63;
+    }
+    
+    .floor2-sign-2-right-text {
+        font-size: 20px;
+        letter-spacing: 1.5px;
+        margin-right: 10px;
+    }
+}
+
+/* =======================================================================================
+
+/* === ป้ายชั้น 2 ใหม่ (ลูกศรชี้ขวา) === */
+.floor2-sign-2-left {
+    grid-column: 70 / 85;
+    grid-row: 30 / 52;
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* พื้นหลังลายไม้ */
+.floor2-sign-2-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            #ffffff 0px,
+            #7d7d7d 8px,
+            #505050 8px,
+            #000000 9px
+        );
+    border: 2px solid #808080;
+    border-radius: 4px;
+    z-index: -2;
+}
+
+/* ป้ายลูกศรสีน้ำตาล ชี้ซ้าย */
+.floor2-sign-2-left::after {
+    content: '';
+    position: absolute;
+    top: 25%;
+    left: 8%;
+    right: 0%;
+    bottom: 25%;
+    background: #8B4513;
+    z-index: -1;
+    /* สร้างรูปลูกศรชี้ซ้าย */
+    clip-path: polygon(
+        15% 0%, 
+        100% 0%, 
+        100% 40%, 
+        100% 60%, 
+        100% 100%, 
+        15% 100%, 
+        0% 50%
+    );
+}
+
+/* ข้อความ "ชั้น 2" ใหม่ */
+.floor2-sign-2-left-text {
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    font-size: clamp(12px, 2.5vw, 18px);
+    font-weight: 700;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 4px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+    position: relative;
+    letter-spacing: 1px;
+    margin-right: 8px;
+}
+
+/* เอฟเฟกต์เมื่อกำลังอยู่ชั้น 2 */
+.floor2-sign-2-left.current-floor::after {
+    background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.floor2-sign-2-left.current-floor .floor2-sign-right-text {
+    color: #FFFFFF;
+    text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(50, 205, 50, 0.6);
+}
+
+/* Hover effect */
+.floor2-sign-2-left:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+.floor2-sign-2-left:active {
+    transform: scale(0.95);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .floor2-sign-2-left {
+        grid-column: 70 / 81;
+        grid-row: 50 / 55;
+    }
+    
+    .floor2-sign-2-left-text {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        margin-right: 6px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .floor2-sign-2-left {
+        grid-column: 70 / 81;
+        grid-row: 50 / 55;
+    }
+    
+    .floor2-sign-2-left-text {
+        font-size: 14px;
+        margin-right: 7px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .floor2-sign-2-left {
+        grid-column: 70 / 80;
+        grid-row: 50 / 55;
+    }
+    
+    .floor2-sign-2-left-text {
+        font-size: 20px;
+        letter-spacing: 1.5px;
+        margin-right: 10px;
+    }
+}
+
+/* === ทางเข้าซ้ายล่าง === */
+.entrance-left {
+    grid-column: 3 / 15;
+    grid-row: 50 / 60;
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    color: white;
+    font-weight: 700;
+    font-size: clamp(10px, 2vw, 14px);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* === ทางเข้าขวาล่าง === */
+.entrance-right {
+    grid-column: 63 / 80;
+    grid-row: 67 / 72;
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: clamp(14px, 2vw, 18px);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* === Responsive สำหรับทางเข้า === */
+@media (max-width: 480px) {
+    .entrance-left,
+    .entrance-right {
+        font-size: 8px;
+        grid-row: 67 / 72;
+    }
+    
+    .entrance-left {
+        grid-column: 1 / 15;
+        grid-row: 50 / 60;
+    }
+    
+    .entrance-right {
+        grid-column: 65 / 81;
+    }
+    
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .entrance-left,
+    .entrance-right {
+        font-size: 10px;
+    }
+    
+    .entrance-left {
+        grid-column: 1 / 15;
+    }
+    
+    .entrance-right {
+        grid-column: 65 / 81;
+    }
+}
+
+@media (min-width: 1025px) {
+    .entrance-left,
+    .entrance-right {
+        font-size: 24px;
+        border-radius: 16px;
+    }
+}
+
+/* === โซนยกพื้นซ้าย (3 แถว) === */
+.elevated-zone-left {
+    grid-column: 1 / 14;
+    grid-row: 3 / 45;
+    position: relative;
+    z-index: 0;
+    background: 
+        linear-gradient(135deg, 
+            rgba(48, 48, 48, 0.978) 0%, 
+            rgba(0, 0, 0, 0.2) 50%, 
+            rgba(58, 58, 58, 0.991) 100%
+        );
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* ขั้นบันไดด้านขวาโซนซ้าย (หันเข้าหาเวที) */
+.elevated-zone-left::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 20% !important;
+    right: -8px !important;
+    bottom: 20% !important;
+    left: auto !important;
+    width: 8px !important;
+    height: auto !important;
+    background: 
+        repeating-linear-gradient(
+            180deg,
+            #374151 0px,
+            #374151 12px,
+            #4b5563 12px,
+            #4b5563 24px
+        ) !important;
+    border: 1px solid #6b7280 !important;
+    border-radius: 0 4px 4px 0 !important;
+    box-shadow: 
+        4px 0 8px rgba(0, 0, 0, 0.4),
+        inset -1px 0 2px rgba(255, 255, 255, 0.1) !important;
+    z-index: -1 !important;
+}
+
+/* เงาข้างขั้นบันไดซ้าย */
+.elevated-zone-left::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 18% !important;
+    right: -12px !important;
+    bottom: 18% !important;
+    left: auto !important;
+    width: 4px !important;
+    height: auto !important;
+    background: 
+        linear-gradient(180deg, 
+            transparent 0%, 
+            rgba(0, 0, 0, 0.2) 20%, 
+            rgba(0, 0, 0, 0.3) 50%, 
+            rgba(0, 0, 0, 0.2) 80%, 
+            transparent 100%
+        ) !important;
+    border-radius: 50% !important;
+    z-index: -2 !important;
+}
+
+/* === โซนยกพื้นขวา (3 แถว) === */
+.elevated-zone-right {
+    grid-column: 88 / 102;
+    grid-row: 3 / 53;
+    position: relative;
+    z-index: 0;
+    background: 
+        linear-gradient(135deg, 
+            rgba(48, 48, 48, 0.978) 0%, 
+            rgba(0, 0, 0, 0.2) 50%, 
+            rgba(58, 58, 58, 0.991) 100%
+        );
+    border: 2px solid rgba(34, 197, 94, 0.3);
+    border-radius: 8px;
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* ขั้นบันไดด้านซ้ายโซนขวา (หันเข้าหาเวที) */
+.elevated-zone-right::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 20% !important;
+    left: -8px !important;
+    bottom: 20% !important;
+    right: auto !important;
+    width: 8px !important;
+    height: auto !important;
+    background: 
+        repeating-linear-gradient(
+            180deg,
+            #374151 0px,
+            #374151 12px,
+            #4b5563 12px,
+            #4b5563 24px
+        ) !important;
+    border: 1px solid #6b7280 !important;
+    border-radius: 4px 0 0 4px !important;
+    box-shadow: 
+        -4px 0 8px rgba(0, 0, 0, 0.4),
+        inset 1px 0 2px rgba(255, 255, 255, 0.1) !important;
+    z-index: -1 !important;
+}
+
+/* เงาข้างขั้นบันไดขวา */
+.elevated-zone-right::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 18% !important;
+    left: -12px !important;
+    bottom: 18% !important;
+    right: auto !important;
+    width: 4px !important;
+    height: auto !important;
+    background: 
+        linear-gradient(180deg, 
+            transparent 0%, 
+            rgba(0, 0, 0, 0.2) 20%, 
+            rgba(0, 0, 0, 0.3) 50%, 
+            rgba(0, 0, 0, 0.2) 80%, 
+            transparent 100%
+        ) !important;
+    border-radius: 50% !important;
+    z-index: -2 !important;
+}
+
+/* ปรับโต๊ะในโซนยกพื้นให้ดูสูงขึ้น */
+.elevated-zone-left .table,
+.elevated-zone-right .table {
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.elevated-zone-left .table:hover,
+.elevated-zone-right .table:hover {
+    transform: translateY(-4px) scale(1.15);
+    box-shadow: 
+        0 12px 35px rgba(0, 0, 0, 0.4),
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* === โซนยกพื้นซ้าย (3 แถว) === */
+.elevated-zone-center-2 {
+    grid-column: 12 / 100;
+    grid-row: 55 / 73;
+    position: relative;
+    z-index: 0;
+    background: 
+        linear-gradient(135deg, 
+            rgba(48, 48, 48, 0.978) 0%, 
+            rgba(0, 0, 0, 0.2) 50%, 
+            rgba(58, 58, 58, 0.991) 100%
+        );
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* === Responsive Design === */
+@media (max-width: 480px) {
+    .elevated-zone-left,
+    .elevated-zone-right {
+        border-width: 1px;
+        border-radius: 6px;
+    }
+    
+    .elevated-zone-left::before {
+        width: 6px !important;
+        right: -6px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right::before {
+        width: 6px !important;
+        left: -6px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-left::after {
+        width: 3px !important;
+        right: -9px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right::after {
+        width: 3px !important;
+        left: -9px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .elevated-zone-left::before {
+        width: 7px !important;
+        right: -7px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right::before {
+        width: 7px !important;
+        left: -7px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-left::after {
+        width: 3px !important;
+        right: -10px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right::after {
+        width: 3px !important;
+        left: -10px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .elevated-zone-left,
+    .elevated-zone-right {
+        border-width: 3px;
+        border-radius: 12px;
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.4),
+            inset 0 2px 4px rgba(255, 255, 255, 0.15);
+    }
+    
+    .elevated-zone-left::before {
+        width: 20px !important;
+        right: -20px !important;
+        border-radius: 0 6px 6px 0 !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right::before {
+        width: 20px !important;
+        left: -20px !important;
+        border-radius: 6px 0 0 6px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-left::after {
+        width: 5px !important;
+        right: -15px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right::after {
+        width: 5px !important;
+        left: -15px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+}
+
+/* ############# ชั้นบน ด้านขวา ################## */
+/* === โซนยกพื้นขวา (3 แถว) === */
+.elevated-zone-right-2 {
+    grid-column: 80 / 100;
+    grid-row: 10 / 55;
+    position: relative;
+    z-index: 0;
+    background: 
+        linear-gradient(135deg, 
+            rgba(48, 48, 48, 0.978) 0%, 
+            rgba(0, 0, 0, 0.2) 50%, 
+            rgba(58, 58, 58, 0.991) 100%
+        );
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* ปรับโต๊ะในโซนยกพื้นให้ดูสูงขึ้น */
+.elevated-zone-right-2 .table {
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.elevated-zone-right-2 .table:hover {
+    transform: translateY(-4px) scale(1.15);
+    box-shadow: 
+        0 12px 35px rgba(0, 0, 0, 0.4),
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+/* === Responsive Design === */
+@media (max-width: 480px) {
+    .elevated-zone-right-2 {
+        border-width: 1px;
+        border-radius: 6px;
+    }
+    
+    .elevated-zone-right-2::before {
+        width: 6px !important;
+        left: -6px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right-2::after {
+        width: 3px !important;
+        left: -9px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .elevated-zone-right-2::before {
+        width: 7px !important;
+        left: -7px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+    
+    .elevated-zone-right-2::after {
+        width: 3px !important;
+        left: -10px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .elevated-zone-right-2 {
+        border-width: 3px;
+        border-radius: 12px;
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.4),
+            inset 0 2px 4px rgba(255, 255, 255, 0.15);
+    }
+    
+    .elevated-zone-right-2::before {
+        width: 20px !important;
+        left: -20px !important;
+        border-radius: 6px 0 0 6px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+
+    .elevated-zone-right-2::after {
+        width: 5px !important;
+        left: -15px !important;
+        top: 0% !important;
+        bottom: 85% !important;
+    }
+}
+
+        .table {
+            border-radius: 20%;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            user-select: none;
+            font-size: clamp(8px, 1.5vw, 12px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            will-change: transform;
+            min-width: 10px;
+            min-height: 10px;
+        }
+        
+        .table.vvip { 
+            background: var(--vvip-color);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+        
+        .table.vip { 
+            background: var(--vip-color);
+            box-shadow: 0 4px 15px rgba(165, 94, 234, 0.4);
+        }
+        
+        .table.normal { 
+            background: var(--normal-color);
+            box-shadow: 0 4px 15px rgba(38, 222, 129, 0.4);
+        }
+
+        .table.small { 
+            background: var(--small-color);
+            box-shadow: 0 4px 15px rgba(38, 222, 129, 0.4);
+        }
+        
+        .table:hover {
+            transform: scale(1.15);
+            z-index: 20;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .table.selected {
+            border-color: var(--accent-gold);
+            border-width: 3px;
+            transform: scale(1.25);
+            z-index: 30;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.6);
+        }
+        
+        .table.occupied {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+            border-color: #9ca3af !important;
+            filter: grayscale(80%);
+            pointer-events: none;
+        }
+        
+        #selected-table-info {
+            background: var(--glass-effect);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-dark);
+            padding: 32px;
+            border-radius: 32px;
+            text-align: center;
+            margin-top: 32px;
+            box-shadow: var(--shadow-strong);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #selected-table-info h3 {
+            margin-bottom: 24px;
+            font-size: clamp(20px, 5vw, 26px);
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        #table-details {
+            margin-bottom: 24px;
+            display: grid;
+            gap: 16px;
+        }
+        
+        .table-detail-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius-small);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .table-detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-medium);
+            font-size: 14px;
+        }
+        
+        .detail-value {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text-dark);
+        }
+        
+        .table-number-card {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .table-number-card .detail-label,
+        .table-number-card .detail-value {
+            color: white;
+        }
+        
+        .price-card .detail-value {
+            background: var(--secondary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 20px 32px;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-medium);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--secondary-gradient);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        
+        .btn-primary:hover::before {
+            opacity: 1;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-strong);
+        }
+        
+        .btn-primary span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .btn-primary:disabled {
+            background: linear-gradient(135deg, #a0aec0 0%, #9ca3af 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: var(--shadow-soft);
+        }
+        
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === Floating Confirm Button === */
+        .floating-confirm-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: calc(100% - 32px);
+            max-width: 400px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #4E342E 0%, #8B4513 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(78, 52, 46, 0.4), 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            display: none; /* ซ่อนไว้ก่อน จนกว่าจะเลือกโต๊ะ */
+        }
+
+        .floating-confirm-btn.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            animation: slideUp 0.3s ease forwards;
+        }
+
+        .floating-confirm-btn.hide {
+            animation: slideDown 0.3s ease forwards;
+        }
+
+        .floating-confirm-btn:active {
+            transform: translateX(-50%) scale(0.98);
+        }
+
+        .floating-confirm-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .floating-confirm-btn .btn-price {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0; 
+                transform: translateX(-50%) translateY(100px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(-50%) translateY(0); 
+            }
+        }
+
+        @keyframes slideDown {
+            from { 
+                opacity: 1; 
+                transform: translateX(-50%) translateY(0); 
+            }
+            to { 
+                opacity: 0; 
+                transform: translateX(-50%) translateY(100px); 
+            }
+        }
+
+        /* เพิ่ม padding ด้านล่างให้ content ไม่โดนปุ่มลอยบัง */
+        #selected-table-info {
+            padding-bottom: 100px;
+        }
+
+        /* === Tap Hint === */
+        .tap-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            margin: 0 auto 16px auto;
+            max-width: 320px;
+            background: linear-gradient(135deg, rgba(255, 183, 77, 0.15), rgba(255, 215, 0, 0.1));
+            border: 1px dashed rgba(255, 183, 77, 0.5);
+            border-radius: 50px;
+            animation: pulseHint 2s ease-in-out infinite;
+        }
+
+        .tap-hint-icon {
+            font-size: 20px;
+            animation: bounceIcon 1s ease-in-out infinite;
+        }
+
+        .tap-hint-text {
+            font-family: 'Kanit', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #8B4513;
+        }
+
+        @keyframes pulseHint {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 183, 77, 0.4);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 0 0 8px rgba(255, 183, 77, 0);
+            }
+        }
+
+        @keyframes bounceIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* --- SIMPLIFIED PRICE CARDS UI --- */
+        .ticket-prices {
+            margin-bottom: 32px;
+            background: var(--glass-effect);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .ticket-prices h2 {
+            font-size: clamp(20px, 5vw, 24px);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .price-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .price-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--border-radius-small);
+            padding: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .price-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .price-card.vvip {
+            border-color: rgba(255, 107, 107, 0.3);
+            background: linear-gradient(145deg, rgba(255, 107, 107, 0.05), rgba(255, 255, 255, 0.9));
+        }
+
+        .price-card.vip {
+            border-color: rgba(165, 94, 234, 0.3);
+            background: linear-gradient(145deg, rgba(165, 94, 234, 0.05), rgba(255, 255, 255, 0.9));
+        }
+
+        .price-card.normal, .price-card.small {
+            border-color: rgba(38, 222, 129, 0.3);
+            background: linear-gradient(145deg, rgba(38, 222, 129, 0.05), rgba(255, 255, 255, 0.9));
+        }
+
+        .price-card.small {
+            border-color: rgba(22, 255, 228, 0.411);
+            background: linear-gradient(145deg, rgba(38, 207, 222, 0.05), rgba(255, 255, 255, 0.9));
+        }
+
+        .price-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .price-type {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .price-amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .price-amount span {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-medium);
+        }
+
+        .price-features {
+            font-size: 13px;
+            color: var(--text-medium);
+            line-height: 1.4;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .price-features li {
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        /* --- ADDED: Extra Chair Styles --- */
+        .chair-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chair-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #BDBDBD;
+            background: #FFFFFF;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chair-btn:hover {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.1);
+        }
+
+        .chair-btn:disabled { 
+            background: #EEEEEE; 
+            color: #BDBDBD; 
+            cursor: not-allowed; 
+            transform: none;
+        }
+
+        #chair-count { 
+            font-size: 16px; 
+            font-weight: 700; 
+            min-width: 24px; 
+            text-align: center;
+            color: var(--text-dark);
+        }
+
+        .total-price-card {
+            border: 2px solid var(--accent-gold) !important;
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.05), rgba(255, 255, 255, 0.9)) !important;
+        }
+
+        .total-price-card .detail-value {
+            font-size: 20px !important;
+            background: var(--secondary-gradient) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            font-weight: 800 !important;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .price-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .price-card {
+                padding: 14px;
+            }
+            
+            .price-header {
+                margin-bottom: 8px;
+            }
+            
+            .price-type {
+                font-size: 16px;
+            }
+            
+            .price-amount {
+                font-size: 18px;
+            }
+            
+            .price-features {
+                font-size: 12px;
+            }
+            
+            .detail-grid {
+                gap: 12px;
+            }
+            
+            .detail-item {
+                padding: 12px;
+            }
+        }
+
+        /* --- ADDED: Modal Styles for Terms and Conditions --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-strong);
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-content h2 {
+            font-size: 22px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .terms-box {
+            border: 1px solid #E0E0E0;
+            border-radius: var(--border-radius-small);
+            padding: 16px;
+            margin-bottom: 24px;
+            max-height: 50vh;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-medium);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: auto; /* Push buttons to the bottom */
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-accept {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-decline {
+            background: #E0E0E0;
+            color: var(--text-medium);
+        }
+
+        /* เพิ่มใน <style> ของ index.html */
+
+.price-breakdown {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.price-item {
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: var(--text-medium);
+    font-weight: 600;
+}
+
+.price-item:last-child {
+    margin-bottom: 0;
+}
+
+/* ปรับปรุง price-card */
+.price-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: var(--border-radius-small);
+    padding: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+    min-height: 140px; /* เพิ่มความสูงเพื่อรองรับข้อมูลที่เพิ่มขึ้น */
+}
+
+/* เพิ่มใน <style> ของ index.html */
+
+    .disabled-feature {
+    background: rgba(200, 200, 200, 0.3) !important;
+    border-color: #ddd !important;
+}
+
+.disabled-feature .detail-label {
+    color: #999 !important;
+}
+
+.chair-btn:disabled {
+    background: #EEEEEE !important;
+    color: #BDBDBD !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    opacity: 0.5;
+}
+
+.chair-btn:disabled:hover {
+    background: #EEEEEE !important;
+    color: #BDBDBD !important;
+    border-color: #BDBDBD !important;
+    transform: none !important;
+}
+
+/* เพิ่มสไตล์สำหรับ warning text */
+.warning-text {
+    color: var(--text-light);
+    font-size: 11px;
+    font-style: italic;
+    margin-top: 4px;
+}
+
+.referral-input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: 'Kanit', sans-serif;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.referral-input:focus {
+    outline: none;
+    border-color: var(--primary-gradient);
+    box-shadow: 0 0 0 3px rgba(78, 52, 46, 0.1);
+}
+
+.referral-input::placeholder {
+    color: #999;
+    font-size: 14px;
+}
+
+/* === Lock Table Styles === */
+.lock-table-section {
+    margin-top: 12px;
+    padding: 16px;
+    background: linear-gradient(145deg, rgba(255, 193, 7, 0.1), rgba(255, 255, 255, 0.9));
+    border: 2px solid #ffc107;
+    border-radius: var(--border-radius-small);
+}
+
+.lock-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.lock-table-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.lock-table-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lock-option {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    background: white;
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.lock-option:hover {
+    border-color: #ffc107;
+    background: rgba(255, 193, 7, 0.05);
+}
+
+.lock-option.selected {
+    border-color: #ffc107;
+    background: linear-gradient(145deg, rgba(255, 193, 7, 0.15), rgba(255, 255, 255, 0.95));
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.lock-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    accent-color: #ffc107;
+}
+
+.lock-option-content {
+    flex: 1;
+}
+
+.lock-option-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.lock-option-desc {
+    font-size: 12px;
+    color: var(--text-medium);
+    margin-top: 2px;
+}
+
+.lock-option-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f57c00;
+    white-space: nowrap;
+}
+
+.lock-option-price.free {
+    color: #4CAF50;
+}
+
+/* === Booking Terms Button & Modal === */
+.booking-terms-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+}
+
+.booking-terms-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.booking-terms-btn:active {
+    transform: translateY(0);
+}
+
+#booking-terms-modal .modal-content {
+    max-width: 450px;
+}
+
+#booking-terms-modal .terms-box {
+    background: linear-gradient(145deg, #fff9e6, #ffffff);
+    border: 1px solid #ffc107;
+}
+
+#booking-terms-modal h2 {
+    color: #f57c00;
+}
+
+.terms-highlight {
+    background: #fff3cd;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+    border-left: 4px solid #ffc107;
+}
+
+.terms-lock-options {
+    margin: 16px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.terms-lock-options li {
+    padding: 8px 0;
+    border-bottom: 1px dashed #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.terms-lock-options li:last-child {
+    border-bottom: none;
+}
+
+.terms-lock-time {
+    font-weight: 500;
+}
+
+.terms-lock-price {
+    font-weight: 700;
+    color: #f57c00;
+}
+        
+    </style>
+</head>
+<body>
+    <div id="terms-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>ข้อตกลงและเงื่อนไขการจอง</h2>
+            <div class="terms-box">
+                <p>ยินดีต้อนรับสู่ระบบการจองโต๊ะคอนเสิร์ตของร้านยักษ์ใหญ่แดนใต้ By TN</p>
+                <ul>
+                    <li>การจองโต๊ะจะมีผลสมบูรณ์เมื่อท่านชำระเงินเรียบร้อยแล้วเท่านั้น</li>
+                    <li>กรุณาชำระเงินภายใน 10 นาทีหลังจากได้รับการยืนยันการจอง มิเช่นนั้นการจองจะถูกยกเลิกโดยอัตโนมัติ</li>
+                    <li>สลิปการโอนเงินสามารถใช้ยืนยันการจองได้เพียงครั้งเดียว</li>
+                    <li>การจองไม่สามารถยกเลิกหรือขอคืนเงินได้ทุกกรณีหลังจากชำระเงินแล้ว</li>
+                    <li>กรุณามาถึงร้านก่อนเวลา 20:30 น. มิเช่นนั้นการจองจะถูกยกเลิกโดยอัตโนมัติ</li>
+                    <li>เมื่อการจองถูกชำระเงินแล้วจะไม่สามารถเปลี่ยนแปลงที่นั่งได้</li>
+                    <li>ผู้จองและผู้ติดตามทุกท่านต้องมีอายุ 20 ปีขึ้นไป จึงจะสามารถเข้าชมคอนเสิร์ตได้</li>
+                    <li>ทางร้านขอสงวนสิทธิ์ในการเปลี่ยนแปลงเงื่อนไขโดยไม่ต้องแจ้งให้ทราบล่วงหน้า</li>
+                </ul>
+                <p>การกด "ยอมรับ" หมายความว่าท่านได้อ่านและยอมรับเงื่อนไขทั้งหมดข้างต้นแล้ว</p>
+            </div>
+            <div class="modal-actions">
+                <button id="decline-terms-btn" class="modal-btn btn-decline">ปฏิเสธ</button>
+                <button id="accept-terms-btn" class="modal-btn btn-accept">ยอมรับ</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Booking Terms Modal (Lock Table Info) -->
+    <div id="booking-terms-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>📢 เงื่อนไขการจองโต๊ะ</h2>
+            <div class="terms-box">
+                <div class="terms-highlight">
+                    <strong>⏰ เงื่อนไขปกติ</strong><br>
+                    ทางร้านจะสำรองที่นั่งให้ถึงเวลา <strong>20:30 น.</strong> เท่านั้น<br>
+                    <small>(หากเกินเวลาขออนุญาตปล่อยโต๊ะให้คิวถัดไปค่ะ)</small>
+                </div>
+                
+                <p style="margin-top: 16px;">✨ <strong>แต่สำหรับท่านที่ไม่ต้องการรีบมา หรือกลัวมาไม่ทัน</strong></p>
+                <p>ทางร้านมีบริการ <strong style="color: #f57c00;">"Lock Table"</strong> การันตีมีโต๊ะแน่นอน<br>จ่ายเพิ่มเพื่อขยายเวลาได้ดังนี้:</p>
+                
+                <ul class="terms-lock-options">
+                    <li>
+                        <span class="terms-lock-time">🔐 มาเวลาไหนก็ได้</span>
+                        <span class="terms-lock-price" id="terms-lock-price">จ่ายเพิ่ม 500.-</span>
+                    </li>
+                </ul>
+                
+                <p style="font-size: 13px; color: var(--text-medium); margin-top: 16px;">
+                    💡 ลูกค้าสามารถเลือกได้ว่าจะเพิ่มเงินเพื่อการันตีโต๊ะ ไม่ให้โต๊ะหลุดค่ะ
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button id="close-booking-terms-btn" class="modal-btn btn-accept">เข้าใจแล้ว</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="main-app-content" style="display: none;">
+    <div class="container">
+        <header class="fade-in">
+            <h1 id="concert-title">กำลังโหลด...</h1>
+            <div class="subtitle">
+                <span id="concert-date"></span>
+                <span>|</span>
+                <span id="concert-time"></span>
+            </div>
+        </header>
+        <div id="liff-content">
+            </div>
+    </div>
+    </div>
+    
+    <!-- Floating Confirm Button -->
+    <button id="floating-confirm-btn" class="floating-confirm-btn" onclick="confirmTableSelection()">
+        <span>✅ ยืนยันการจอง</span>
+        <span id="floating-price" class="btn-price">0 บาท</span>
+    </button>
+    
+    <script>
+        let selectedTable = null, userId = null, concertId = null, concertDetails = {};
+        let allTables = { 1: [], 2: [] }; 
+        let currentFloor = 1;
+        let pollingInterval = null; 
+        let extraChairsCount = 0;
+        let referralCode = '';
+        let lockTableOption = 0;  // 0=ไม่ Lock, 1=Lock (ราคาจาก concert)
+        let mainButtonObserver = null;
+
+        // === Floating Button Functions ===
+        function showFloatingButton() {
+            const floatingBtn = document.getElementById('floating-confirm-btn');
+            if (floatingBtn && selectedTable) {
+                floatingBtn.classList.remove('hide');
+                floatingBtn.classList.add('show');
+                updateFloatingButtonPrice();
+            }
+        }
+
+        function hideFloatingButton() {
+            const floatingBtn = document.getElementById('floating-confirm-btn');
+            if (floatingBtn) {
+                floatingBtn.classList.remove('show');
+                floatingBtn.classList.add('hide');
+                // ซ่อนจริงหลังจาก animation เสร็จ
+                setTimeout(() => {
+                    if (floatingBtn.classList.contains('hide')) {
+                        floatingBtn.style.display = 'none';
+                    }
+                }, 300);
+            }
+        }
+
+        function updateFloatingButtonPrice() {
+            const floatingPrice = document.getElementById('floating-price');
+            if (floatingPrice && selectedTable) {
+                const basePrice = getTablePrice(selectedTable.table_type, selectedTable.capacity);
+                const extraChairPrice = concertDetails.extra_chair_price || 0;
+                const totalExtraChairPrice = extraChairsCount * extraChairPrice;
+                const lockTableFee = lockTableOption > 0 ? (concertDetails.lock_table_price || 500) : 0;
+                const totalPrice = basePrice + totalExtraChairPrice + lockTableFee;
+                floatingPrice.textContent = `${totalPrice.toLocaleString('th-TH')} บาท`;
+            }
+        }
+
+        function setupMainButtonObserver() {
+            const mainButton = document.getElementById('confirm-table');
+            const floatingBtn = document.getElementById('floating-confirm-btn');
+            
+            if (!mainButton || !floatingBtn) return;
+
+            // ถ้ามี observer เก่าอยู่ ให้ disconnect ก่อน
+            if (mainButtonObserver) {
+                mainButtonObserver.disconnect();
+            }
+
+            mainButtonObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // ปุ่มหลักมองเห็นแล้ว -> ซ่อน floating button
+                        floatingBtn.classList.remove('show');
+                        floatingBtn.style.display = 'none';
+                    } else {
+                        // ปุ่มหลักไม่เห็น -> แสดง floating button (ถ้าเลือกโต๊ะแล้ว)
+                        if (selectedTable) {
+                            floatingBtn.style.display = 'flex';
+                            floatingBtn.classList.add('show');
+                            floatingBtn.classList.remove('hide');
+                        }
+                    }
+                });
+            }, {
+                threshold: 0.5, // 50% ของปุ่มต้องเห็น
+                rootMargin: '0px'
+            });
+
+            mainButtonObserver.observe(mainButton);
+        }
+
+        const showContent = (html) => {
+            document.getElementById('liff-content').innerHTML = html;
+        };
+        const renderError = (message) => showContent(`<div class="error-display fade-in"><h2>⚠️ เกิดข้อผิดพลาด</h2><p>${message}</p></div>`);
+        const renderLoading = (message) => showContent(`<div class="loading fade-in"><div class="spinner"></div><p>${message}</p></div>`);
+
+        function renderSuccessAndLockPage() {
+            if(pollingInterval) clearInterval(pollingInterval);
+            const content = document.getElementById('liff-content');
+            content.innerHTML = `
+                <div class="success-screen fade-in">
+                    <h2>✅ เลือกโต๊ะสำเร็จ</h2>
+                    <p>ระบบได้ส่งข้อมูลการจองไปที่แชทของคุณแล้ว กรุณากลับไปที่หน้าต่างแอปพลิเคชัน LINE เพื่อดำเนินการในขั้นตอนต่อไป</p>
+                </div>
+            `;
+        }
+
+        function renderMainLayout() {
+    const createPriceCard = (type, icon, title, privileges, priceObj) => {
+        if (!priceObj || Object.values(priceObj).every(price => !price || price <= 0)) return '';
+        
+        const featuresArray = (privileges || '')
+            .split(';')
+            .map(feature => feature.trim())
+            .filter(feature => feature)
+            .slice(0, 3);
+
+        const featuresHtml = featuresArray
+            .map(feature => `<li>${feature}</li>`)
+            .join('');
+
+        // --- START OF MODIFIED SECTION ---
+
+        let price2Item = '';
+        let price4Item = '';
+        let price6Item = '';
+
+        // เงื่อนไข: แสดงราคา 2 ที่นั่งเฉพาะประเภท 'small' เท่านั้น
+        if (type !== 'vvip' && type !== 'vip' && type !== 'normal') {
+            if (priceObj.price_2 > 0) {
+                price2Item = `<div class="price-item">2 ที่: ${priceObj.price_2.toLocaleString('th-TH')} บาท</div>`;
+            }
+        }
+
+        // แสดงราคา 4 ที่นั่งตามปกติ
+        if (priceObj.price_4 > 0) {
+            price4Item = `<div class="price-item">4 ที่: ${priceObj.price_4.toLocaleString('th-TH')} บาท</div>`;
+        }
+        
+        // เงื่อนไข: ซ่อนราคา 6 ที่นั่งสำหรับ Small
+        if (type !== 'small') {
+            if (priceObj.price_6 > 0) {
+                price6Item = `<div class="price-item">6 ที่: ${priceObj.price_6.toLocaleString('th-TH')} บาท</div>`;
+            }
+        }
+
+        // ประกอบ HTML สำหรับแสดงราคา
+        const priceDisplay = `
+            <div class="price-breakdown">
+                ${price2Item}
+                ${price4Item}
+                ${price6Item}
+            </div>
+        `;
+
+        // --- END OF MODIFIED SECTION ---
+
+        return `
+            <div class="price-card ${type}">
+                <div class="price-header">
+                    <div class="price-type">
+                        <span>${icon}</span>
+                        <span>${title}</span>
+                    </div>
+                </div>
+                ${priceDisplay}
+                ${featuresHtml ? `<ul class="price-features">${featuresHtml}</ul>` : ''}
+            </div>
+        `;
+    };
+
+    const layoutHtml = `
+        <div class="ticket-prices fade-in">
+            <h2>💰 ประเภทบัตรและราคา</h2>
+            <div class="price-grid">
+                ${createPriceCard('vvip', '🟥', 'VVIP', concertDetails.privilege_vvip, {
+                    price_2: concertDetails.ticket_price_vvip_2,
+                    price_4: concertDetails.ticket_price_vvip_4,
+                    price_6: concertDetails.ticket_price_vvip_6
+                })}
+                ${createPriceCard('vip', '🟪', 'VIP', concertDetails.privilege_vip, {
+                    price_2: concertDetails.ticket_price_vip_2,
+                    price_4: concertDetails.ticket_price_vip_4,
+                    price_6: concertDetails.ticket_price_vip_6
+                })}
+                ${createPriceCard('normal', '🟩', 'Standard', concertDetails.privilege_normal, {
+                    price_2: concertDetails.ticket_price_normal_2,
+                    price_4: concertDetails.ticket_price_normal_4,
+                    price_6: concertDetails.ticket_price_normal_6
+                })}
+                ${createPriceCard('small', '🩵', 'โต๊ะสูง', concertDetails.privilege_small, {
+                    price_2: concertDetails.ticket_price_small_2,
+                    price_4: concertDetails.ticket_price_small_4,
+                    price_6: concertDetails.ticket_price_small_6
+                })}
+            </div>
+        </div>
+
+        <div class="floor-selector fade-in">
+            <button id="btn-floor-1" class="floor-btn active" data-floor="1">ชั้น 1</button>
+            <button id="btn-floor-2" class="floor-btn" data-floor="2">ชั้น 2</button>
+        </div>
+
+        <div class="tap-hint fade-in">
+            <span class="tap-hint-icon">👆</span>
+            <span class="tap-hint-text">แตะเลือกโต๊ะที่ต้องการได้เลย</span>
+        </div>
+
+        <main>
+            <div class="layout-wrapper fade-in">
+                <div id="restaurant-layout">
+                    <div class="stage">🎤 เวที</div>
+                    <div class="artist-room">ห้องศิลปิน</div>
+                    <div class="sound-room">ห้องนักดนตรี</div>
+
+                    <div class="rest-room floor-1-only">
+                        <img src="static/images/rest-room.png" alt="ทางไปห้องน้ำ" /></div>
+
+                    <div class="rest-room-left floor-1-only">
+                        <img src="static/images/rest-room-left.png" alt="ทางไปห้องน้ำ" /></div>
+                    
+                    <div class="line-separator line-pos-1 floor-1-only"></div>
+                    <div class="line-separator line-pos-2 floor-1-only"></div>
+                    <div class="line-separator line-pos-3 floor-1-only"></div>
+                    <div class="line-separator line-pos-4 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-5 floor-1-only"></div>
+                    <div class="line-separator line-pos-6 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-7 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-8 floor-1-only"></div>
+                    <div class="line-separator line-pos-9 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-10 floor-1-only"></div>
+                    <div class="line-separator line-pos-11 floor-1-only"></div>
+                    <div class="line-separator line-pos-12 floor-1-only"></div>
+                    <div class="line-separator line-pos-13 floor-1-only"></div>
+                    <div class="line-separator line-pos-14 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-15 floor-1-only"></div>
+                    <div class="line-separator line-pos-16 floor-1-only"></div>
+                    <div class="line-separator line-pos-17 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-18 floor-1-only"></div>
+                    <div class="line-separator line-pos-19 floor-1-only"></div>
+                    <div class="line-separator line-pos-20 floor-1-only"></div>
+
+                    <div class="line-separator line-pos-21 floor-1-only"></div>
+
+                    
+
+                    <div class="elevated-zone-left floor-1-only"></div>
+
+            <div class="elevated-zone-center-2 floor-2-only hidden-floor"></div>
+            <div class="elevated-zone-right-2 floor-2-only hidden-floor"></div>
+
+            <div class="turn-arrow"></div>
+            
+            <div class="elevated-zone-right floor-1-only"></div>
+
+                    <div class="counter-bar floor-1-only">🍺 เคาน์เตอร์บาร์ 🍺</div>
+
+                    <div class="counter-bar-2 floor-2-only hidden-floor">DJ</div>
+
+            
+            <div class="floor2-sign floor-1-only">
+                <span class="floor2-sign-text">ชั้น 2</span>
+            </div>
+
+            <div class="floor2-sign-2-left floor-2-only hidden-floor">
+                <span class="floor2-sign-2-left-text floor-2-only hidden-floor">ชั้น 1</span>
+            </div>
+            
+
+            <div class="floor2-sign-right floor-1-only">
+                <span class="floor2-sign-right-text">ชั้น 2</span>
+            </div>
+
+            <div class="entrance-left floor-1-only">
+            🚪 ทางเข้า
+        </div>
+
+        <div class="entrance-right floor-1-only">
+            ทางเข้า 🚪
+        </div>
+                </div>
+            </div>
+        </main>
+        
+        <div id="selected-table-info" class="hidden">
+            <h3>✨ ยืนยันการเลือกโต๊ะ</h3>
+            <div id="table-details"></div>
+            <button id="confirm-table" class="btn-primary"><span>ยืนยันการจอง</span></button>
+        </div>
+    `;
+    showContent(layoutHtml);
+    
+    document.getElementById('btn-floor-1').addEventListener('click', () => switchFloor(1));
+    document.getElementById('btn-floor-2').addEventListener('click', () => switchFloor(2));
+    document.getElementById('confirm-table').addEventListener('click', confirmTableSelection);
+}
+
+function switchFloor(floorNumber) {
+    if (currentFloor === floorNumber) return;
+
+    currentFloor = floorNumber;
+    
+    document.querySelectorAll('.floor-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`btn-floor-${floorNumber}`).classList.add('active');
+
+    selectedTable = null;
+    document.getElementById('selected-table-info').classList.add('hidden');
+
+    // ซ่อน/แสดง elements ที่เฉพาะชั้น 1
+    const floor1OnlyElements = document.querySelectorAll('.floor-1-only');
+    floor1OnlyElements.forEach(element => {
+        if (floorNumber === 1) {
+            element.classList.remove('hidden-floor');
+        } else {
+            element.classList.add('hidden-floor');
+        }
+    });
+
+    // (เพิ่มเข้ามา) ซ่อน/แสดง elements ที่เฉพาะชั้น 2
+    const floor2OnlyElements = document.querySelectorAll('.floor-2-only');
+    floor2OnlyElements.forEach(element => {
+        if (floorNumber === 2) {
+            element.classList.remove('hidden-floor');
+        } else {
+            element.classList.add('hidden-floor');
+        }
+    });
+
+    renderTables();
+}
+
+        function renderTables() {
+            const layout = document.getElementById('restaurant-layout');
+            if (!layout) return;
+
+            const previouslySelectedId = selectedTable ? selectedTable.id : null;
+
+            layout.querySelectorAll('.table').forEach(el => el.remove());
+            
+            const fragment = document.createDocumentFragment();
+            const tablesToRender = allTables[currentFloor]; 
+            
+            if (!tablesToRender) return;
+
+            tablesToRender.forEach((table) => {
+                const el = document.createElement('div');
+                el.className = `table ${table.table_type.toLowerCase()}`;
+                
+                const colStart = Math.floor(table.x_position);
+                const rowStart = Math.floor(table.y_position);
+                
+                let colSpan, rowSpan;
+
+                if (table.capacity <= 2) {
+                    colSpan = 5;
+                    rowSpan = 5;
+                } else if (table.capacity === 6) {
+                    colSpan = 6;
+                    rowSpan = 8;
+                } else {
+                    colSpan = 6;
+                    rowSpan = 6;
+                }
+                
+                el.style.gridColumn = `${colStart} / span ${colSpan}`;
+                el.style.gridRow = `${rowStart} / span ${rowSpan}`;
+                
+                el.textContent = table.table_number.slice(-2);
+                //el.textContent = table.table_number;
+                el.dataset.tableId = table.id;
+                
+                if (table.is_available) {
+                    el.addEventListener('click', () => selectTable(table));
+                    el.setAttribute('tabindex', '0');
+                } else {
+                    el.classList.add('occupied');
+                }
+                
+                fragment.appendChild(el);
+            });
+            
+            layout.appendChild(fragment);
+
+            if (previouslySelectedId) {
+                const selectedElement = document.querySelector(`.table[data-table-id='${previouslySelectedId}']`);
+                if (selectedElement && !selectedElement.classList.contains('occupied')) {
+                    selectedElement.classList.add('selected');
+                }
+            }
+        }
+
+        function selectTable(table) {
+    extraChairsCount = 0; // รีเซ็ตเก้าอี้เสริมเมื่อเลือกโต๊ะใหม่
+    lockTableOption = 0;  // รีเซ็ต Lock Table เมื่อเลือกโต๊ะใหม่
+
+    document.querySelectorAll('.table.selected').forEach(el => el.classList.remove('selected'));
+    const tableElement = document.querySelector(`[data-table-id="${table.id}"]`);
+    if (tableElement) tableElement.classList.add('selected');
+    
+    selectedTable = table;
+    updateTableDetails();
+    showFloatingButton(); // แสดง Floating Button
+    
+    // ซ่อน tap-hint เมื่อเลือกโต๊ะแล้ว
+    const tapHint = document.querySelector('.tap-hint');
+    if (tapHint) tapHint.style.display = 'none';
+
+    const tableInfo = document.getElementById('selected-table-info');
+    tableInfo.classList.remove('hidden');
+    tableInfo.classList.add('fade-in');
+    setTimeout(() => { tableInfo.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+}
+
+function updateExtraChairs(amount) {
+    if (!selectedTable) return;
+    
+    // *** ตรวจสอบว่าโต๊ะนี้สามารถเพิ่มเก้าอี้เสริมได้หรือไม่ ***
+    if (!selectedTable.allow_extra_chairs) {
+        return; // ไม่สามารถเพิ่มเก้าอี้เสริมได้เลย
+    }
+    
+    const maxExtraChairs = selectedTable.max_extra_chairs || 0;
+    const newCount = extraChairsCount + amount;
+    
+    // ตรวจสอบว่าจำนวนใหม่ต้องไม่ต่ำกว่า 0 และไม่เกินจำนวนสูงสุด
+    if (newCount >= 0 && newCount <= maxExtraChairs) {
+        extraChairsCount = newCount;
+        updateTableDetails();
+    }
+}
+
+function updateTableDetails() {
+    if (!selectedTable) return;
+
+    const tableDetails = document.getElementById('table-details');
+    const basePrice = getTablePrice(selectedTable.table_type, selectedTable.capacity);
+    const extraChairPrice = concertDetails.extra_chair_price || 0;
+    const totalExtraChairPrice = extraChairsCount * extraChairPrice;
+    const lockTableFee = lockTableOption > 0 ? (concertDetails.lock_table_price || 500) : 0;
+    const totalPrice = basePrice + totalExtraChairPrice + lockTableFee;
+    const zoneName = classifyTableZone(selectedTable);
+    const typeIcon = selectedTable.table_type === 'VVIP' ? '🌟' : selectedTable.table_type === 'VIP' ? '💎' : '✨';
+    
+    // *** ตรวจสอบสถานะเก้าอี้เสริม ***
+    const canAddExtraChairs = selectedTable.allow_extra_chairs && extraChairPrice > 0;
+    const maxExtraChairs = selectedTable.max_extra_chairs || 0;
+
+    const referralHTML = `
+        <div class="table-detail-card">
+            <div class="detail-header">
+                <div class="detail-label">👤 รหัสผู้แนะนำ</div>
+            </div>
+            <input type="text" 
+                   id="referral-code-input" 
+                   class="referral-input" 
+                   placeholder="กรอกรหัสผู้แนะนำ (ถ้ามี)" 
+                   value="${referralCode}"
+                   maxlength="20">
+            <div class="warning-text">
+                * รหัสผู้ที่แนะนำให้มาจองโต๊ะ (ไม่บังคับ)
+            </div>
+        </div>
+    `;
+
+    const extraChairHTML = canAddExtraChairs ? `
+        <div class="table-detail-card">
+            <div class="detail-header">
+                <div class="detail-label">🪑 เก้าอี้เสริม</div>
+                <div class="chair-controls">
+                    <button class="chair-btn" id="minus-chair-btn" ${extraChairsCount === 0 ? 'disabled' : ''}>-</button>
+                    <span id="chair-count">${extraChairsCount}</span>
+                    <button class="chair-btn" id="plus-chair-btn" ${extraChairsCount >= maxExtraChairs ? 'disabled' : ''}>+</button>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-medium); margin-top: 8px;">
+                ราคา ${extraChairPrice.toLocaleString('th-TH')} บาท/ตัว (สูงสุด ${maxExtraChairs} ตัว)
+            </div>
+        </div>
+    ` : selectedTable.allow_extra_chairs === false ? `
+        <div class="table-detail-card disabled-feature">
+            <div class="detail-header">
+                <div class="detail-label">🪑 เก้าอี้เสริม</div>
+                <div class="detail-value" style="color: #999; font-size: 14px;">ไม่สามารถเพิ่มได้</div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-light); margin-top: 8px;">
+                โต๊ะนี้ไม่อนุญาตให้เพิ่มเก้าอี้เสริม
+            </div>
+        </div>
+    ` : '';
+
+    // *** Lock Table HTML ***
+    const lockTablePrice = concertDetails.lock_table_price || 500;
+    const lockTableHTML = `
+        <div class="table-detail-card lock-table-section">
+            <div class="lock-table-header">
+                <div class="lock-table-title">🔒 Lock Table (การันตีโต๊ะ)</div>
+            </div>
+            <div class="lock-table-options">
+                <label class="lock-option ${lockTableOption === 0 ? 'selected' : ''}" data-option="0">
+                    <input type="radio" name="lock-table" value="0" ${lockTableOption === 0 ? 'checked' : ''}>
+                    <div class="lock-option-content">
+                        <div class="lock-option-label">⏰ ไม่ต้องการ Lock Table</div>
+                        <div class="lock-option-desc">ต้องมาก่อน 20:30 น.</div>
+                    </div>
+                    <div class="lock-option-price free">ฟรี</div>
+                </label>
+                <label class="lock-option ${lockTableOption === 1 ? 'selected' : ''}" data-option="1">
+                    <input type="radio" name="lock-table" value="1" ${lockTableOption === 1 ? 'checked' : ''}>
+                    <div class="lock-option-content">
+                        <div class="lock-option-label">🔐 Lock Table</div>
+                        <div class="lock-option-desc">มาเวลาไหนก็ได้ การันตีมีโต๊ะ</div>
+                    </div>
+                    <div class="lock-option-price">+${lockTablePrice.toLocaleString()}.-</div>
+                </label>
+            </div>
+            <button type="button" id="show-booking-terms-btn" class="booking-terms-btn">
+                📢 แจ้งเงื่อนไขการจองโต๊ะ
+            </button>
+        </div>
+    `;
+
+    tableDetails.innerHTML = `
+        <div class="table-detail-card table-number-card">
+            <div class="detail-header">
+                <div class="detail-label">🪑 หมายเลขโต๊ะ</div>
+                <div class="detail-value">${selectedTable.table_number}</div>
+            </div>
+        </div>
+        
+        <div class="table-detail-card">
+            <div class="detail-header">
+                <div class="detail-label">${typeIcon} ประเภท</div>
+                <div class="detail-value">${selectedTable.table_type}</div>
+            </div>
+        </div>
+        
+        <div class="table-detail-card">
+            <div class="detail-header">
+                <div class="detail-label">👥 จำนวนที่นั่ง</div>
+                <div class="detail-value">${selectedTable.capacity + extraChairsCount} ที่นั่ง</div>
+            </div>
+        </div>
+        
+        <div class="table-detail-card">
+            <div class="detail-header">
+                <div class="detail-label">📍 ตำแหน่ง</div>
+                <div class="detail-value">${zoneName}</div>
+            </div>
+        </div>
+        
+        <div class="table-detail-card">
+            <div class="detail-header">
+                <div class="detail-label">💰 ราคาโต๊ะ</div>
+                <div class="detail-value">${basePrice.toLocaleString('th-TH')} บาท</div>
+            </div>
+        </div>
+        
+        ${extraChairHTML}
+
+        ${lockTableHTML}
+
+        ${referralHTML}
+        
+        <div class="table-detail-card price-card total-price-card">
+            <div class="detail-header">
+                <div class="detail-label">💵 ราคารวมสุทธิ</div>
+                <div class="detail-value">${totalPrice.toLocaleString('th-TH')} บาท</div>
+            </div>
+            ${lockTableFee > 0 ? `<div style="font-size: 11px; color: var(--text-medium); margin-top: 4px;">(รวมค่า Lock Table ${lockTableFee.toLocaleString('th-TH')} บาท)</div>` : ''}
+        </div>
+    `;
+
+    const referralInput = document.getElementById('referral-code-input');
+    if (referralInput) {
+        referralInput.addEventListener('input', (e) => {
+            referralCode = e.target.value.trim();
+        });
+    }
+    
+    // *** เพิ่ม Event Listeners เฉพาะเมื่อสามารถเพิ่มเก้าอี้เสริมได้ ***
+    if (canAddExtraChairs) {
+        const plusBtn = document.getElementById('plus-chair-btn');
+        const minusBtn = document.getElementById('minus-chair-btn');
+        
+        if (plusBtn) plusBtn.addEventListener('click', () => updateExtraChairs(1));
+        if (minusBtn) minusBtn.addEventListener('click', () => updateExtraChairs(-1));
+    }
+
+    // *** Lock Table Event Listeners ***
+    const lockOptions = document.querySelectorAll('.lock-option');
+    lockOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            const newOption = parseInt(option.dataset.option);
+            if (lockTableOption !== newOption) {
+                lockTableOption = newOption;
+                updateTableDetails();
+            }
+        });
+    });
+
+    // *** Show Booking Terms Modal ***
+    const showTermsBtn = document.getElementById('show-booking-terms-btn');
+    if (showTermsBtn) {
+        showTermsBtn.addEventListener('click', () => {
+            document.getElementById('booking-terms-modal').style.display = 'flex';
+        });
+    }
+
+    // *** Setup Floating Button Observer ***
+    setTimeout(() => {
+        setupMainButtonObserver();
+        updateFloatingButtonPrice();
+    }, 100);
+}
+
+        function classifyTableZone(table) {
+            const x = table.x_position;
+            const y = table.y_position;
+            const type = table.table_type.toLowerCase();
+            
+            if (type === 'vvip') {
+                if (y <= 20) return 'โซน VVIP หน้าเวที';
+                return 'โซน VVIP';
+            }
+            if (type === 'vip') {
+                if (x <= 40) return 'โซน VIP ซ้าย';
+                if (x >= 60) return 'โซน VIP ขวา';
+                return 'โซน VIP กลาง';
+            }
+            if (type === 'normal') {
+                if (x <= 25) return 'โซน Standard ซ้าย';
+                if (x >= 75) return 'โซน Standard ขวา';
+                if (y >= 40) return 'โซน Standard หลัง';
+                return 'โซน Standard';
+            }
+            return 'โซนทั่วไป';
+        }
+
+        async function refreshTableData() {
+            try {
+                if (!concertId) return;
+                const response = await fetch(`/api/booking/tables/available?concert_id=${concertId}`);
+                if (!response.ok) return;
+
+                const tablesData = await response.json();
+                
+                allTables[1] = tablesData.filter(t => t.floor === 1 || t.floor === undefined);
+                allTables[2] = tablesData.filter(t => t.floor === 2);
+                
+                renderTables();
+
+                if (selectedTable) {
+                    const currentSelectedTableState = allTables[currentFloor].find(t => t.id === selectedTable.id);
+                    if (!currentSelectedTableState || !currentSelectedTableState.is_available) {
+                        const oldTableNumber = selectedTable.table_number;
+                        selectedTable = null;
+                        document.getElementById('selected-table-info').classList.add('hidden');
+                        alert(`ขออภัย โต๊ะ ${oldTableNumber} เพิ่งถูกจองไป`);
+                    }
+                }
+            } catch (err) {
+                console.error("Error refreshing table data:", err);
+            }
+        }
+
+        async function initializeLiff() {
+            // --- START: MODIFIED SECTION ---
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const paramConcertId = urlParams.get('concertId');
+                const paramUserId = urlParams.get('userId');
+
+                // 1. Save parameters to sessionStorage if they exist in the URL
+                if (paramConcertId && paramUserId) {
+                    sessionStorage.setItem('concertId', paramConcertId);
+                    sessionStorage.setItem('userId', paramUserId);
+                }
+
+                await liff.init({ liffId: '2007820373-9O0QNn4L' }); 
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login(); // User will be redirected
+                    return; 
+                }
+
+                // 2. After login, retrieve parameters from sessionStorage
+                concertId = sessionStorage.getItem('concertId');
+                userId = sessionStorage.getItem('userId');
+
+                // 3. Clean up sessionStorage
+                sessionStorage.removeItem('concertId');
+                sessionStorage.removeItem('userId');
+
+                // Now, proceed with the app logic
+                const modal = document.getElementById('terms-modal');
+                const mainContent = document.getElementById('main-app-content');
+                
+                if (sessionStorage.getItem('termsAccepted') === 'true') {
+                    modal.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    await startApp();
+                } else {
+                    mainContent.style.display = 'none';
+                    modal.style.display = 'flex';
+
+                    document.getElementById('accept-terms-btn').addEventListener('click', async () => {
+                        sessionStorage.setItem('termsAccepted', 'true');
+                        modal.style.display = 'none';
+                        mainContent.style.display = 'block';
+                        await startApp();
+                    });
+
+                    document.getElementById('decline-terms-btn').addEventListener('click', () => {
+                        alert('คุณต้องยอมรับเงื่อนไขเพื่อดำเนินการต่อ');
+                        liff.closeWindow();
+                    });
+                }
+            } catch (error) {
+                console.error("LIFF Initialization Error:", error);
+                renderError(error.message);
+            }
+            // --- END: MODIFIED SECTION ---
+        }
+
+        const startApp = async () => {
+            renderLoading('กำลังเชื่อมต่อระบบ...');
+            try {
+                // The main logic now uses variables from sessionStorage
+                if (!userId || !concertId) {
+                    throw new Error('กรุณากดปิดหน้านี้และเข้าลิงค์เลือกโต๊ะใหม่อีกครั้ง');
+                }
+                
+                await loadConcertDetails();
+                renderMainLayout();
+                await refreshTableData();
+
+                if(pollingInterval) clearInterval(pollingInterval); 
+                pollingInterval = setInterval(refreshTableData, 15000); 
+
+            } catch (error) {
+                console.error("App Initialization Error:", error);
+                renderError(error.message);
+                if(pollingInterval) clearInterval(pollingInterval);
+            }
+        };
+
+        async function loadConcertDetails() {
+            try {
+                const response = await fetch(`/api/concerts/${concertId}/details`);
+                if (!response.ok) throw new Error('ไม่สามารถโหลดข้อมูลคอนเสิร์ตได้');
+                concertDetails = await response.json();
+                
+                // Update Lock Table price ใน modal
+                const lockPrice = concertDetails.lock_table_price || 500;
+                const termsLockPrice = document.getElementById('terms-lock-price');
+                if (termsLockPrice) {
+                    termsLockPrice.textContent = `จ่ายเพิ่ม ${lockPrice.toLocaleString()}.-`;
+                }
+                
+                document.getElementById('concert-title').textContent = concertDetails.title;
+                
+                const concertDate = new Date(concertDetails.concert_date);
+                document.getElementById('concert-date').textContent = `🗓️ ${concertDate.toLocaleDateString('th-TH', { dateStyle: 'long' })}`;
+                
+                const startTime = concertDetails.start_time.slice(0, 5);
+                const endTime = concertDetails.end_time.slice(0, 5);
+                document.getElementById('concert-time').textContent = `🕒 ${startTime} - ${endTime} น.`;
+                
+            } catch (error) {
+                document.getElementById('concert-title').textContent = "เกิดข้อผิดพลาด";
+                console.error(error);
+            }
+        }
+
+        async function confirmTableSelection() {
+            if (!selectedTable) { 
+                alert('กรุณาเลือกโต๊ะที่ต้องการก่อน'); 
+                return; 
+            }
+            
+            const btn = document.getElementById('confirm-table');
+            const floatingBtn = document.getElementById('floating-confirm-btn');
+            const originalHTML = btn ? btn.innerHTML : '';
+            const floatingOriginalHTML = floatingBtn ? floatingBtn.innerHTML : '';
+            
+            // Disable ทั้งสองปุ่ม
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0 auto;"></div>`;
+            }
+            if (floatingBtn) {
+                floatingBtn.disabled = true;
+                floatingBtn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0 auto;"></div>`;
+            }
+            
+            let bookingSuccess = false; // flag สำหรับเช็คว่าจองสำเร็จหรือไม่
+            
+            try {
+                const response = await fetch('/api/line/select-table', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_id: userId, 
+                        table_id: selectedTable.id, 
+                        concert_id: parseInt(concertId),
+                        extra_chairs: extraChairsCount,
+                        referral_code: referralCode || null,
+                        lock_table_option: lockTableOption  // เพิ่ม Lock Table option
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    if (response.status === 409) {
+                        alert('ขออภัย โต๊ะที่คุณเลือกเพิ่งถูกจองไป กรุณาเลือกโต๊ะใหม่อีกครั้งครับ');
+                        await refreshTableData();
+                    } else {
+                        throw new Error(errorData.detail || 'ไม่สามารถจองโต๊ะได้');
+                    }
+                } else {
+                    hideFloatingButton(); // ซ่อน floating button เมื่อสำเร็จ
+                    bookingSuccess = true; // flag สำเร็จ
+                    if (liff.isInClient()) {
+                        alert('ดำเนินการสำเร็จ! กรุณากลับไปที่แชท LINE เพื่อดำเนินการต่อ');
+                        liff.closeWindow();
+                    } else {
+                        renderSuccessAndLockPage();
+                    }
+                }
+            } catch (error) {
+                alert(`เกิดข้อผิดพลาด: ${error.message}`);
+            } finally {
+                // รีเซ็ตปุ่มเฉพาะกรณีไม่สำเร็จ
+                if (!bookingSuccess) {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }
+                    if (floatingBtn) {
+                        floatingBtn.disabled = false;
+                        floatingBtn.innerHTML = floatingOriginalHTML;
+                        updateFloatingButtonPrice();
+                    }
+                }
+            }
+        }
+
+        function updateCounterBarText() {
+    const counterBar = document.querySelector('.counter-bar');
+    if (!counterBar) return;
+
+    const screenWidth = window.innerWidth;
+    
+    // เปลี่ยนข้อความตามขนาดหน้าจอ
+    if (screenWidth <= 320) {
+        counterBar.innerHTML = '🍺 บาร์ 🍺';
+    } else if (screenWidth <= 480) {
+        counterBar.innerHTML = 'เคาน์เตอร์บาร์';
+    } else if (screenWidth <= 768) {
+        counterBar.innerHTML = '🍺 เคาน์เตอร์บาร์ 🍺';
+    } else {
+        counterBar.innerHTML = '🍺 เคาน์เตอร์บาร์ 🍺';
+    }
+}
+
+function getTablePrice(tableType, capacity) {
+    const priceKey = `ticket_price_${tableType.toLowerCase()}_${capacity}`;
+    return concertDetails[priceKey] || 0;
+}
+
+document.addEventListener('DOMContentLoaded', updateCounterBarText);
+
+// เรียกใช้เมื่อขนาดหน้าจอเปลี่ยน
+window.addEventListener('resize', updateCounterBarText);
+
+// หรือใช้ ResizeObserver สำหรับ performance ที่ดีกว่า
+if (window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(updateCounterBarText);
+    resizeObserver.observe(document.body);
+}
+
+// *** Close Booking Terms Modal ***
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBookingTermsBtn = document.getElementById('close-booking-terms-btn');
+    const bookingTermsModal = document.getElementById('booking-terms-modal');
+    
+    if (closeBookingTermsBtn && bookingTermsModal) {
+        closeBookingTermsBtn.addEventListener('click', () => {
+            bookingTermsModal.style.display = 'none';
+        });
+        
+        // ปิด modal เมื่อคลิกนอก modal
+        bookingTermsModal.addEventListener('click', (e) => {
+            if (e.target === bookingTermsModal) {
+                bookingTermsModal.style.display = 'none';
+            }
+        });
+    }
+});
+
+        document.addEventListener('DOMContentLoaded', initializeLiff);
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"05bfd78db436474286216483c3181d86","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

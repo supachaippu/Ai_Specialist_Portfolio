@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Statement Tracker - Mobile First</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="glass-header">
+            <div class="logo">
+                <i class="ph-fill ph-wallet"></i>
+                <span>FinTracker</span>
+            </div>
+            <div class="user-profile">
+                <div class="avatar"></div>
+            </div>
+        </header>
+
+        <main>
+            <!-- 1. Upload Section -->
+            <section id="upload-section" class="active-view">
+                <div class="hero-text">
+                    <h1>วิเคราะห์รายจ่าย<br><span class="gradient-text">ฉบับมนุษย์เงินเดือน</span></h1>
+                    <p>อัปโหลด Statement ธนาคารของคุณ</p>
+                </div>
+
+                <div class="upload-card glass-card">
+                    <form id="upload-form">
+                        <div class="file-drop-area" id="file-drop-area">
+                            <i class="ph ph-file-pdf icon-large"></i>
+                            <p class="file-name" id="file-name-display">แตะเพื่อเลือกไฟล์ PDF</p>
+                            <input type="file" id="pdf-file" accept="application/pdf" required hidden>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="pdf-password"><i class="ph ph-lock-key"></i> รหัสผ่าน (วันเดือนปีเกิด)</label>
+                            <input type="password" id="pdf-password" placeholder="เช่น 25121990">
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="submit-btn">
+                            <span>เริ่มประมวลผล</span>
+                            <i class="ph ph-magic-wand"></i>
+                        </button>
+                    </form>
+                    <div id="loading-spinner" class="hidden">
+                        <div class="spinner"></div>
+                        <p>กำลังอ่านข้อมูลอย่างปลอดภัย...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Dashboard Section -->
+            <section id="dashboard-section" class="hidden-view">
+                <div class="ai-insights-box glass-card" id="ai-insights">
+                    <i class="ph ph-sparkle"></i>
+                    <p id="ai-insights-text">กำลังรวบรวมข้อมูลวิเคราะห์จาก AI...</p>
+                </div>
+
+                <div class="dashboard-header">
+                    <h2>สรุปการเงิน</h2>
+                    <button id="btn-back-upload" class="btn-icon"><i class="ph ph-upload-simple"></i></button>
+                </div>
+
+                <div class="summary-cards">
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon income-icon"><i class="ph ph-trend-up"></i></div>
+                        <div class="stat-details">
+                            <p>รายรับทั้งหมด</p>
+                            <h3 id="total-income">฿0.00</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon expense-icon"><i class="ph ph-trend-down"></i></div>
+                        <div class="stat-details">
+                            <p>รายจ่ายทั้งหมด</p>
+                            <h3 id="total-expense">฿0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container glass-card">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+
+                <div class="category-section mt-4">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <h3>หมวดหมู่รายจ่าย <span class="subtitle">(แตะเพื่อจัดกลุ่ม)</span></h3>
+                        <button class="btn-secondary" style="font-size:0.75rem; padding: 4px 10px;" onclick="manageTagsModal()">
+                            <i class="ph ph-gear"></i> เพิ่มหมวด
+                        </button>
+                    </div>
+                    <div id="category-cards-list" class="category-list">
+                        <!-- JS will inject category cards here -->
+                    </div>
+                </div>
+                
+                <button class="btn-primary w-100 mt-4" style="margin-bottom:30px" onclick="saveToDatabase()">
+                    <i class="ph ph-floppy-disk" style="margin-right: 8px;"></i> บันทึกข้อมูลเข้าสู่ระบบ
+                </button>
+            </section>
+
+            <!-- 3. Category Detail (Bulk Tagging) Section -->
+            <section id="detail-section" class="hidden-view">
+                <div class="dashboard-header">
+                    <button id="btn-back-dashboard" class="btn-secondary"><i class="ph ph-arrow-left"></i> กลับ</button>
+                    <h2 id="detail-category-title">หมวดหมู่</h2>
+                </div>
+
+                <div class="glass-card mt-4">
+                    <p class="subtitle mb-3">รายการซ้ำกันจะถูกจัดกลุ่มรวมไว้ เปลี่ยนหมวดหมู่ครั้งเดียว อัปเดตให้ทั้งหมด</p>
+                    <div id="bulk-list" class="bulk-list">
+                        <!-- JS will inject bulk items here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

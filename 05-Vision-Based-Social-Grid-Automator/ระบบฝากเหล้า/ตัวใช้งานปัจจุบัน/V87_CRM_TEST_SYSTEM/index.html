@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>V86 Nightlife MASTER</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #EAB308;
+            --bg: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --grad-start: #1e3a8a;
+            --grad-end: #1e293b;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            /* กลับมาขนาดปกติ */
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-grad {
+            background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* เมนูหน้าหลักจากต้นฉบับ */
+        .btn-menu {
+            background: linear-gradient(145deg, var(--grad-start), var(--grad-end));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-menu:active {
+            transform: scale(0.98);
+        }
+
+        .icon {
+            font-size: 42px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .label {
+            font-size: 18px;
+            font-weight: 600;
+            display: block;
+        }
+
+        .sub-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 18px;
+            width: 100%;
+            color: white;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 10px;
+            gap: 2px;
+        }
+
+        .nav-active {
+            color: var(--accent);
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="safe-area-inset">
+
+    <div id="loading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent border-[var(--accent)]"></div>
+    </div>
+
+    <!-- หน้าเลือก Tier -->
+    <div id="view-tier-selector"
+        class="hidden fixed inset-0 z-[90] bg-black p-6 flex flex-col justify-center items-center text-center">
+        <h1 class="text-2xl font-bold mb-8">V86 MASTER SYSTEM</h1>
+        <div class="space-y-4 w-full max-w-sm">
+            <div onclick="selectTier(1)"
+                class="glass p-5 rounded-2xl border-l-4 border-blue-500 text-left cursor-pointer active:scale-95 transition-all">
+                <p class="font-bold">Tier 1: Starter</p>
+                <p class="text-[10px] text-gray-400">จองโต๊ะ + ฝากเหล้าพื้นฐาน (ไม่มีรูป/ไม่มีแต้ม)</p>
+            </div>
+            <div onclick="selectTier(2)"
+                class="glass p-5 rounded-2xl border-l-4 border-green-500 text-left cursor-pointer active:scale-95 transition-all">
+                <p class="font-bold">Tier 2: CRM Pro</p>
+                <p class="text-[10px] text-gray-400">Tier 1 + ถ่ายรูปเหล้าได้ + ระบบสะสมแต้ม</p>
+            </div>
+            <div onclick="selectTier(3)"
+                class="glass p-5 rounded-2xl border-l-4 border-orange-500 text-left cursor-pointer active:scale-95 transition-all">
+                <p class="font-bold">Tier 3: Enterprise</p>
+                <p class="text-[10px] text-gray-400">Tier 2 + จัดการคิวจองสำหรับพนักงาน</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าสมัครสมาชิก -->
+    <div id="view-phone-link"
+        class="hidden fixed inset-0 z-[85] bg-black/95 p-6 flex items-center justify-center animate-fade">
+        <div class="glass w-full max-w-sm p-8 rounded-3xl text-center">
+            <h2 class="text-xl font-bold mb-6 italic">ลงทะเบียนสมาชิก</h2>
+            <div class="space-y-4">
+                <input type="tel" id="link-phone" placeholder="เลขหมายโทรศัพท์..."
+                    class="glass-input text-center font-bold">
+                <input type="tel" id="link-phone-confirm" placeholder="ยืนยันเบอร์เดิมอีกครั้ง..."
+                    class="glass-input text-center font-bold">
+                <button onclick="linkPhoneToUID()"
+                    class="btn-grad w-full p-4 rounded-xl font-bold">ยืนยันการสมัคร</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="flex-1 max-w-md mx-auto w-full p-5 pb-24">
+
+        <!-- Header เหมือนต้นฉบับ -->
+        <div class="flex justify-between items-center mb-6 pt-4">
+            <div>
+                <h1 class="text-xl font-black uppercase" id="display-shop">V86 CLUB</h1>
+                <p id="display-phone" class="text-[10px] text-white/50 font-mono"></p>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Badge แสดง Tier ปัจจุบัน กดเพื่อเปลี่ยน Tier ได้ -->
+                <button onclick="show('view-tier-selector')" id="badge-tier"
+                    class="text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 bg-white/5 text-white/70 uppercase tracking-widest hover:opacity-100">TIER
+                    ?</button>
+                <button onclick="verifyManager()"
+                    class="opacity-30 hover:opacity-100 text-base transition-opacity">⚙️</button>
+            </div>
+        </div>
+
+        <!-- หน้าลูกค้า -->
+        <div id="view-customer" class="hidden animate-fade space-y-6">
+            <div class="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <img id="user-img" class="w-12 h-12 rounded-full border-2 border-[var(--accent)]" src="">
+                <div>
+                    <h2 id="user-name" class="font-bold text-sm">Guest</h2>
+                    <p class="text-[10px] text-gray-400">ยินดีต้อนรับ กรุณาเลือกบริการ</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <div onclick="show('view-booking')" class="btn-menu">
+                    <span class="icon">📅</span>
+                    <span class="label">จองโต๊ะ</span>
+                    <span class="sub-label">สำรองที่นั่งล่วงหน้า</span>
+                </div>
+                <div onclick="show('view-wallet'); loadWallet();" class="btn-menu">
+                    <span class="icon">🥃</span>
+                    <span class="label">ระบบฝากเหล้า</span>
+                    <span class="sub-label">เช็ครายการฝากเหล้าของคุณ</span>
+                </div>
+
+                <!-- การ์ดแต้ม (โชว์เฉพาะ Tier 2, 3) -->
+                <div id="section-points" class="hidden glass p-6 rounded-3xl btn-grad shadow-xl">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] uppercase text-white/60">คะแนนสะสม</p>
+                            <p id="user-points" class="text-4xl font-black mt-1">0</p>
+                        </div>
+                        <button onclick="show('view-rewards'); loadRewards();"
+                            class="glass px-4 py-2 rounded-xl text-xs font-bold">แลกของรางวัล</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center pt-4">
+                <button onclick="resetDemoLocal()"
+                    class="text-[9px] text-gray-600 uppercase tracking-widest hover:underline">Reset Demo
+                    Session</button>
+            </div>
+        </div>
+
+        <!-- หน้าจองโต๊ะ -->
+        <div id="view-booking" class="hidden animate-fade space-y-4">
+            <div class="flex items-center gap-3">
+                <button onclick="show('view-customer')" class="w-10 h-10 glass rounded-xl">←</button>
+                <h2 class="font-bold">สำรองที่นั่ง</h2>
+            </div>
+            <div class="glass p-6 rounded-3xl space-y-4">
+                <input type="text" id="bk-name" placeholder="ชื่อผู้จอง..." class="glass-input">
+                <!-- วันที่และเวลาชัดเจน -->
+                <div>
+                    <label
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">วันที่ที่ต้องการจอง</label>
+                    <input type="date" id="bk-date" class="glass-input mt-1 font-bold text-white text-base">
+                </div>
+                <div>
+                    <label
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">เวลาที่ต้องการ</label>
+                    <input type="time" id="bk-time" value="20:00"
+                        class="glass-input mt-1 font-bold text-white text-xl text-center">
+                </div>
+                <input type="number" id="bk-pax" placeholder="จำนวนคน..." class="glass-input text-center font-bold">
+                <div class="glass p-3 rounded-xl border-l-4 border-yellow-500 bg-yellow-500/5">
+                    <p class="text-[10px] text-yellow-400 font-bold">⚠️ กรุณามารับโต๊ะอย่างช้าก่อน 20:00 น.
+                        เพื่อรักษาสิทธิ์ของท่าน</p>
+                </div>
+                <button onclick="submitBooking()" class="btn-grad w-full p-4 rounded-xl font-bold">ยืนยันการจอง</button>
+            </div>
+        </div>
+
+        <!-- หน้าฝากเหล้า -->
+        <div id="view-wallet" class="hidden animate-fade space-y-4">
+            <div class="flex items-center gap-3">
+                <button onclick="show('view-customer')" class="w-10 h-10 glass rounded-xl">←</button>
+                <h2 class="font-bold">รายการเหล้าของคุณ</h2>
+            </div>
+            <div id="wallet-list" class="space-y-4"></div>
+        </div>
+
+        <!-- หน้าสตาฟ (ลับ) -->
+        <div id="view-staff" class="hidden animate-fade space-y-6">
+            <div
+                class="flex justify-between items-center text-[10px] font-bold uppercase text-[var(--accent)] tracking-widest px-2">
+                <span>Staff Access Area</span>
+                <button onclick="show('view-customer')" class="text-white hover:underline">กลับหน้าลูกค้า</button>
+            </div>
+
+            <div class="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/5 flex-wrap">
+                <button onclick="setStaffTab('deposit')" id="tab-dep"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold btn-grad">รับฝาก</button>
+                <button onclick="setStaffTab('search')" id="tab-src"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass">เบิกเหล้า</button>
+                <button onclick="setStaffTab('stock')" id="tab-stk"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass">สต็อก</button>
+                <button id="tab-manager-bk" onclick="setStaffTab('booking')"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass hidden">คิวจอง</button>
+            </div>
+
+            <!-- ฟอร์มพนักงาน -->
+            <div id="staff-deposit" class="glass p-6 rounded-3xl space-y-4">
+                <input type="tel" id="dep-phone" placeholder="เบอร์โทรลูกค้า *" class="glass-input">
+                <input type="text" id="dep-brand" placeholder="ยี่ห้อเหล้า / รุ่น *" class="glass-input">
+                <input type="number" id="dep-amount" placeholder="ปริมาณเหล้า (%) *" class="glass-input">
+
+                <!-- ถ่ายรูป / แนบรูป (โชว์เฉพาะ Tier 2, 3) -->
+                <div id="staff-photo-section" class="hidden space-y-2">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">แนบรูปเหล้า</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- ถ่ายรูปด้วยกล้อง -->
+                        <label
+                            class="glass p-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer border border-white/10 active:scale-95 transition-all">
+                            <input type="file" accept="image/*" capture="environment" id="dep-file-camera"
+                                class="hidden" onchange="previewImg(this, 'camera')">
+                            <span class="text-2xl">📷</span>
+                            <span class="text-[10px] font-bold">ถ่ายรูป</span>
+                        </label>
+                        <!-- เลือกรูปจากคลัง -->
+                        <label
+                            class="glass p-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer border border-white/10 active:scale-95 transition-all">
+                            <input type="file" accept="image/*" id="dep-file-gallery" class="hidden"
+                                onchange="previewImg(this, 'gallery')">
+                            <span class="text-2xl">🖼️</span>
+                            <span class="text-[10px] font-bold">แนบรูป</span>
+                        </label>
+                    </div>
+                    <!-- แสดงรูป Preview -->
+                    <div id="dep-preview-container" class="hidden relative h-32 rounded-2xl overflow-hidden">
+                        <img id="dep-preview" class="w-full h-full object-cover">
+                        <button onclick="clearPhoto()"
+                            class="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold">✕</button>
+                    </div>
+                    <div id="dep-placeholder"
+                        class="glass h-20 rounded-2xl flex items-center justify-center text-gray-500 text-xs border border-dashed border-white/10">
+                        ยังไม่ได้แนบรูป</div>
+                </div>
+
+                <!-- แต้มที่จะให้ลูกค้า (Staff เห็นเสมอ) -->
+                <div id="staff-points-section">
+                    <div class="flex items-center justify-between text-xs text-gray-400 px-1">
+                        <span>แต้มที่จะให้:</span>
+                        <input type="number" id="dep-points" value="0"
+                            class="w-16 bg-black p-1 rounded text-center text-[var(--accent)] font-bold">
+                    </div>
+                </div>
+
+                <button onclick="submitDepositStaff()"
+                    class="btn-grad w-full p-4 rounded-xl font-bold">บันทึกรายการ</button>
+            </div>
+
+            <!-- ค้นหา/เบิกเหล้า -->
+            <div id="staff-search" class="hidden space-y-4">
+                <div class="flex gap-2">
+                    <input type="tel" id="search-phone" placeholder="ระบุเบอร์โทรลูกค้า..."
+                        class="flex-1 glass-input font-bold">
+                    <button onclick="searchByPhone()" class="btn-grad px-6 rounded-xl font-bold">ค้นหา</button>
+                </div>
+                <div id="user-info-section" class="hidden space-y-3">
+                    <!-- ข้อมูลลูกค้า + แต้ม -->
+                    <div class="glass p-4 rounded-2xl border border-white/5">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="font-bold text-sm" id="info-name">-</p>
+                            <div class="text-right">
+                                <p class="text-[10px] text-gray-400">แต้มสะสม</p>
+                                <p class="text-[var(--accent)] font-black text-lg" id="info-points">0</p>
+                            </div>
+                        </div>
+                        <!-- เพิ่มแต้ม manual -->
+                        <div class="border-t border-white/5 pt-3 mt-2">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">
+                                เพิ่มแต้มให้ลูกค้า</p>
+                            <div class="flex gap-2">
+                                <input type="number" id="add-pts-amount" placeholder="จำนวนแต้ม..." value="50"
+                                    class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-center font-bold">
+                                <button onclick="addPointsManual()"
+                                    class="btn-grad px-4 py-2 rounded-xl text-xs font-bold">
+                                    ✚ เพิ่มแต้ม
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- รายการเหล้าของลูกค้า -->
+                    <div id="search-results" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- สต็อกเหล้า (Logs) -->
+            <div id="staff-stock" class="hidden space-y-3">
+                <div id="staff-stock-list" class="space-y-3"></div>
+            </div>
+
+            <!-- ดูรายการจอง -->
+            <div id="staff-booking" class="hidden space-y-3">
+                <div id="staff-booking-list" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation สำหรับลูกค้า -->
+    <nav id="nav-bar"
+        class="fixed bottom-0 left-0 w-full glass border-t border-white/5 p-4 flex justify-around items-center z-40 rounded-t-3xl hidden">
+        <button onclick="show('view-customer')" class="nav-item nav-active" id="nav-home">🏠<span>Home</span></button>
+        <button onclick="show('view-wallet'); loadWallet();" class="nav-item"
+            id="nav-cabinet">🥃<span>Cabinet</span></button>
+        <button onclick="show('view-booking')" class="nav-item" id="nav-booking-btn">📅<span>Booking</span></button>
+        <button id="nav-rewards-btn" onclick="show('view-rewards'); loadRewards();"
+            class="nav-item hidden">🎁<span>Rewards</span></button>
+    </nav>
+
+    <script>
+        const CFG = { liff: "2009020696-z6Zlyc90", worker: "https://testsystem.likesolution99.workers.dev" };
+        let profile = {}, myPhone = "", currentTier = 0;
+
+        async function init() {
+            const savedTier = localStorage.getItem('v86_tier');
+            if (!savedTier) {
+                document.getElementById('loading').classList.add('hidden');
+                show('view-tier-selector');
+                return;
+            }
+            currentTier = parseInt(savedTier);
+            updateTierUI();
+
+            try {
+                await liff.init({ liffId: CFG.liff });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                profile = await liff.getProfile();
+                document.getElementById('user-img').src = profile.pictureUrl;
+                document.getElementById('user-name').innerText = profile.displayName;
+                checkUser();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').classList.add('hidden');
+                Swal.fire("Error", "LIFF ไม่ทำงาน", "error");
+            }
+        }
+
+        function selectTier(t) {
+            localStorage.setItem('v86_tier', t);
+            location.reload();
+        }
+
+        function updateTierUI() {
+            // อัปเดต Badge ให้แสดง Tier ปัจจุบัน
+            const badge = document.getElementById('badge-tier');
+            if (badge) badge.innerText = `TIER ${currentTier}`;
+
+            if (currentTier >= 2) {
+                document.getElementById('section-points').classList.remove('hidden');
+                document.getElementById('nav-rewards-btn').classList.remove('hidden');
+                document.getElementById('staff-points-section').classList.remove('hidden');
+                document.getElementById('staff-photo-section').classList.remove('hidden');
+            }
+            if (currentTier === 3) {
+                document.getElementById('tab-manager-bk').classList.remove('hidden');
+            }
+        }
+
+        async function checkUser() {
+            const res = await fetch(`${CFG.worker}/api/me?uid=${profile.userId}`);
+            const data = await res.json();
+            document.getElementById('loading').classList.add('hidden');
+            if (!data.phone) {
+                show('view-phone-link');
+            } else {
+                myPhone = data.phone;
+                document.getElementById('display-phone').innerText = `Phone: ${myPhone}`;
+                document.getElementById('user-points').innerText = (data.points || 0).toLocaleString();
+                show('view-customer');
+            }
+        }
+
+        async function linkPhoneToUID() {
+            const phone = document.getElementById('link-phone').value;
+            const confirm = document.getElementById('link-phone-confirm').value;
+            if (phone.length < 9 || phone !== confirm) return Swal.fire("ขออภัย", "เบอร์โทรไม่ถูกต้องหรือข้อมูลไม่ตรงกัน", "warning");
+
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/link-phone`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: profile.userId, phone, name: profile.displayName })
+            });
+            if (await res.json().then(d => d.success)) {
+                Swal.fire("สำเร็จ", "สมัครสมาชิกเรียบร้อย", "success").then(() => checkUser());
+            }
+        }
+
+        async function submitDepositStaff() {
+            const phone = document.getElementById('dep-phone').value;
+            const brand = document.getElementById('dep-brand').value;
+            const amt = document.getElementById('dep-amount').value;
+            const pts = document.getElementById('dep-points').value;
+            // รองรับทั้งกล้องและแนบรูป
+            const cameraFile = document.getElementById('dep-file-camera').files[0];
+            const galleryFile = document.getElementById('dep-file-gallery').files[0];
+            const file = cameraFile || galleryFile;
+            if (!phone || !brand || !amt) return Swal.fire("ข้อมูลไม่ครบ", "กรุณาระบุช่องที่มี * ให้ครบ", "warning");
+
+            Swal.showLoading();
+            const fd = new FormData();
+            if (file && currentTier >= 2) fd.append('image', file);
+            fd.append('phone', phone);
+            fd.append('brand', brand);
+            fd.append('amount', amt);
+            fd.append('points', (currentTier >= 2) ? pts : 0);
+            fd.append('staff_uid', profile.userId);
+            try {
+                const res = await fetch(`${CFG.worker}/api/deposit`, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire("สำเร็จ", "บันทึกรายการเรียบร้อยแล้ว", "success").then(() => location.reload());
+                } else {
+                    Swal.fire("เกิดข้อผิดพลาด", data.error || "Unknown error", "error");
+                }
+            } catch (e) {
+                Swal.fire("เชื่อมต่อไม่ได้", e.message, "error");
+            }
+        }
+
+        let currentSearchPhone = '';
+
+        async function searchByPhone() {
+            const p = document.getElementById('search-phone').value;
+            if (!p) return;
+            currentSearchPhone = p;
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/staff-search?phone=${p}`);
+            const data = await res.json();
+            Swal.close();
+            const info = document.getElementById('user-info-section');
+            const list = document.getElementById('search-results');
+            info.classList.remove('hidden');
+            if (data.user) {
+                document.getElementById('info-name').innerText = `${data.user.name} (${p})`;
+                document.getElementById('info-points').innerText = data.user.points || 0;
+            } else {
+                document.getElementById('info-name').innerText = `Guest (${p})`;
+                document.getElementById('info-points').innerText = '0';
+            }
+            list.innerHTML = data.deposits.length ? '' : "<div class='text-center py-4 opacity-30 text-xs'>ไม่มีเหล้าในคลัง</div>";
+            data.deposits.forEach(item => {
+                const expiry = item.expiry_date ? new Date(item.expiry_date) : null;
+                const daysLeft = expiry ? Math.ceil((expiry - new Date()) / 86400000) : null;
+                list.innerHTML += `
+                    <div class="bg-white/5 p-4 rounded-xl flex items-center gap-4 border border-white/5">
+                        ${item.image_url ? `<img src="${item.image_url}" class="w-12 h-16 rounded object-cover">` : '<div class="w-12 h-16 bg-white/10 rounded flex items-center justify-center">🥃</div>'}
+                        <div class="flex-1">
+                            <p class="font-bold text-xs">${item.item_name}</p>
+                            <p class="text-[10px] text-[var(--accent)]">คงเหลือ ${item.amount}%</p>
+                            ${daysLeft !== null ? `<p class="text-[10px] ${daysLeft <= 3 ? 'text-red-400 font-bold' : daysLeft <= 7 ? 'text-yellow-400' : 'text-gray-400'}">หมดอายุ: ${item.expiry_date} (อีก ${daysLeft} วัน)</p>` : ''}
+                        </div>
+                        <button onclick="withdrawByStaff('${item.id}')" class="bg-red-500 text-white px-3 py-1.5 rounded text-[10px] font-bold">เบิก</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function addPointsManual() {
+            const pts = parseInt(document.getElementById('add-pts-amount').value);
+            if (!currentSearchPhone || !pts || pts <= 0) return Swal.fire('แจ้งเตือน', 'ค้นหาลูกค้าก่อน และใส่จำนวนแต้ม', 'warning');
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/add-points`, {
+                method: 'POST',
+                body: JSON.stringify({ phone: currentSearchPhone, points: pts, staff_uid: profile.userId, reason: 'staff_manual' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('info-points').innerText = data.newTotal;
+                Swal.fire('เพิ่มแต้มสำเร็จ!', `เพิ่ม ${pts} แต้ม → ยอดรวมตอนนี้: ${data.newTotal} แต้ม`, 'success');
+            } else {
+                Swal.fire('ไม่ได้', data.error || 'ลองใหม่', 'error');
+            }
+        }
+
+        async function withdrawByStaff(id) {
+            const conf = await Swal.fire({ title: 'เบิกเหล้าคืนลูกค้า?', icon: 'warning', showCancelButton: true });
+            if (!conf.isConfirmed) return;
+            const res = await fetch(`${CFG.worker}/api/staff-withdraw`, { method: 'POST', body: JSON.stringify({ deposit_id: id, staff_uid: profile.userId }) });
+            if (await res.json().then(d => d.success)) Swal.fire("เบิกสำเร็จ", "", "success").then(() => searchByPhone());
+        }
+
+        async function loadWallet() {
+            const list = document.getElementById('wallet-list');
+            list.innerHTML = "<div class='text-center py-10 opacity-20'>\u0e01\u0e33\u0e25\u0e31\u0e07\u0e42\u0e2b\u0e25\u0e14...</div>";
+            const res = await fetch(`${CFG.worker}/api/my-wallet?uid=${profile.userId}`);
+            const data = await res.json();
+            list.innerHTML = data.length ? "" : "<div class='text-center py-10 opacity-20 font-bold'>\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e1d\u0e32\u0e01\u0e40\u0e2b\u0e25\u0e49\u0e32</div>";
+            data.forEach(it => {
+                const today = new Date();
+                const expiry = it.expiry_date ? new Date(it.expiry_date) : null;
+                const daysLeft = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null;
+                let expiryColor = 'text-gray-400';
+                let expiryLabel = '';
+                if (daysLeft !== null) {
+                    if (daysLeft <= 1) { expiryColor = 'text-red-500'; expiryLabel = '\u26a0\ufe0f \u0e27\u0e31\u0e19\u0e19\u0e35\u0e49\u0e27\u0e31\u0e19\u0e2a\u0e38\u0e14\u0e17\u0e49\u0e32\u0e22!'; }
+                    else if (daysLeft <= 3) { expiryColor = 'text-red-400'; expiryLabel = `\u26a0\ufe0f \u0e2d\u0e35\u0e01 ${daysLeft} \u0e27\u0e31\u0e19`; }
+                    else if (daysLeft <= 7) { expiryColor = 'text-yellow-400'; expiryLabel = `\u0e43\u0e01\u0e25\u0e49\u0e2b\u0e21\u0e14 ${daysLeft} \u0e27\u0e31\u0e19`; }
+                    else if (daysLeft <= 14) { expiryColor = 'text-orange-400'; expiryLabel = `\u0e40\u0e2b\u0e25\u0e37\u0e2d ${daysLeft} \u0e27\u0e31\u0e19`; }
+                    else { expiryLabel = `\u0e40\u0e2b\u0e25\u0e37\u0e2d ${daysLeft} \u0e27\u0e31\u0e19`; }
+                }
+                const depositDate = it.created_at ? it.created_at.split(' ')[0] : '-';
+                const isWithdrawn = it.status === 'withdrawn';
+                list.innerHTML += `
+                    <div class="glass p-4 rounded-2xl ${isWithdrawn ? 'opacity-30 grayscale' : ''} border border-white/5">
+                        <div class="flex items-center gap-4">
+                            ${it.image_url ? `<img src="${it.image_url}" class="w-16 h-20 rounded-xl object-cover flex-shrink-0">` : '<div class="w-16 h-20 bg-white/5 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">\ud83e\udd43</div>'}
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-sm text-white">${it.item_name}</p>
+                                <div class="w-full bg-white/10 h-1.5 rounded-full mt-2"><div class="bg-[var(--accent)] h-full rounded-full" style="width:${it.amount}%"></div></div>
+                                <p class="text-xs text-[var(--accent)] mt-1">\u0e04\u0e07\u0e40\u0e2b\u0e25\u0e37\u0e2d ${it.amount}%</p>
+                                <div class="mt-2 space-y-0.5 text-[10px] text-gray-400">
+                                    <p>\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48\u0e1d\u0e32\u0e01: ${depositDate}</p>
+                                    <p>\u0e0a\u0e37\u0e48\u0e2d\u0e1c\u0e39\u0e49\u0e1d\u0e32\u0e01: ${it.depositor_name || '-'}</p>
+                                    ${expiry ? `<p class="${expiryColor} font-bold">หมดอายุ: ${it.expiry_date} (${expiryLabel})</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        ${!isWithdrawn ? `
+                        <div class="mt-3 border-t border-white/5 pt-3">
+                            <button onclick="shareDepositToLine('${it.item_name}', ${it.amount}, '${it.expiry_date || '-'}', '${it.image_url || ''}')"
+                                class="w-full bg-[#06C755]/10 border border-[#06C755]/30 text-[#06C755] py-2 rounded-xl text-xs font-bold hover:bg-[#06C755]/20 flex items-center justify-center gap-2">
+                                <span>💬</span> ส่งสิทธิ์ให้เพื่อนทาง LINE
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        async function shareDepositToLine(itemName, amount, expiryDate, imageUrl) {
+            if (!liff.isApiAvailable('shareTargetPicker')) {
+                return Swal.fire('ไม่รองรับ', 'อุปกรณ์ไม่รองรับการส่งข้อความผ่าน LINE', 'warning');
+            }
+
+            const flexPayload = {
+                type: "bubble",
+                size: "mega",
+                header: {
+                    type: "box", layout: "vertical",
+                    backgroundColor: "#111111", paddingAll: "20px",
+                    contents: [{ type: "text", text: "🥃 มอบสิทธิ์เหล้าฝากให้คุณ!", color: "#ffffff", weight: "bold", size: "lg" }]
+                },
+                body: {
+                    type: "box", layout: "vertical", spacing: "md",
+                    contents: [
+                        {
+                            type: "box", layout: "horizontal", contents: [
+                                { type: "text", text: "เหล้า", color: "#aaaaaa", size: "md", flex: 2 },
+                                { type: "text", text: itemName || '-', weight: "bold", size: "md", flex: 4 }
+                            ]
+                        },
+                        {
+                            type: "box", layout: "horizontal", contents: [
+                                { type: "text", text: "ปริมาณ", color: "#aaaaaa", size: "md", flex: 2 },
+                                { type: "text", text: `${amount}%`, weight: "bold", size: "md", flex: 4 }
+                            ]
+                        },
+                        {
+                            type: "box", layout: "horizontal", contents: [
+                                { type: "text", text: "หมดอายุ", color: "#aaaaaa", size: "md", flex: 2 },
+                                { type: "text", text: expiryDate || '-', weight: "bold", size: "md", flex: 4 }
+                            ]
+                        }
+                    ]
+                },
+                footer: {
+                    type: "box", layout: "vertical", backgroundColor: "#FEF3C7", paddingAll: "16px",
+                    contents: [{ type: "text", text: "🎁 โชว์ข้อความนี้พร้อมบอกชื่อเจ้าของตอนไปเบิก", size: "sm", color: "#92400E", weight: "bold", align: "center", wrap: true }]
+                }
+            };
+
+            if (imageUrl) {
+                flexPayload.hero = {
+                    type: "image",
+                    url: imageUrl,
+                    size: "full",
+                    aspectRatio: "1:1",
+                    aspectMode: "cover"
+                };
+            }
+
+            try {
+                const res = await liff.shareTargetPicker([{
+                    type: "flex",
+                    altText: `🥃 มอบสิทธิ์ฝากเหล้า: ${itemName} (${amount}%)`,
+                    contents: flexPayload
+                }]);
+                if (res) {
+                    Swal.fire('✅ ส่งสำเร็จ', 'ส่งสิทธิ์ให้เพื่อนเรียบร้อยแล้ว', 'success');
+                }
+            } catch (e) {
+                Swal.fire('❌ ข้อผิดพลาด', 'ไม่สามารถแชร์ได้: ' + e.message, 'error');
+            }
+        }
+
+        async function submitBooking() {
+            const n = document.getElementById('bk-name').value;
+            const d = document.getElementById('bk-date').value;
+            const t = document.getElementById('bk-time').value;
+            const p = document.getElementById('bk-pax').value || 1;
+            if (!n || !d) return Swal.fire("แจ้งเตือน", "กรุณากรอกชื่อและวันที่ก่อน", "warning");
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/book-table`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: n, phone: myPhone || 'ไม่ระบุ', date: d, time: t, pax: p })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    // ส่งข้อความยืนยันการจองผ่าน LIFF โดยตรง (ไม่ต้องใช้ Token)
+                    try {
+                        await liff.sendMessages([{
+                            type: "flex",
+                            altText: `📅 จองโต๊ะสำเร็จ — ${n} (${p} ท่าน) วันที่ ${d}`,
+                            contents: {
+                                type: "bubble",
+                                size: "mega",
+                                header: {
+                                    type: "box",
+                                    layout: "vertical",
+                                    contents: [{ type: "text", text: "📅 จองโต๊ะสำเร็จ!", color: "#ffffff", weight: "bold", size: "xl" }],
+                                    backgroundColor: "#1e3a8a",
+                                    paddingAll: "20px"
+                                },
+                                body: {
+                                    type: "box",
+                                    layout: "vertical",
+                                    spacing: "md",
+                                    contents: [
+                                        {
+                                            type: "box", layout: "horizontal", contents: [
+                                                { type: "text", text: "ชื่อ", color: "#aaaaaa", size: "md", flex: 2 },
+                                                { type: "text", text: n, weight: "bold", size: "md", flex: 4 }
+                                            ]
+                                        },
+                                        {
+                                            type: "box", layout: "horizontal", contents: [
+                                                { type: "text", text: "วันที่", color: "#aaaaaa", size: "md", flex: 2 },
+                                                { type: "text", text: d, weight: "bold", size: "md", flex: 4 }
+                                            ]
+                                        },
+                                        {
+                                            type: "box", layout: "horizontal", contents: [
+                                                { type: "text", text: "เวลา", color: "#aaaaaa", size: "md", flex: 2 },
+                                                { type: "text", text: t, weight: "bold", size: "lg", color: "#EAB308", flex: 4 }
+                                            ]
+                                        },
+                                        {
+                                            type: "box", layout: "horizontal", contents: [
+                                                { type: "text", text: "จำนวน", color: "#aaaaaa", size: "md", flex: 2 },
+                                                { type: "text", text: `${p} ท่าน`, weight: "bold", size: "md", flex: 4 }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                footer: {
+                                    type: "box",
+                                    layout: "vertical",
+                                    backgroundColor: "#FEF3C7",
+                                    paddingAll: "16px",
+                                    contents: [
+                                        { type: "text", text: "⚠️ กรุณามารับโต๊ะก่อน 20:00 น.", size: "sm", color: "#92400E", weight: "bold", align: "center" },
+                                        { type: "text", text: "เพื่อรักษาสิทธิ์การจองของท่าน", size: "xs", color: "#92400E", align: "center", margin: "sm" }
+                                    ]
+                                }
+                            }
+                        }]);
+                    } catch (liffErr) {
+                        // sendMessages ใช้ได้เฉพาะเมื่อเปิดใน LINE Chat — ไม่ error ถ้าเปิดจาก browser
+                        console.warn("liff.sendMessages not available:", liffErr.message);
+                    }
+                    Swal.fire("จองสำเร็จ!", `เราเตรียมที่นั่งรอ ${n} ${p} ท่าน วันที่ ${d} ครับ`, "success")
+                        .then(() => show('view-customer'));
+                } else {
+                    Swal.fire("มีปัญหา", data.error || "ไม่สามารถส่งข้อมูลได้", "error");
+                }
+            } catch (e) {
+                Swal.fire("เชื่อมต่อไม่ได้", e.message, "error");
+            }
+        }
+
+        async function verifyManager() {
+            const { value: pass } = await Swal.fire({
+                title: 'เข้าสู่ระบบพนักงาน',
+                html: `
+                    <p style="font-size:12px;color:#aaa;margin-bottom:12px;">Manager: 7777 | Staff: 5555 | Cashier: 3333</p>
+                    <input id="swal-pass" type="password" class="swal2-input" placeholder="รหัสผ่าน...">
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'เข้าสู่ระบบ',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => document.getElementById('swal-pass').value
+            });
+            if (!pass) return;
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/staff-login`, {
+                    method: 'POST',
+                    body: JSON.stringify({ uid: profile.userId || 'demo', password: pass, name: profile.displayName || 'Staff' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const role = data.role;
+                    // ตั้งค่า UI ตาม Role
+                    const roleNames = { manager: '👑 Manager', staff: '🔧 Staff', cashier: '💰 Cashier' };
+                    document.querySelector('#view-staff span').innerText = roleNames[role] || role;
+
+                    // แสดง/ซ่อน Tab ตาม Role
+                    const tabSrc = document.getElementById('tab-src');
+                    const tabBk = document.getElementById('tab-manager-bk');
+
+                    if (role === 'cashier') {
+                        // Cashier: รับฝากอย่างเดียว
+                        if (tabSrc) tabSrc.classList.add('hidden');
+                        if (tabBk) tabBk.classList.add('hidden');
+                    } else if (role === 'staff') {
+                        // Staff: รับฝาก + เบิกเหล้า
+                        if (tabSrc) tabSrc.classList.remove('hidden');
+                        if (tabBk) tabBk.classList.add('hidden');
+                    } else if (role === 'manager') {
+                        // Manager: ทุกอย่าง (tab booking ขึ้นอยู่กับ Tier)
+                        if (tabSrc) tabSrc.classList.remove('hidden');
+                        if (currentTier === 3 && tabBk) tabBk.classList.remove('hidden');
+                    }
+
+                    Swal.fire({
+                        title: `ยินดีต้อนรับ ${roleNames[role]}`,
+                        icon: 'success', timer: 1200, showConfirmButton: false
+                    }).then(() => { show('view-staff'); setStaffTab('deposit'); });
+                } else {
+                    Swal.fire('รหัสไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
+                }
+            } catch (e) {
+                Swal.fire('เชื่อมต่อไม่ได้', e.message, 'error');
+            }
+        }
+
+        function show(id) {
+            document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            const noNav = ['view-staff', 'view-phone-link', 'view-tier-selector'];
+            document.getElementById('nav-bar').classList.toggle('hidden', noNav.includes(id));
+            document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('nav-active'); if (i.id.includes(id.split('-')[1])) i.classList.add('nav-active'); });
+        }
+
+        function setStaffTab(tab) {
+            document.getElementById('staff-deposit').classList.toggle('hidden', tab !== 'deposit');
+            document.getElementById('staff-search').classList.toggle('hidden', tab !== 'search');
+            document.getElementById('staff-stock').classList.toggle('hidden', tab !== 'stock');
+            document.getElementById('staff-booking').classList.toggle('hidden', tab !== 'booking');
+            const tabMap = { deposit: 'dep', search: 'src', stock: 'stk', booking: 'bk' };
+            const activeId = tabMap[tab];
+            ['dep', 'src', 'stk', 'bk'].forEach(t => {
+                const el = document.getElementById('tab-' + t);
+                if (el) el.className = (t === activeId) ? "flex-1 py-3 rounded-lg text-xs font-bold btn-grad" : "flex-1 py-3 rounded-lg text-xs font-bold glass";
+            });
+            if (tab === 'booking') loadStaffBookings();
+            if (tab === 'stock') loadStaffStock();
+        }
+
+        async function loadStaffStock() {
+            const list = document.getElementById('staff-stock-list');
+            list.innerHTML = "<div class='text-center py-6 opacity-20 text-sm'>\u0e01\u0e33\u0e25\u0e31\u0e07\u0e42\u0e2b\u0e25\u0e14\u0e2a\u0e15\u0e47\u0e2d\u0e01...</div>";
+            try {
+                const res = await fetch(`${CFG.worker}/api/all-deposits`);
+                const data = await res.json();
+                if (!data.length) {
+                    list.innerHTML = "<div class='text-center py-10 glass rounded-2xl opacity-50 text-sm font-bold'>\u0e44\u0e21\u0e48\u0e21\u0e35\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e43\u0e19\u0e2a\u0e15\u0e47\u0e2d\u0e01</div>";
+                    return;
+                }
+                list.innerHTML = "";
+                data.forEach(it => {
+                    const today = new Date();
+                    const expiry = it.expiry_date ? new Date(it.expiry_date) : null;
+                    const daysLeft = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null;
+                    let borderColor = 'border-white/10';
+                    let badge = '';
+                    if (daysLeft !== null) {
+                        if (daysLeft <= 1) { borderColor = 'border-red-500/50 bg-red-500/5'; badge = '<span class="text-[10px] bg-red-500/20 text-red-400 border border-red-400/30 px-2 py-0.5 rounded-full font-bold">\u{1F6A8} \u0e27\u0e31\u0e19\u0e19\u0e35\u0e49!</span>'; }
+                        else if (daysLeft <= 3) { borderColor = 'border-red-400/30'; badge = `<span class="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full font-bold">\u26a0\ufe0f ${daysLeft} \u0e27\u0e31\u0e19</span>`; }
+                        else if (daysLeft <= 7) { borderColor = 'border-yellow-500/30'; badge = `<span class="text-[10px] text-yellow-400 px-2 py-0.5 rounded-full">\u0e43\u0e01\u0e25\u0e49 ${daysLeft} \u0e27\u0e31\u0e19</span>`; }
+                        else if (daysLeft <= 14) { badge = `<span class="text-[10px] text-orange-400">${daysLeft} \u0e27\u0e31\u0e19</span>`; }
+                        else { badge = `<span class="text-[10px] text-gray-500">${daysLeft} \u0e27\u0e31\u0e19</span>`; }
+                    }
+                    const depositDate = it.created_at ? it.created_at.split(' ')[0] : '-';
+                    list.innerHTML += `
+                        <div class="glass p-4 rounded-2xl border ${borderColor} space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-bold text-sm text-white">${it.item_name}</p>
+                                    <p class="text-xs text-[var(--accent)] mt-0.5">\u0e40\u0e2b\u0e25\u0e37\u0e2d ${it.amount}%</p>
+                                </div>
+                                ${badge}
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-gray-400">
+                                <p>\u0e40\u0e08\u0e49\u0e32\u0e02\u0e2d\u0e07: <span class="text-white font-bold">${it.customer_name || '-'}</span></p>
+                                <p>\u0e42\u0e17\u0e23: <span class="text-white">${it.owner_phone || '-'}</span></p>
+                                <p>\u0e1d\u0e32\u0e01\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48: <span class="text-white">${depositDate}</span></p>
+                                <p>\u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38: <span class="text-white">${it.expiry_date || '-'}</span></p>
+                                <p>\u0e1d\u0e32\u0e01\u0e42\u0e14\u0e22: <span class="text-white">${it.depositor_name || '-'}</span></p>
+                            </div>
+                            <button onclick="notifyDeposit(${it.id}, '${(it.customer_name || it.owner_phone || '').replace(/'/g, '').substring(0, 20)}')"
+                                class="w-full glass border border-yellow-500/20 text-yellow-400 text-xs py-2 rounded-xl font-bold">
+                                \ud83d\udce2 \u0e41\u0e08\u0e49\u0e07\u0e40\u0e15\u0e37\u0e2d\u0e19\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e19\u0e35\u0e49
+                            </button>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                list.innerHTML = `<div class='text-center py-10 text-red-400 text-sm'>\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: ${e.message}</div>`;
+            }
+        }
+
+        async function notifyDeposit(depositId, ownerName) {
+            // โหลดข้อมูลรายการ
+            const allRes = await fetch(`${CFG.worker}/api/all-deposits`);
+            const allData = await allRes.json();
+            const dep = allData.find(d => d.id === depositId);
+
+            const today = new Date();
+            const expiry = dep && dep.expiry_date ? new Date(dep.expiry_date) : null;
+            const daysLeft = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : '?';
+            const urgency = typeof daysLeft === 'number' && daysLeft <= 1 ? '🚨 ด่วนมาก!' : typeof daysLeft === 'number' && daysLeft <= 3 ? '⚠️ ใกล้หมดมาก!' : '📢 แจ้งเตือน';
+            const urgencyColor = typeof daysLeft === 'number' && daysLeft <= 3 ? '#991b1b' : typeof daysLeft === 'number' && daysLeft <= 7 ? '#78350f' : '#1e3a8a';
+
+            const conf = await Swal.fire({
+                title: 'ส่งแจ้งเตือนไปลูกค้า?',
+                html: `<pre style="text-align:left;font-size:11px;background:#111;color:#fff;padding:12px;border-radius:8px;white-space:pre-wrap">${urgency} เหล้าใกล้หมดอายุ
+
+ชื่อเหล้า: ${dep ? dep.item_name : '?'}
+ปริมาณ: ${dep ? dep.amount : '?'}%
+หมดอายุ: ${dep ? dep.expiry_date : '?'} (อีก ${daysLeft} วัน)
+
+⚠️ กรุณามาเบิกก่อนวันหมดอายุ</pre>
+                <p style="font-size:11px;color:#aaa;margin-top:8px">*เปิด LIFF จากแชท LINE ของลูกค้า แล้วค่อยกดส่ง</p>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '📤 ส่งไปแชทลูกค้า',
+                cancelButtonText: 'ยกเลิก'
+            });
+            if (!conf.isConfirmed) return;
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/notify-deposit`, {
+                    method: 'POST',
+                    body: JSON.stringify({ deposit_id: depositId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('✅ ส่งสำเร็จ!', 'ระบบ LINE OA ส่งข้อความหาลูกค้าเรียบร้อยแล้ว', 'success');
+                } else {
+                    Swal.fire('⚠️ ส่งไม่ได้', `เกิดข้อผิดพลาด: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                Swal.fire('❌ เกิดข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: ' + err.message, 'error');
+            }
+        }
+
+        async function loadStaffBookings() {
+            const list = document.getElementById('staff-booking-list');
+            list.innerHTML = "<div class='text-center py-6 opacity-20 text-sm'>\u0e01\u0e33\u0e25\u0e31\u0e07\u0e42\u0e2b\u0e25\u0e14...</div>";
+            try {
+                const res = await fetch(`${CFG.worker}/api/bookings-list`);
+                const data = await res.json();
+                if (!data.length) {
+                    list.innerHTML = "<div class='text-center py-10 glass rounded-2xl opacity-50 text-sm font-bold'>\u0e44\u0e21\u0e48\u0e21\u0e35\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e08\u0e2d\u0e07\u0e42\u0e15\u0e4a\u0e30</div>";
+                    return;
+                }
+                list.innerHTML = "";
+                data.forEach(bk => {
+                    const isConfirmed = bk.status === 'confirmed';
+                    list.innerHTML += `
+                        <div class="glass p-5 rounded-2xl border ${isConfirmed ? 'border-green-500/30 bg-green-500/5' : 'border-white/5'}">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <p class="font-black text-base text-white">${bk.name}</p>
+                                    <p class="text-blue-400 font-bold mt-1">${bk.date} \u2022 ${bk.time} \u2022 ${bk.pax} \u0e17\u0e48\u0e32\u0e19</p>
+                                    <p class="text-gray-400 text-xs mt-1">\u0e42\u0e17\u0e23: ${bk.phone || '-'}</p>
+                                </div>
+                                <span class="${isConfirmed ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'} border px-3 py-1 rounded-full font-bold text-xs">
+                                    ${isConfirmed ? '\u2705 \u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e41\u0e25\u0e49\u0e27' : '\u23f3 \u0e23\u0e2d\u0e14\u0e33\u0e40\u0e19\u0e34\u0e19\u0e01\u0e32\u0e23'}
+                                </span>
+                            </div>
+                            ${!isConfirmed ? `<button onclick="confirmBooking(${bk.id})" class="w-full bg-green-500/20 text-green-400 border border-green-500/20 py-2 rounded-xl text-sm font-bold">\u2705 \u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e01\u0e32\u0e23\u0e08\u0e2d\u0e07\u0e19\u0e35\u0e49</button>` : ''}
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                list.innerHTML = `<div class='text-center py-10 text-red-400 text-sm'>\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: ${e.message}</div>`;
+            }
+        }
+
+        async function confirmBooking(id) {
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/confirm-booking`, {
+                method: 'POST',
+                body: JSON.stringify({ booking_id: id, staff_uid: profile.userId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e41\u0e25\u0e49\u0e27!', '\u0e01\u0e32\u0e23\u0e08\u0e2d\u0e07\u0e16\u0e39\u0e01\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e41\u0e25\u0e49\u0e27', 'success').then(() => loadStaffBookings());
+            }
+        }
+
+        async function triggerExpiryNotify() {
+            const conf = await Swal.fire({
+                title: '\u0e2a\u0e48\u0e07\u0e41\u0e08\u0e49\u0e07\u0e40\u0e15\u0e37\u0e2d\u0e19\u0e40\u0e2b\u0e25\u0e49\u0e32\u0e43\u0e01\u0e25\u0e49\u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38?',
+                text: '\u0e23\u0e30\u0e1a\u0e1a\u0e08\u0e30\u0e41\u0e08\u0e49\u0e07\u0e40\u0e15\u0e37\u0e2d\u0e19\u0e17\u0e38\u0e01\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e17\u0e35\u0e48\u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38\u0e43\u0e19 1/3/7/14 \u0e27\u0e31\u0e19\u0e02\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '\u0e2a\u0e48\u0e07\u0e40\u0e25\u0e22',
+                cancelButtonText: '\u0e22\u0e01\u0e40\u0e25\u0e34\u0e01'
+            });
+            if (!conf.isConfirmed) return;
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/notify-expiring`);
+            const data = await res.json();
+            Swal.fire('\u0e2a\u0e38\u0e14\u0e17\u0e49\u0e32\u0e22', `\u0e2a\u0e48\u0e07\u0e41\u0e08\u0e49\u0e07\u0e40\u0e15\u0e37\u0e2d\u0e19 ${data.sent || 0} \u0e23\u0e32\u0e22\u0e01\u0e32\u0e23`, 'success');
+        }
+
+        function previewImg(input, source) {
+            if (input.files && input.files[0]) {
+                const r = new FileReader();
+                r.onload = e => {
+                    document.getElementById('dep-preview').src = e.target.result;
+                    document.getElementById('dep-preview-container').classList.remove('hidden');
+                    document.getElementById('dep-placeholder').classList.add('hidden');
+                };
+                r.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearPhoto() {
+            document.getElementById('dep-file-camera').value = '';
+            document.getElementById('dep-file-gallery').value = '';
+            document.getElementById('dep-preview-container').classList.add('hidden');
+            document.getElementById('dep-placeholder').classList.remove('hidden');
+        }
+
+        function resetDemoLocal() { localStorage.clear(); location.reload(); }
+
+        init();
+    </script>
+</body>
+
+</html>

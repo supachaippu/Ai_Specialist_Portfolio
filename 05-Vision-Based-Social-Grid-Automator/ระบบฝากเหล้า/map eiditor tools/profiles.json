@@ -1,0 +1,25 @@
+{
+    "TEST SYSTEM": {
+        "Shop Name": "TEST SYSTEM",
+        "LIFF ID": "2009020696-z6Zlyc90",
+        "Worker URL": "https://testsystem.likesolution99.workers.dev",
+        "Manager Password": "8484",
+        "R2 Public URL": " https://pub-ba2b05487c4048fb87bf05e3ae86f54c.r2.dev",
+        "Channel Access Token": "PENDING",
+        "D1 Database ID": "7d1db510-e4c0-479d-8f47-d0eb7eb5babb",
+        "Hold Table Time": "21:00",
+        "colors": {
+            "bg_color": "#0f172a",
+            "grad_start": "#0e4296",
+            "grad_end": "#1e293b",
+            "text_main": "#ffffff",
+            "text_sub": "#94a3b8",
+            "accent": "#EAB308",
+            "radius": "16px",
+            "shadow": "0 4px 15px rgba(0,0,0,0.3)",
+            "border": "1px solid rgba(255,255,255,0.1)"
+        },
+        "bk_mode": "Interactive Map (Select Table)",
+        "bk_tmpl": "✨ Booking Confirmed ✨\n━━━━━━━━━━━━━━━━━━\nร้าน: {shop}\nชื่อ: {name}\nเบอร์: {phone}\nวันที่: {date}\nเวลา: {time}\nจำนวน: {pax} คน\n\n*กรุณามารับโต๊ะก่อนเวลา {hold}\nเพื่อรักษาสิทธิ์ของท่าน"
+    }
+}

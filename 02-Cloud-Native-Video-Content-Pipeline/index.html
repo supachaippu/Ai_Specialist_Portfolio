@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLC SYSTEM | I LOVE MY JOB v87</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #cfaf34; --purple: #57005f; --bg: #1a001c; --card: #3d0042;
+            --text: #ffffff; --success: #22c55e; --danger: #ef4444; --border: #cfaf3433; --sidebar-w: 240px;
+        }
+        *, *::before, *::after { box-sizing: border-box !important; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { width: 100%; padding: 15px 25px; background: linear-gradient(to right, #000, var(--purple), #000); border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 100; }
+        .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
+        #global-loader { position: absolute; inset: 0; background: rgba(26,0,28,0.95); backdrop-filter: blur(10px); z-index: 9999; display: none; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: var(--primary); flex-direction: column; gap: 20px; }
+        .spinner { width: 60px; height: 60px; border: 6px solid rgba(207,175,52,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .mini-sidebar { width: 240px; background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+        .filter-box { padding: 15px; border-bottom: 1px solid var(--border); background: var(--purple); width: 100%; }
+        .project-select { width: 100%; background: #000; color: var(--primary); border: 1px solid var(--primary); padding: 10px; border-radius: 8px; font-weight: 800; outline: none; }
+        .mini-slides-list { padding: 15px; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* v128: Multi-Link Modal Styles */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: var(--card); border: 2px solid var(--primary); border-radius: 20px; width: 100%; max-width: 400px; padding: 30px; }
+        .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .project-item { display: flex; gap: 15px; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .project-item:hover { background: rgba(255,255,255,0.05); }
+        
+        .mini-slide-wrapper {
+            width: 210px; height: 100px; overflow: hidden; border-radius: 12px; border: 1px solid #333;
+            position: relative; flex-shrink: 0; cursor: pointer; transition: 0.2s; background: #000; display: flex;
+        }
+        .mini-slide-wrapper:hover { border-color: var(--primary); transform: scale(1.02); }
+        .mini-slide-wrapper.active { border: 2px solid var(--primary); box-shadow: 0 0 15px var(--primary); }
+        .mini-slide-wrapper.drag-over { border: 3px dashed #fff !important; background: rgba(207,175,52,0.4) !important; }
+        .mini-slide-img-box { width: 140px; height: 100%; background: #000; border-right: 1px solid #222; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .mini-slide-thumb { width: 100%; height: 100%; background-size: contain; background-position: center; background-repeat: no-repeat; pointer-events: none; }
+        .mini-slide-num-box { flex: 1; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.4rem; font-weight: 900; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .tabs-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px 25px; background: #000; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px; text-align: center; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 800; color: #555; font-size: 0.8rem; transition: 0.3s; }
+        .tab.active { background: var(--purple); color: var(--primary); border-color: var(--primary); }
+        .bulk-bar { display: flex; gap: 15px; padding: 15px 25px; background: #000; border-bottom: 1px solid var(--border); align-items: center; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 40px; scroll-behavior: smooth; }
+        .slide-feed { width: 100%; max-width: 900px; margin: 0 auto; }
+        .slide-card { background: var(--card); border-radius: 24px; padding: 35px; border: 1px solid var(--border); margin-bottom: 60px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .slide-header { display: flex; justify-content: space-between; margin-bottom: 25px; border-bottom: 1px solid rgba(207,175,52,0.1); padding-bottom: 20px; }
+        .slide-subject { font-size: 1.5rem; font-weight: 900; color: #fff; background: rgba(0,0,0,0.3); border: 2px dashed var(--primary); padding: 10px 20px; border-radius: 12px; outline: none; }
+        .slide-layout { display: grid; grid-template-columns: 1fr 240px; gap: 30px; }
+        .caption-area { background: #fff; border-radius: 15px; padding: 25px; min-height: 250px; color: #111; font-size: 1.15rem; outline: none; line-height: 1.6; }
+        .card-footer { margin-top: 20px; border-top: 1px solid rgba(207,175,52,0.1); padding-top: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .card-log-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 0.75rem; color: #bbb; font-family: monospace; max-height: 120px; overflow-y: auto; line-height: 1.5; }
+        .btn-send-main { background: var(--primary); color: #000; padding: 10px 22px; border-radius: 10px; font-weight: 900; cursor: pointer; border: none; }
+        .target-select { background: #000; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; padding: 8px 12px; font-weight: 900; font-size: 0.8rem; outline: none; }
+        .video-frame { width: 100%; aspect-ratio: 9/16; background: #000; border-radius: 15px; overflow: hidden; border: 2px solid var(--primary); }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .btn-action { width: 100%; padding: 14px; border-radius: 10px; font-weight: 900; cursor: pointer; border: none; margin-top: 12px; }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-blue { background: #2563eb; color: #fff; text-decoration: none; display: block; text-align: center; }
+        .btn-floating-del { background: linear-gradient(to right, #57005f, #ef4444); color: #fff; border: 1px solid var(--primary); padding: 10px 25px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4); }
+        .btn-test-notice { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid var(--primary); padding: 8px 15px; border-radius: 50px; font-weight: 900; font-size: 0.75rem; cursor: pointer; margin-right: 15px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="text-align:left;"><h1 style="margin:0; font-size:1.6rem; letter-spacing:3px; color:var(--primary); font-weight:900;">👑 BLC PREMIUM PORTAL</h1><span style="font-size:1.1rem; color:#fff; font-weight:900; letter-spacing:4px; font-style:italic;">I LOVE MY JOB</span></div>
+        <div style="display:flex; align-items:center;">
+            <button class="btn-test-notice" onclick="testNotification()">⚡ TEST NOTICE</button>
+            <div style="background:var(--purple); padding:10px 20px; border:2px solid var(--primary); border-radius:50px; font-weight:900;">
+                👤 <select id="global-user" style="background:transparent; color:#fff; border:none; font-weight:900; outline:none; cursor:pointer;">
+                    <option>Bart</option><option>Bai</option><option>Ash</option><option>Theuy</option>
+                </select>
+            </div>
+        </div>
+    </header>
+    <div class="workspace">
+        <div id="global-loader"><div class="spinner"></div><div id="loader-txt">⏳ PROCESSING...</div></div>
+        <aside class="mini-sidebar">
+            <div class="filter-box">
+                <select id="project-filter" class="project-select" onchange="renderWork()"></select>
+                <div style="display:grid; grid-template-columns: 1fr; gap:8px; margin-top:10px;">
+                    <button class="btn-action btn-primary" style="font-size:0.7rem; padding:8px;" onclick="copyApprovalLink()">🔗 PROJECT LINK</button>
+                    <button class="btn-action btn-primary" style="font-size:0.7rem; padding:8px; background:var(--purple); color:#fff;" onclick="openGroupTagModal()">🏷️ TAG PROJECTS</button>
+                    <button class="btn-action btn-primary" style="font-size:0.7rem; padding:8px; background:#333; color:#fff;" onclick="generateGroupLink()">🔗 GROUP LINK</button>
+                </div>
+            </div>
+            <div class="mini-slides-list" id="mini-list"></div>
+        </aside>
+        <main class="main-content">
+            <div class="tabs-container">
+                <div class="tab" id="tab-edit" onclick="switchTab('EDIT')">🛠️ EDIT <span id="count-edit"></span></div>
+                <div class="tab" id="tab-wait_sub" onclick="switchTab('WAIT_SUB')">📝 CAPTION <span id="count-wait_sub"></span></div>
+                <div class="tab active" id="tab-wait" onclick="switchTab('WAIT')">WAIT <span id="count-wait"></span></div>
+                <div class="tab" id="tab-approved" onclick="switchTab('APPROVED')">✅ APPROVED <span id="count-approved"></span></div>
+                <div class="tab" id="tab-archived" onclick="switchTab('ARCHIVED')">📦 BOX <span id="count-archived"></span></div>
+            </div>
+            <div class="bulk-bar">
+                <label style="font-size:0.85rem; cursor:pointer; color:var(--primary); font-weight:900;"><input type="checkbox" id="select-all-toggle" onclick="toggleSelectAll()"> SELECT ALL</label>
+                <div id="bulk-action-buttons" style="display:flex; gap:15px; margin-left:30px;"></div>
+                <button id="bulk-del-btn" class="btn-floating-del" style="margin-left:auto;" onclick="deleteSelected()">🗑️ DELETE SELECTED</button>
+            </div>
+            <div class="scroll-area"><div class="slide-feed" id="main-feed"></div></div>
+        </main>
+    </div>
+    <!-- v128: Multi-Link Modal -->
+    <div id="multi-link-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">🔗 BUILD MULTI-LINK</div>
+            <div id="multi-project-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-action btn-primary" onclick="generateMultiLink()">🚀 GENERATE & COPY</button>
+                <button class="btn-action" style="background:#333; color:#fff;" onclick="document.getElementById('multi-link-modal').style.display='none'">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://blc-check-slide.supachai-ppu.workers.dev";
+        const GREEN_API = { 
+            idInstance: "7107564696", 
+            apiToken: "YOUR_GREEN_API_TOKEN_HERE", 
+            targets: { 
+                "PRODUCTION GROUP": "120363408512730530@g.us", 
+                "ASH GROUP": "120363293817349581@g.us", 
+                "THEUY GROUP": "120363282928374829@g.us",
+                "THEUY CAPTION": "120363409803308998@g.us",
+                "BART": "66810000000@c.us", 
+                "BAI": "66820000000@c.us" 
+            } 
+        };
+        let currentStatus = 'WAIT'; let allData = []; let selectedIds = new Set();
+
+        async function robustFetch(url, options = {}) {
+            try {
+                const res = await fetch(url, options);
+                const data = await res.json();
+                if (!res.ok) throw new Error(`[SERVER_${res.status}] ${data.error || "Unknown Error"}`);
+                return data;
+            } catch (e) {
+                if (e.message.includes("DATABASE_FAIL") || e.message.includes("GLOBAL_CRASH")) alert(`🆘 BACKEND ERROR:\n${e.message}`);
+                throw e;
+            }
+        }
+
+        // 🚀 v87: RESTORE DRAG & DROP LOGIC
+        async function handleDrop(e, id) {
+            e.preventDefault();
+            const wrapper = document.getElementById(`mini-${id}`);
+            if (wrapper) wrapper.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            setLoader(true, "📸 COMPRESSING & UPLOADING...");
+            try {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const img = new Image();
+                    img.onload = async () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 210; canvas.height = (img.height / img.width) * 210;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const base64 = canvas.toDataURL('image/jpeg', 0.5);
+                        await robustFetch(`${API_BASE}/api/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, thumbnail: base64, user: document.getElementById('global-user').value, msg: 'Updated Thumbnail via Drop' }) });
+                        await loadData();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            } catch (err) { alert("❌ DROP FAILED"); } finally { setLoader(false); }
+        }
+
+        function populateProjects() {
+            const projects = [...new Set(allData.map(s => s.folder_name))];
+            const select = document.getElementById('project-filter');
+            const prev = select.value;
+            select.innerHTML = '<option value="ALL">All Projects</option>' + projects.map(p => `<option value="${p}">${p}</option>`).join('');
+            if(prev) select.value = prev;
+        }
+        function updateCounts() {
+            const counts = { EDIT:0, WAIT_SUB:0, WAIT:0, APPROVED:0, ARCHIVED:0 };
+            allData.forEach(s => { if(counts[s.status || 'EDIT'] !== undefined) counts[s.status || 'EDIT']++; });
+            Object.keys(counts).forEach(k => { const el = document.getElementById(`count-${k.toLowerCase()}`); if(el) el.innerText = `(${counts[k]})`; });
+        }
+        function switchTab(status) { currentStatus = status; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(`tab-${status.toLowerCase()}`).classList.add('active'); selectedIds.clear(); document.getElementById('select-all-toggle').checked = false; renderWork(); }
+        
+        function renderWork() {
+            const project = document.getElementById('project-filter').value;
+            const filtered = allData.filter(s => (s.status || 'EDIT') === currentStatus && (project === 'ALL' || s.folder_name === project));
+            const miniList = document.getElementById('mini-list');
+            miniList.innerHTML = filtered.map((s, idx) => {
+                const num = s.subject.match(/#(\d+)/)?.[0] || `#${idx+1}`;
+                const thumb = s.thumbnail || `https://v.opus.pro/c.${s.id}/VIDEO_THUMBNAIL_720.jpg`;
+                return `<div class="mini-slide-wrapper" id="mini-${s.id}" onclick="scrollToSlide('${s.id}')" ondrop="handleDrop(event, '${s.id}')" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')">
+                    <div class="mini-slide-img-box"><div class="mini-slide-thumb" style="background-image: url('${thumb}')"></div></div>
+                    <div class="mini-slide-num-box">${num}</div>
+                </div>`;
+            }).join('');
+            const feed = document.getElementById('main-feed');
+            if (filtered.length === 0) { feed.innerHTML = `<div style="text-align:center; padding:150px; opacity:0.1; font-weight:900;">NO CLIPS FOUND</div>`; return; }
+            feed.innerHTML = filtered.map(s => renderSlide(s)).join('');
+            renderBulkButtons();
+        }
+
+        function renderSlide(s) {
+            const isSelected = selectedIds.has(s.id) ? 'checked' : '';
+            const videoUrl = s.video_url || s.opus_url || `https://v.opus.pro/c.${s.id}/VIDEO_PREVIEW_720.mp4`;
+            const opusLink = (s.opus_url || `https://v.opus.pro/c.${s.id}/`).split('#')[0] + '#' + s.id;
+            const logs = s.logs ? JSON.parse(s.logs) : [];
+            const logHtml = logs.slice(-8).reverse().map(l => `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:4px 0"><span style="color:var(--primary)">[${new Date(l.time).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}]</span> <b>${l.user}:</b> ${l.msg}</div>`).join('');
+            return `<div class="slide-card" id="card-${s.id}">
+                <div class="slide-header">
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="font-size:0.8rem; color:var(--primary); font-weight:900;">📂 ${s.folder_name}</div>
+                            ${s.is_backed_up ? `<div style="font-size:0.6rem; background:#007bff; color:#fff; padding:2px 8px; border-radius:5px; border:1px solid gold; font-weight:bold;">☁️ BACKUP DONE</div>` : ''}
+                        </div>
+                        ${s.group_name ? `<div style="font-size:0.7rem; background:#333; color:#fff; padding:2px 8px; border-radius:5px; width:fit-content;">🏷️ ${s.group_name}</div>` : ''}
+                        <div class="slide-subject" contenteditable="true" onblur="updateField('${s.id}', 'subject', this.innerText)">${s.subject}</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                        <input type="checkbox" onchange="toggleSelect('${s.id}')" ${isSelected}>
+                        ${document.getElementById('global-user').value.toUpperCase() === 'BART' ? `<button class="btn-action" style="background:#ff9800; color:#000; font-size:0.6rem; padding:4px 8px; margin-top:5px; width:auto; border:2px solid #000; font-weight:900;" onclick="noticeTheuy('${s.id}')">📢 Notice Theuy</button>` : ''}
+                        <button class="btn-del" onclick="deleteSingle('${s.id}')">🗑️</button>
+                    </div>
+                </div>
+                <div class="slide-layout">
+                    <div class="caption-container"><div class="caption-area" id="caption-${s.id}" contenteditable="true" onblur="updateField('${s.id}', 'caption', this.innerText)">${s.caption || ''}</div>
+                        <div class="card-footer">
+                            <div class="card-msg-row">
+                                <button class="btn-send-main" style="background:var(--purple);" onclick="openMessenger('${s.id}')">🚀 SEND</button>
+                                <button class="btn-send-main" onclick="sendNotification('${s.id}')">🔔 NOTIFY</button>
+                                <select id="target-${s.id}" class="target-select">
+                                    <option value="PRODUCTION GROUP">PRODUCTION GROUP</option>
+                                    <option value="ASH GROUP">ASH GROUP</option>
+                                    <option value="THEUY GROUP">THEUY GROUP</option>
+                                    <option value="THEUY CAPTION">THEUY CAPTION</option>
+                                    <option value="BART">BART</option>
+                                    <option value="BAI">BAI</option>
+                                </select>
+                            </div>
+                            <div class="card-log-box">${logHtml || 'No activity yet.'}</div>
+                        </div>
+                    </div>
+                    <div class="video-area"><div class="video-frame"><video src="${videoUrl}" loop muted preload="metadata" onmouseover="this.play()" onmouseout="this.pause()" controls></video></div><a href="${opusLink}" target="_blank" class="btn-blue btn-action">▶ EDIT IN OPUS</a><button class="btn-action btn-primary" onclick="saveAll('${s.id}')">💾 SAVE DATA</button>${renderActionButtons(s)}</div>
+                </div>
+            </div>`;
+        }
+
+        async function openMessenger(id) {
+            const s = allData.find(x => x.id === id);
+            if (!s) return;
+            const caption = document.getElementById(`caption-${id}`).innerText;
+            const target = document.getElementById(`target-${id}`).value;
+            const chatId = GREEN_API.targets[target] || "120363408512730530@g.us";
+            
+            const finalMsg = prompt(`💬 พิมพ์ข้อความที่ต้องการส่งไปที่ [${target}]:`, caption);
+            if (!finalMsg) return;
+
+            setLoader(true, "🚀 SENDING MESSAGE...");
+            try {
+                const res = await fetch(`https://api.green-api.com/waInstance${GREEN_API.idInstance}/sendMessage/${GREEN_API.apiToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatId, message: finalMsg })
+                });
+                if (res.ok) alert("✅ MESSAGE SENT!");
+                else alert("❌ SEND FAILED");
+            } catch (e) { alert("❌ ERROR: " + e.message); } finally { setLoader(false); }
+        }
+
+        async function sendNotification(id) {
+            const s = allData.find(x => x.id === id);
+            if (!s) return;
+            const subject = document.querySelector(`#card-${id} .slide-subject`).innerText;
+            const caption = document.getElementById(`caption-${id}`).innerText;
+            const target = document.getElementById(`target-${id}`).value;
+            const chatId = GREEN_API.targets[target] || "120363408512730530@g.us";
+            
+            setLoader(true, "🚀 PREPARING NOTIFICATION...");
+            try {
+                // Save first
+                await robustFetch(`${API_BASE}/api/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, subject, caption, user: document.getElementById('global-user').value }) });
+                
+                const statusIcons = { 'WAIT': '⚖️ WAIT APPROVAL', 'WAIT_SUB': '📝 CAPTION', 'EDIT': '🛠️ EDITING', 'APPROVED': '✅ APPROVED', 'ARCHIVED': '📦 ARCHIVED' };
+                const icon = statusIcons[s.status || 'EDIT'] || '📝 NOTICE';
+                const finalMsg = `${icon}\n👤 From: ${document.getElementById('global-user').value}\n📂 Project: ${s.folder_name}\n🎬 Clip: ${subject}\n🔗 https://blc-check-slide-dashboard.pages.dev/?id=${s.id}\n\n${caption}`;
+                
+                const isWait = s.status === 'WAIT';
+                const thumbUrl = s.thumbnail || `https://v.opus.pro/c.${s.id}/VIDEO_THUMBNAIL_720.jpg`;
+                
+                let res;
+                if (isWait) {
+                    setLoader(true, "🚀 SENDING NOTIFICATION WITH IMAGE (WAIT PHASE)...");
+                    res = await fetch(`https://api.green-api.com/waInstance${GREEN_API.idInstance}/sendFileByUrl/${GREEN_API.apiToken}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chatId, urlFile: thumbUrl, fileName: `${s.id}.jpg`, caption: finalMsg })
+                    });
+                } else {
+                    setLoader(true, "🚀 SENDING TEXT NOTIFICATION...");
+                    res = await fetch(`https://api.green-api.com/waInstance${GREEN_API.idInstance}/sendMessage/${GREEN_API.apiToken}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chatId, message: finalMsg })
+                    });
+                }
+                
+                if (res.ok) { alert("✅ NOTIFICATION SENT SUCCESSFULLY!"); await loadData(); }
+                else alert("❌ SEND FAILED");
+            } catch (e) { alert("❌ ERROR: " + e.message); } finally { setLoader(false); }
+        }
+
+        async function testNotification() {
+            const user = document.getElementById('global-user').value;
+            const chatId = "120363408512730530@g.us";
+            setLoader(true, "⚡ TESTING NOTICE...");
+            try {
+                const msg = `⚡ BLC TEST NOTICE\n👤 User: ${user}\n🕒 Time: ${new Date().toLocaleString()}\n✅ SYSTEM STATUS: ONLINE`;
+                const res = await fetch(`https://api.green-api.com/waInstance${GREEN_API.idInstance}/sendMessage/${GREEN_API.apiToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatId, message: msg })
+                });
+                if (res.ok) alert("✅ TEST SUCCESS!");
+                else alert("❌ TEST FAILED");
+            } catch (e) {
+                alert("❌ ERROR: " + e.message);
+            } finally {
+                setLoader(false);
+            }
+        }
+
+        async function saveAll(id) {
+            const s = allData.find(x => x.id === id);
+            if (!s) return;
+            const subjectEl = document.querySelector(`#card-${id} .slide-subject`);
+            const captionEl = document.getElementById(`caption-${id}`);
+            if (!subjectEl || !captionEl) {
+                alert("❌ ERROR: ELEMENT NOT FOUND");
+                return;
+            }
+            const subject = subjectEl.innerText.trim();
+            const caption = captionEl.innerText.trim();
+            const user = document.getElementById('global-user').value;
+            
+            setLoader(true, "💾 SAVING TO D1 DATABASE...");
+            try {
+                const data = await robustFetch(`${API_BASE}/api/update`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ id, status: s.status, subject, caption, user, msg: "Updated Caption" }) 
+                });
+                if (data && !data.error) {
+                    alert("✅ SAVED SUCCESSFULLY!");
+                    await loadData();
+                } else {
+                    alert("❌ SERVER ERROR: " + (data.error || "Unknown"));
+                }
+            } catch(e) {
+                alert("❌ NETWORK ERROR: " + e.message);
+            } finally {
+                setLoader(false);
+            }
+        }
+
+        async function loadData() {
+            setLoader(true, "📡 SYNCING FROM CLOUDFLARE...");
+            try {
+                const data = await robustFetch(`${API_BASE}/api/slides`);
+                allData = data.map(s => ({ ...s, caption: s.caption || '' }));
+                updateCounts();
+                populateProjects();
+                
+                // --- v139: SMART CROSS-TAB DEEP LINKING ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetId = urlParams.get('id');
+                if (targetId) {
+                    const slide = allData.find(s => s.id === targetId);
+                    if (slide) {
+                        currentStatus = slide.status || 'EDIT';
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        const tabEl = document.getElementById(`tab-${currentStatus.toLowerCase()}`);
+                        if (tabEl) tabEl.classList.add('active');
+                        
+                        document.getElementById('project-filter').value = slide.folder_name;
+                        
+                        renderWork();
+                        setTimeout(() => { scrollToSlide(targetId); }, 800);
+                    } else {
+                        renderWork();
+                    }
+                } else {
+                    renderWork();
+                }
+            } catch(e) {
+                console.error("LOAD ERROR:", e);
+                renderWork();
+            } finally { setLoader(false); }
+        }
+
+        async function deleteSingle(id) { if(!confirm("Delete?")) return; setLoader(true, "🗑️ DELETING..."); try { await robustFetch(`${API_BASE}/api/slides`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [id] }) }); await loadData(); } catch(e) {} finally { setLoader(false); } }
+        async function deleteSelected() { const ids = Array.from(selectedIds); if(!ids.length) return; if(!confirm(`Delete ${ids.length}?`)) return; setLoader(true, "🗑️ DELETING..."); try { await robustFetch(`${API_BASE}/api/slides`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) }); selectedIds.clear(); await loadData(); } catch(e) {} finally { setLoader(false); } } 
+        async function updateStatus(id, status) { setLoader(true, "🚚 MOVING..."); try { await robustFetch(`${API_BASE}/api/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status, user: document.getElementById('global-user').value }) }); await loadData(); } catch(e) {} finally { setLoader(false); } }
+        function renderActionButtons(s) {
+            if (s.status === 'EDIT') return `<button class="btn-action btn-blue" onclick="updateStatus('${s.id}', 'WAIT_SUB')">🚀 SUBMIT TO CAPTION</button>`;
+            if (s.status === 'WAIT_SUB') return `<button class="btn-action btn-blue" onclick="updateStatus('${s.id}', 'WAIT')">🚀 SUBMIT TO WAIT</button>`;
+            if (s.status === 'WAIT') return `
+                <button class="btn-action btn-green" onclick="updateStatus('${s.id}', 'APPROVED')">✅ APPROVE</button>
+                <button class="btn-action" style="background:var(--danger); color:#fff;" onclick="updateStatus('${s.id}', 'WAIT_SUB')">❌ REJECT</button>
+            `;
+            if (s.status === 'APPROVED') return `<button class="btn-action btn-purple" onclick="updateStatus('${s.id}', 'ARCHIVED')">📦 MOVE TO BOX</button>`;
+            return '';
+        }
+        function toggleSelect(id) { if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id); renderBulkButtons(); }
+        function toggleSelectAll() {
+            const isChecked = document.getElementById('select-all-toggle').checked;
+            const project = document.getElementById('project-filter').value;
+            const filtered = allData.filter(s => (s.status || 'EDIT') === currentStatus && (project === 'ALL' || s.folder_name === project));
+            if(isChecked) filtered.forEach(s => selectedIds.add(s.id)); else selectedIds.clear(); renderWork();
+        }
+        function renderBulkButtons() {
+            const container = document.getElementById('bulk-action-buttons');
+            if(currentStatus==='WAIT' && selectedIds.size > 0) container.innerHTML = `<button class="btn-action btn-primary" style="margin:0; padding:10px 20px; width:auto;" onclick="bulkUpdate('APPROVED')">✅ APPROVE ALL (${selectedIds.size})</button>`;
+            else container.innerHTML = '';
+        }
+        async function bulkUpdate(status) { const ids = Array.from(selectedIds); setLoader(true, "🚀 UPDATING..."); try { await robustFetch(`${API_BASE}/api/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, status, user: document.getElementById('global-user').value }) }); selectedIds.clear(); await loadData(); } catch(e) {} finally { setLoader(false); } }
+        
+        function scrollToSlide(id) { 
+            const card = document.getElementById(`card-${id}`); 
+            if(card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+                document.querySelectorAll('.mini-slide-wrapper').forEach(w => w.classList.remove('active'));
+                document.getElementById(`mini-${id}`)?.classList.add('active');
+                
+                // --- v127: Update URL with ID ---
+                const url = new URL(window.location);
+                url.searchParams.set('id', id);
+                window.history.pushState({}, '', url);
+            }
+        }
+        function setLoader(show, text = "⏳ PROCESSING...") { const loader = document.getElementById('global-loader'); document.getElementById('loader-txt').innerText = text; loader.style.display = show ? 'flex' : 'none'; }
+        function copyApprovalLink() {
+            const project = document.getElementById('project-filter').value;
+            if (!project || project === 'ALL') { alert("⚠️ Please select a specific project first!"); return; }
+            const token = btoa(unescape(encodeURIComponent(project)));
+            const approvalUrl = `${window.location.origin}/approval.html?p=${token}`;
+            navigator.clipboard.writeText(approvalUrl).then(() => { alert(`✅ Link Copied for [${project}]!\n\n${approvalUrl}`); }).catch(err => { alert("❌ Failed to copy: " + err); });
+        }
+
+        function generateGroupLink() {
+            const groups = [...new Set(allData.map(s => s.group_name).filter(g => g))];
+            if (groups.length === 0) { alert("⚠️ No groups found! Tag some projects first."); return; }
+            
+            const list = document.getElementById('multi-project-list');
+            list.innerHTML = groups.map(g => `
+                <div class="project-item" onclick="copyThisGroupLink('${g}')">
+                    <span>🏷️ ${g}</span>
+                    <button class="btn-action btn-primary" style="margin:0; width:auto; padding:5px 15px; font-size:0.6rem;">COPY LINK</button>
+                </div>
+            `).join('');
+            
+            const modalBox = document.querySelector('.modal-box');
+            modalBox.querySelector('.modal-title').innerText = "🔗 SELECT GROUP LINK";
+            modalBox.querySelector('button').style.display = 'none'; // Hide the generate button
+            
+            document.getElementById('multi-link-modal').style.display = 'flex';
+        }
+
+        function copyThisGroupLink(groupName) {
+            const token = btoa(unescape(encodeURIComponent(groupName)));
+            const approvalUrl = `${window.location.origin}/approval.html?g=${token}`;
+            navigator.clipboard.writeText(approvalUrl).then(() => { 
+                alert(`✅ Link Copied for Group: [${groupName}]!\n\n${approvalUrl}`); 
+                document.getElementById('multi-link-modal').style.display = 'none';
+            }).catch(err => { alert("❌ Failed to copy: " + err); });
+        }
+
+        // --- v130: Project-Level Group Tagging ---
+        function openGroupTagModal() {
+            const projects = [...new Set(allData.map(s => s.folder_name))];
+            const list = document.getElementById('multi-project-list');
+            list.innerHTML = projects.map(p => `
+                <label class="project-item">
+                    <input type="checkbox" class="tag-project-cb" value="${p}">
+                    <span>${p}</span>
+                </label>
+            `).join('');
+            
+            const modalBox = document.querySelector('.modal-box');
+            modalBox.querySelector('.modal-title').innerText = "🏷️ TAG PROJECTS WITH GROUP";
+            const btn = modalBox.querySelector('button');
+            btn.style.display = 'block'; // Reset visibility
+            btn.onclick = applyTagToProjects;
+            btn.innerText = "🚀 APPLY GROUP TAG";
+            
+            document.getElementById('multi-link-modal').style.display = 'flex';
+        }
+
+        async function applyTagToProjects() {
+            const selectedProjects = Array.from(document.querySelectorAll('.tag-project-cb:checked')).map(cb => cb.value);
+            if (selectedProjects.length === 0) { alert("⚠️ Please select at least one project!"); return; }
+            
+            const groupName = prompt("🏷️ Enter GROUP NAME for these projects:");
+            if (!groupName) return;
+
+            const idsToTag = allData.filter(s => selectedProjects.includes(s.folder_name)).map(s => s.id);
+            if (idsToTag.length === 0) return;
+
+            setLoader(true, `🏷️ TAGGING ${idsToTag.length} SLIDES...`);
+            try {
+                await robustFetch(`${API_BASE}/api/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: idsToTag, group_name: groupName, user: document.getElementById('global-user').value, msg: `Tagged as ${groupName} (Project Bulk)` })
+                });
+                alert(`✅ Successfully tagged ${selectedProjects.length} projects as [${groupName}]!`);
+                document.getElementById('multi-link-modal').style.display = 'none';
+                await loadData();
+            } catch(e) { alert("❌ Error: " + e.message); } finally { setLoader(false); }
+        }
+
+        async function tagSelectedWithGroup() {
+            const ids = Array.from(selectedIds);
+            if (!ids.length) { alert("⚠️ Please select slides to tag!"); return; }
+            const groupName = prompt("🏷️ Assign GROUP NAME to selected slides:");
+            if (groupName === null) return;
+            setLoader(true, "🏷️ TAGGING...");
+            try {
+                await robustFetch(`${API_BASE}/api/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids, group_name: groupName, user: document.getElementById('global-user').value, msg: `Tagged as ${groupName}` })
+                });
+                selectedIds.clear();
+                await loadData();
+            } catch(e) {} finally { setLoader(false); }
+        }
+
+        async function noticeTheuy(id) {
+            const s = allData.find(x => x.id === id);
+            if (!s) return;
+            setLoader(true, "🚀 SENDING NOTICE TO THEUY...");
+            const dashLink = `${window.location.origin}/?id=${s.id}`;
+            const msg = `📝 CAPTION\n👤 From: Bart\n📂 Project: ${s.folder_name}\n🎬 Clip: ${s.subject}\n🔗 ${dashLink}`;
+            
+            try {
+                await fetch(`https://api.green-api.com/waInstance${GREEN_API.idInstance}/sendMessage/${GREEN_API.apiToken}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ chatId: GREEN_API.targets["THEUY CAPTION"], message: msg })
+                });
+                alert("✅ NOTICE SENT TO THEUY CAPTION GROUP!");
+            } catch(e) { alert("❌ Failed to send notice"); }
+            finally { setLoader(false); }
+        }
+        loadData();
+    </script>
+</body>
+</html>

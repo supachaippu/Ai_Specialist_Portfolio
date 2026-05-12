@@ -1,0 +1,15 @@
+name = "v91-crm-production-worker"
+main = "src/worker.js"
+compatibility_date = "2023-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "<YOUR_D1_DATABASE_NAME>"
+database_id = "<YOUR_D1_DATABASE_ID>"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "<YOUR_R2_BUCKET_NAME>"
+
+[triggers]
+crons = ["0 2 * * *"]

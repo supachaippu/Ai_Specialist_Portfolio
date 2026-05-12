@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Velvet Bangsaen - Check-in System</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Sarabun:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root {
+            --primary: #06C755;
+            --bg: #0f172a;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background: radial-gradient(circle at top left, #063c1a, #0f172a);
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 1.8rem;
+            margin: 0;
+        }
+
+        .line-badge {
+            background: #06C755;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .app-card {
+            background: var(--card);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .profile-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            margin-bottom: 10px;
+            background: #eee;
+        }
+
+        .upload-box {
+            border: 2px dashed #cbd5e1;
+            border-radius: 24px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            margin-bottom: 15px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn {
+            border: none;
+            padding: 15px;
+            border-radius: 18px;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #64748b;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: white;
+            backdrop-filter: blur(8px);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        #historyArea {
+            display: none;
+            text-align: left;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 15px;
+        }
+
+        .log-table th {
+            background: #f8fafc;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+            color: #64748b;
+        }
+
+        .log-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .tab-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            border-radius: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: var(--bg);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loadingOverlay" class="loader-overlay">
+        <div class="spinner"></div>
+        <div id="loadingText" style="text-align:center;">Connecting...</div>
+        <div id="bypassBtn" style="display:none; margin-top:20px;">
+            <button onclick="checkD1Manual()"
+                style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:8px 15px; border-radius:12px; font-size:0.8rem;">
+                ใช้ระบบแบบไม่ผ่าน LINE
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Velvet Bangsaen</h1>
+            <div class="line-badge">STAFF CHECKIN</div>
+        </div>
+        <div class="tab-btn-group">
+            <button id="tabIn" class="tab-btn active" onclick="switchTab('in')">ลงเวลาเข้างาน</button>
+            <button id="tabHist" class="tab-btn" onclick="switchTab('hist')">ประวัติ & รายงาน</button>
+        </div>
+        <div class="app-card">
+            <div id="mainApp">
+                <div class="user-profile">
+                    <img id="lineImg" class="profile-img" src="">
+                    <div id="lineName" style="font-weight:700; font-size:1.1rem; color:#1e293b; margin-top:5px;">
+                        Loading...</div>
+                    <div id="d1Nick" style="font-size:0.8rem; color:var(--primary); font-weight:600;">(กำลังโหลด...)
+                    </div>
+                    <button class="btn" onclick="openMultiSelect()"
+                        style="font-size:0.75rem; background:#f1f5f9; color:#64748b; margin-top:8px; border-radius:10px; padding:5px 12px; border:1px solid #e2e8f0;">
+                        <i class="fa-solid fa-users"></i> เลือกคนในรูป (<span id="selectedCount">1</span>)
+                    </button>
+                </div>
+                <div id="attendanceArea" style="opacity: 0.3; pointer-events: none;">
+                    <div
+                        style="text-align:left; margin-bottom:10px; font-weight:600; font-size:0.85rem; color:#64748b;">
+                        <i class="fa-solid fa-camera"></i> ถ่ายรูปจาก <b>Timestamp Camera</b>
+                    </div>
+                    <input type="file" id="fileInput" hidden accept="image/*">
+                    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                        <div id="placeholder" style="text-align:center;">
+                            <i class="fa-solid fa-expand"
+                                style="font-size:2rem; color:#94a3b8; margin-bottom:10px;"></i>
+                            <p style="font-size:0.85rem; color:#64748b;">กดเพื่อถ่ายภาพ</p>
+                        </div>
+                        <img id="previewImg" style="width:100%;height:100%;object-fit:cover;display:none;">
+                    </div>
+                    <div id="infoBox" class="info-box"
+                        style="background:#f8fafc; border:2px solid #e2e8f0; color:var(--text); padding:15px; border-radius:20px; display:none; margin-bottom:15px;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div style="border-right:1px solid #e2e8f0;">
+                                <span style="font-size:0.6rem; color:#94a3b8;">วันที่พบ</span>
+                                <span id="detectedDate"
+                                    style="display:block; font-size:1rem; font-weight:800; color:var(--primary);">--/--/--</span>
+                            </div>
+                            <div>
+                                <span style="font-size:0.6rem; color:#94a3b8;">เวลาพบ</span>
+                                <span id="detectedTime"
+                                    style="display:block; font-size:1rem; font-weight:800; color:var(--primary);">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="submitBtn" disabled onclick="saveLog()">
+                        <i class="fa-solid fa-check-circle"></i> บันทึกเวลาเข้างาน
+                    </button>
+                </div>
+            </div>
+            <div id="historyArea">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <button class="btn btn-primary" style="font-size:0.8rem; padding:10px;" onclick="downloadPDF()">
+                        <i class="fa-solid fa-file-pdf"></i> โหลด PDF
+                    </button>
+                    <button class="btn btn-primary" style="font-size:0.8rem; padding:10px; background:#107c41;"
+                        onclick="downloadExcel()">
+                        <i class="fa-solid fa-file-excel"></i> โหลด Excel
+                    </button>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 15px;">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>ชื่อ</th>
+                                <th>เวลาบันทึก</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <tr>
+                                <td colspan="2" style="text-align:center;">กำลังโหลด...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-secondary" onclick="fetchLogs()">
+                    <i class="fa-solid fa-sync"></i> รีเฟรชข้อมูล
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="regModal"
+        style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+        <div
+            style="background:#fff;border-radius:30px;padding:35px;width:100%;max-width:350px;text-align:center;box-sizing:border-box;">
+            <h2 style="color:var(--primary); margin-bottom:10px;">ยินดีต้อนรับ!</h2>
+            <p style="margin-bottom:15px; font-size:0.9rem; color:#64748b;">กรุณาใส่ชื่อเล่น <b
+                    style="color:red;">ภาษาอังกฤษเท่านั้น</b></p>
+            <input type="text" id="regNick" placeholder="เช่น Somchai_A"
+                style="width:100%;padding:15px;border-radius:15px;border:2px solid #e2e8f0;font-size:1.1rem;text-align:center;box-sizing:border-box;margin-bottom:10px;outline:none;"
+                oninput="this.style.borderColor='#e2e8f0'; document.getElementById('regError').style.display='none';">
+            <div id="regError" style="color:red; font-size:0.8rem; margin-bottom:15px; display:none; font-weight:700;">❌
+                ห้ามใช้ภาษาไทย หรืออักขระพิเศษ</div>
+            <button class="btn btn-primary" onclick="doRegister()">บันทึกข้อมูล</button>
+        </div>
+    </div>
+    <div id="multiModal"
+        style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1100;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:30px;padding:25px;width:100%;max-width:350px;box-sizing:border-box;">
+            <h3 style="color:var(--text); text-align:center; margin-bottom:10px;">ใครอยู่ในรูปบ้าง?</h3>
+            <input type="text" id="empSearch" placeholder="🔍 ค้นหาชื่อเล่น..."
+                style="width:100%; padding:12px; border-radius:15px; border:2px solid #e2e8f0; margin-bottom:15px; box-sizing:border-box; outline:none; font-size:1rem;"
+                oninput="renderEmployeeList(this.value)">
+            <div id="employeeChecklist"
+                style="max-height:250px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee; border-radius:15px; padding:5px;">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button class="btn btn-secondary"
+                    onclick="document.getElementById('multiModal').style.display='none'">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="confirmSelection()">ตกลง</button>
+            </div>
+        </div>
+    </div>
+    <div id="zoomModal"
+        style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:2000;align-items:center;justify-content:center;padding:20px;"
+        onclick="this.style.display='none'">
+        <img id="zoomImg"
+            style="max-width:100%; max-height:90%; border-radius:15px; box-shadow:0 0 30px rgba(255,255,255,0.2);">
+        <p style="position:absolute; bottom:30px; color:#ccc; font-size:0.8rem;">แตะที่ใดก็ได้เพื่อปิด</p>
+    </div>
+    <script>
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script'); s.src = url;
+                s.onload = resolve; s.onerror = (e) => reject(new Error("Failed to load script: " + url));
+                document.head.appendChild(s);
+            });
+        }
+        const LIFF_ID = "2008959901-etZ1uvnq";
+        const API_BASE = "https://checkinstaffvelvet.velvetbangsaen.workers.dev";
+        const MONTH_MAP = {
+            'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5,
+            'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11,
+            'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3, 'พฤษภาคม': 4, 'มิถุนายน': 5,
+            'กรกฎาคม': 6, 'สิงหาคม': 7, 'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11,
+            'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11,
+            'january': 0, 'february': 1, 'march': 2, 'april': 3, 'may': 4, 'june': 5, 'july': 6, 'august': 7, 'september': 8, 'october': 9, 'november': 10, 'december': 11
+        };
+        let USER_ID = null; let MY_NICKNAME = ""; let ALL_EMPLOYEES = []; let DETECTED_ISO = null;
+        let IS_SUSPICIOUS = false; let SUSPICIOUS_NOTE = ""; let SELECTED_ITEMS = [];
+        const debugLog = (m) => { console.log("[DEBUG]", m); const lt = document.getElementById('loadingText'); if (lt) lt.innerText = m; };
+        window.onerror = function (msg, url, line) {
+            console.error("Window Error:", msg, url, line);
+            alert("⚠️ Error: " + msg + "\\nLine: " + line);
+            showLoad(false); return false;
+        };
+        async function initLIFF() {
+            try {
+                debugLog("กำลังเชื่อมต่อ LINE...");
+                const timeoutTimer = setTimeout(() => {
+                    if (!USER_ID) { debugLog("LINE ช้ามาก... กดปุ่มด้านล่างเพื่อข้ามครับ"); document.getElementById('bypassBtn').style.display = 'block'; }
+                }, 6000);
+                const initPromise = liff.init({ liffId: LIFF_ID });
+                const timeoutPromise = new Promise((_, r) => setTimeout(() => r(new Error("LIFF Timeout")), 15000));
+                await Promise.race([initPromise, timeoutPromise]);
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                const profile = await liff.getProfile();
+                USER_ID = profile.userId;
+                document.getElementById('lineImg').src = profile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+                document.getElementById('lineName').innerText = profile.displayName;
+                clearTimeout(timeoutTimer);
+                await checkD1();
+            } catch (e) {
+                console.error("LIFF Init Error:", e);
+                debugLog("เริ่มระบบไม่สำเร็จ: " + e.message);
+                document.getElementById('bypassBtn').style.display = 'block';
+            }
+        }
+        async function checkD1Manual() {
+            const nick = prompt("ใส่ชื่อเล่นภาษาอังกฤษ:"); if (!nick) return;
+            USER_ID = "MANUAL_" + nick; MY_NICKNAME = nick;
+            document.getElementById('lineName').innerText = nick + " (Manual)";
+            document.getElementById('bypassBtn').style.display = 'none';
+            await checkD1();
+        }
+        async function checkD1() {
+            try {
+                showLoad("กำลังเช็คชื่อพนักงาน...");
+                const r = await fetch(`${API_BASE}/api/check_uid?uid=${USER_ID}`);
+                const d = await r.json();
+                if (d.success) {
+                    MY_NICKNAME = d.nickname; SELECTED_ITEMS = [{ uid: USER_ID, nickname: MY_NICKNAME }];
+                    updateSelectionUI(); document.getElementById('d1Nick').innerText = MY_NICKNAME;
+                    document.getElementById('attendanceArea').style.opacity = '1';
+                    document.getElementById('attendanceArea').style.pointerEvents = 'auto'; showLoad(false);
+                } else {
+                    if (USER_ID.startsWith("MANUAL_")) {
+                        await fetch(`${API_BASE}/api/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: USER_ID, nickname: MY_NICKNAME }) });
+                        await checkD1();
+                    } else { document.getElementById('regModal').style.display = 'flex'; showLoad(false); }
+                }
+            } catch (e) { alert("🔴 ติดต่อเซิร์ฟเวอร์ไม่ได้: " + e.message); showLoad(false); }
+        }
+        document.getElementById('fileInput').onchange = async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const imgUrl = ev.target.result; document.getElementById('previewImg').src = imgUrl;
+                document.getElementById('previewImg').style.display = 'block'; document.getElementById('placeholder').style.display = 'none';
+                await runOCR(imgUrl);
+            };
+            reader.readAsDataURL(file);
+        };
+        async function runOCR(imgUrl) {
+            showLoad("AI กำลังแกะข้อมูล...");
+            let worker = null;
+            try {
+                if (typeof Tesseract === 'undefined') { await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'); }
+                worker = await Tesseract.createWorker('tha+eng');
+                const img = new Image(); img.src = imgUrl; await new Promise(r => img.onload = r);
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const cropH = img.height * 0.3; const cropY = img.height * 0.7;
+                canvas.width = img.width; canvas.height = cropH;
+                ctx.drawImage(img, 0, cropY, img.width, cropH, 0, 0, canvas.width, canvas.height);
+                const result = await worker.recognize(canvas.toDataURL());
+                let text = result.data.text;
+                if (text.length < 10) {
+                    ctx.filter = 'invert(1) contrast(1.5) grayscale(1)';
+                    ctx.drawImage(img, 0, cropY, img.width, cropH, 0, 0, canvas.width, canvas.height);
+                    const result2 = await worker.recognize(canvas.toDataURL()); text += " " + result2.data.text;
+                }
+                parseTimestamp(text);
+            } catch (err) { alert("❌ AI ทำงานพลาด: " + err.message); }
+            finally { if (worker) await worker.terminate(); showLoad(false); }
+        }
+        function parseTimestamp(rawText) {
+            const text = rawText.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+            const dateRe = /(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์|อาทิตย์)?[\s\(\),]*(\d{1,2})[\s\.\/-]*([ก-๙\w\.]+?)[\s\.\/-]*(\d{4})/gi;
+            const numericDateRe = /(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{4})/g;
+            const timeRe = /(\d{1,2})[:\.](\d{1,2})(?:[:\.](\d{1,2}))?[\s\(\)]*(local|[AaPp]\.?[Mm]\.?)?/gi;
+            let mD = [...text.matchAll(dateRe)]; if (mD.length === 0) mD = [...text.matchAll(numericDateRe)];
+            const mT = [...text.matchAll(timeRe)];
+            if (mD.length === 0 || mT.length === 0) { alert("⚠️ อ่านวันเวลาไม่เจอ!"); return; }
+            const now = new Date(); let best = null; let maxScore = -999999;
+            for (const dM of mD) {
+                for (const tM of mT) {
+                    try {
+                        let d, m, y;
+                        if (dM[1] && dM[2] && dM[3]) { d = parseInt(dM[1]); m = fuzzyMonth(dM[2].toLowerCase().trim().replace(/[.]/g, '')); y = parseInt(dM[3]); }
+                        else { d = parseInt(dM[1]); m = parseInt(dM[2]) - 1; y = parseInt(dM[3]); }
+                        let h = parseInt(tM[1]); const min = parseInt(tM[2]); const s = parseInt(tM[3] || 0);
+                        const ampm = tM[4] ? tM[4].toLowerCase().replace(/[.]/g, '') : null;
+                        if (ampm === 'pm' && h < 12) h += 12; if (ampm === 'am' && h === 12) h = 0;
+                        const fY = (y > 2400) ? (y - 543) : y; const dObj = new Date(fY, m, d, h, min, s);
+                        if (isNaN(dObj.getTime())) continue;
+                        const diffSec = Math.abs(now - dObj) / 1000;
+                        let score = 100000 - (diffSec / 60);
+                        if (tM[4] && tM[4].toLowerCase().includes("local")) score += 50000;
+                        if (dM[0].match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์|อาทิตย์/i)) score += 30000;
+                        if (score > maxScore) { maxScore = score; best = { obj: dObj, d, m, y, h, min, s }; }
+                    } catch (e) { }
+                }
+            }
+            if (best) {
+                DETECTED_ISO = best.obj.toISOString(); const diff = Math.abs(now - best.obj) / 60000;
+                IS_SUSPICIOUS = diff > 10; SUSPICIOUS_NOTE = IS_SUSPICIOUS ? `เวลาห่าง ${Math.round(diff)} นาที` : "";
+                const yD = (best.y > 2400) ? best.y : best.y + 543;
+                document.getElementById('detectedDate').innerText = `${best.d}/${best.m + 1}/${yD}`;
+                document.getElementById('detectedTime').innerText = `${best.h.toString().padStart(2, '0')}:${best.min.toString().padStart(2, '0')}:${best.s.toString().padStart(2, '0')}`;
+                document.getElementById('infoBox').style.display = 'block'; document.getElementById('submitBtn').disabled = false;
+            } else { alert("AI แกะข้อมูลไม่ได้ครับ"); }
+        }
+        function fuzzyMonth(s) {
+            if (MONTH_MAP[s] !== undefined) return MONTH_MAP[s];
+            const sub = s.substring(0, 3); if (MONTH_MAP[sub] !== undefined) return MONTH_MAP[sub];
+            const n = parseInt(s); if (!isNaN(n) && n >= 1 && n <= 12) return n - 1;
+            return 0;
+        }
+        async function saveLog() {
+            showLoad("กำลังส่งข้อมูล...");
+            try {
+                const img = document.getElementById('previewImg'); const compressed = await compressImage(img);
+                const targetUids = SELECTED_ITEMS.map(i => i.uid);
+                const r = await fetch(`${API_BASE}/api/log`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: USER_ID, timestamp: DETECTED_ISO, image: compressed, is_suspicious: IS_SUSPICIOUS, note: SUSPICIOUS_NOTE, uids: targetUids }) });
+                if (r.ok) { alert("✅ บันทึกสำเร็จ!"); switchTab('hist'); } else throw new Error("Server Error");
+            } catch (e) { alert("❌ พลาด: " + e.message); } finally { showLoad(false); }
+        }
+        async function compressImage(img) {
+            return new Promise((res) => {
+                const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d');
+                let w = img.naturalWidth; let h = img.naturalHeight; const max = 1200;
+                if (w > h) { if (w > max) { h *= max / w; w = max; } } else { if (h > max) { w *= max / h; h = max; } }
+                cvs.width = w; cvs.height = h; ctx.drawImage(img, 0, 0, w, h);
+                res(cvs.toDataURL('image/jpeg', 0.7));
+            });
+        }
+        async function fetchLogs() {
+            const tbody = document.getElementById('logTableBody'); tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px;">โหลด...</td></tr>';
+            try {
+                const r = await fetch(`${API_BASE}/api/get_logs`); const d = await r.json(); tbody.innerHTML = '';
+                if (!d || d.length === 0) { tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px;">ว่าง</td></tr>'; return; }
+                d.forEach(l => {
+                    const tr = document.createElement('tr'); if (l.is_suspicious) tr.style.background = '#fff1f2';
+                    tr.innerHTML = `<td style="display:flex; align-items:center; gap:12px; padding:12px;">${l.image_key ? `<img src="${API_BASE}/api/get_image?key=${l.image_key}" style="width:45px;height:45px;border-radius:10px;object-fit:cover;" onclick="openZoom(this.src)">` : ''}<div><b>${l.nickname}</b><br><small>${l.check_note || ""}</small></div></td><td>${new Date(l.timestamp).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })}</td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="2">Error</td></tr>'; }
+        }
+        function switchTab(t) {
+            document.getElementById('mainApp').style.display = (t === 'in' ? 'block' : 'none'); document.getElementById('historyArea').style.display = (t === 'hist' ? 'block' : 'none');
+            document.getElementById('tabIn').className = (t === 'in' ? 'tab-btn active' : 'tab-btn'); document.getElementById('tabHist').className = (t === 'hist' ? 'tab-btn active' : 'tab-btn');
+            if (t === 'hist') fetchLogs();
+        }
+        function openZoom(s) { document.getElementById('zoomImg').src = s; document.getElementById('zoomModal').style.display = 'flex'; }
+        function showLoad(t) {
+            const o = document.getElementById('loadingOverlay');
+            if (t === false) o.style.display = 'none'; else { document.getElementById('loadingText').innerText = t; o.style.display = 'flex'; }
+        }
+        async function openMultiSelect() {
+            showLoad("โหลดรายชื่อ...");
+            try { const r = await fetch(`${API_BASE}/api/get_employees`); ALL_EMPLOYEES = await r.json(); renderEmployeeList(); document.getElementById('multiModal').style.display = 'flex'; }
+            catch (e) { alert(e.message); } finally { showLoad(false); }
+        }
+        function renderEmployeeList(q = '') {
+            const c = document.getElementById('employeeChecklist'); c.innerHTML = ''; const low = q.toLowerCase();
+            ALL_EMPLOYEES.filter(e => e.nickname.toLowerCase().includes(low)).forEach(e => {
+                const l = document.createElement('label'); l.style = "display:flex;align-items:center;padding:12px;border-bottom:1px solid #eee;";
+                const is = SELECTED_ITEMS.some(i => i.uid === e.uid);
+                l.innerHTML = `<input type="checkbox" ${is ? 'checked' : ''} onchange="toggleItemSelection('${e.uid}', this.checked, '${e.nickname}')" style="width:20px;height:20px;margin-right:12px;"><b>${e.nickname}</b>`;
+                c.appendChild(l);
+            });
+        }
+        function toggleItemSelection(u, c, n) { if (c) { if (!SELECTED_ITEMS.some(i => i.uid === u)) SELECTED_ITEMS.push({ uid: u, nickname: n }); } else { SELECTED_ITEMS = SELECTED_ITEMS.filter(i => i.uid !== u); } }
+        function confirmSelection() { updateSelectionUI(); document.getElementById('multiModal').style.display = 'none'; }
+        function updateSelectionUI() { const n = SELECTED_ITEMS.map(i => i.nickname); document.getElementById('d1Nick').innerText = n.join(', '); document.getElementById('selectedCount').innerText = SELECTED_ITEMS.length; }
+        async function doRegister() {
+            const n = document.getElementById('regNick').value.trim(); if (!/^[a-zA-Z0-9_]{2,20}$/.test(n)) { document.getElementById('regError').style.display = 'block'; return; }
+            showLoad("บันทึก...");
+            try { await fetch(`${API_BASE}/api/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: USER_ID, nickname: n }) }); document.getElementById('regModal').style.display = 'none'; await checkD1(); }
+            catch (e) { alert(e.message); showLoad(false); }
+        }
+        async function downloadExcel() {
+            showLoad("เตรียม Excel...");
+            try {
+                const r = await fetch(`${API_BASE}/api/get_logs`); const d = await r.json();
+                let csv = "\ufeffName,Time,Note\n"; d.forEach(l => { csv += `${l.nickname},${new Date(l.timestamp).toLocaleString('th-TH')},${l.check_note || ''}\n`; });
+                const b = new Blob([csv], { type: 'text/csv' }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = 'Report.csv'; a.click();
+            } catch (e) { } finally { showLoad(false); }
+        }
+        async function downloadPDF() {
+            showLoad("สร้าง PDF...");
+            try {
+                if (typeof window.jspdf === 'undefined') { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js'); }
+                const { jsPDF } = window.jspdf; const doc = new jsPDF(); const r = await fetch(`${API_BASE}/api/get_logs`); const d = await r.json();
+                doc.text("Report", 15, 20); doc.autoTable({ startY: 25, head: [['Name', 'Time', 'Note']], body: d.map(l => [l.nickname, new Date(l.timestamp).toLocaleString('th-TH'), l.check_note || "-"]) });
+                doc.save("Report.pdf");
+            } catch (e) { } finally { showLoad(false); }
+        }
+        initLIFF();
+    </script>
+</body>
+
+</html>

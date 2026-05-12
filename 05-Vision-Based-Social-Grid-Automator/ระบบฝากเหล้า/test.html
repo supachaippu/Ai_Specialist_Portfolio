@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบฝากเหล้า</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .page-section { display: none; } /* ซ่อนทุกหน้าไว้ก่อน */
+        .btn { padding: 10px 20px; background: #06c755; color: white; border: none; border-radius: 5px; margin: 5px; }
+        .btn-danger { background: #dc3545; }
+        .card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <h2 id="user-greeting">กำลังโหลด...</h2>
+
+    <div id="customer-view" class="page-section">
+        <h3>🍾 รายการเหล้าของคุณ</h3>
+        <div id="my-bottles-list">Loading...</div>
+        <hr>
+        <button onclick="showManagerLogin()" style="background:#333; font-size:12px;">Admin Login</button>
+    </div>
+
+    <div id="staff-view" class="page-section">
+        <h3>👷‍♂️ เมนูพนักงาน</h3>
+        <button class="btn">รับฝากเหล้า</button>
+        <button class="btn">ทำเรื่องเบิกเหล้า</button>
+    </div>
+
+    <div id="manager-login-modal" class="page-section">
+        <h3>🔒 ผู้จัดการเข้าสู่ระบบ</h3>
+        <input type="password" id="manager-pw" placeholder="ใส่รหัสผ่าน..." style="padding:10px;">
+        <button class="btn" onclick="verifyManager()">เข้าสู่ระบบ</button>
+        <button class="btn btn-danger" onclick="location.reload()">ยกเลิก</button>
+    </div>
+
+    <div id="manager-dashboard" class="page-section">
+        <h3>👑 จัดการสิทธิ์ Staff</h3>
+        <p>UID ของคุณ: <span id="my-uid-display"></span></p>
+        
+        <div class="card">
+            <span>นาย A (UID: U123...)</span>
+            <button class="btn btn-danger" onclick="toggleStaff('U123...', false)">ลบสิทธิ์</button>
+        </div>
+        
+        <div class="card">
+            <h4>เพิ่ม Staff ใหม่</h4>
+            <input type="text" id="new-staff-uid" placeholder="ใส่ UID พนักงาน">
+            <button class="btn" onclick="addStaff()">เพิ่มสิทธิ์</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUserUID = "";
+        
+        // --- 1. เริ่มทำงานทันทีที่เปิดเว็บ ---
+        async function main() {
+            await liff.init({ liffId: "YOUR_LIFF_ID_HERE" }); // ใส่ LIFF ID ของคุณ
+            
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
+
+            const profile = await liff.getProfile();
+            currentUserUID = profile.userId;
+            document.getElementById('user-greeting').innerText = `สวัสดีคุณ ${profile.displayName}`;
+            document.getElementById('my-uid-display').innerText = currentUserUID;
+
+            // เช็คว่าเป็น Staff หรือไม่? (ยิงไปถาม Backend Cloudflare)
+            checkUserRole(currentUserUID);
+        }
+
+        // --- 2. ฟังก์ชันเช็คสิทธิ์ (ยิงไป Python Backend) ---
+        async function checkUserRole(uid) {
+            // จำลองการดึงข้อมูล (ของจริงต้อง fetch ไปที่ Cloudflare Worker)
+            // const response = await fetch('https://your-worker.workers.dev/api/check-role', { method: 'POST', body: JSON.stringify({uid}) });
+            // const data = await response.json();
+            
+            // สมมติว่า Backend ตอบกลับมาว่า role = 'customer'
+            let role = 'customer'; 
+            
+            // ถ้าเป็น Staff ให้โชว์หน้า Staff
+            if (role === 'staff') {
+                document.getElementById('staff-view').style.display = 'block';
+            }
+            
+            // เปิดหน้า Customer เสมอ (หรือจะซ่อนก็ได้ถ้าเป็น Staff)
+            document.getElementById('customer-view').style.display = 'block';
+        }
+
+        // --- 3. ฟังก์ชัน Manager Login (ใส่รหัส) ---
+        function showManagerLogin() {
+            hideAll();
+            document.getElementById('manager-login-modal').style.display = 'block';
+        }
+
+        async function verifyManager() {
+            const pw = document.getElementById('manager-pw').value;
+            
+            // ยิงไปเช็ครหัสที่ Backend
+            // const res = await fetch('.../api/manager-login', { ... body: { password: pw } })
+            
+            // จำลองว่ารหัสถูกคือ '1234'
+            if (pw === '1234') {
+                alert('ยินดีต้อนรับผู้จัดการ!');
+                hideAll();
+                document.getElementById('manager-dashboard').style.display = 'block';
+            } else {
+                alert('รหัสผิด!');
+            }
+        }
+
+        function hideAll() {
+            document.querySelectorAll('.page-section').forEach(el => el.style.display = 'none');
+        }
+
+        // --- เริ่มรันระบบ ---
+        main();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ocean V88 - พรีเมียมซีฟู้ด</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        .menu-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            align-items: center;
+        }
+
+        .menu-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            object-fit: cover;
+        }
+
+        .room-tag {
+            font-size: 0.8rem;
+            padding: 2px 10px;
+            border-radius: 50px;
+            font-weight: 700;
+        }
+
+        .tag-free {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .tag-busy {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .manager-only {
+            display: none;
+            border: 2px dashed var(--accent);
+            padding: 15px;
+            border-radius: 20px;
+            background: #fffcf5;
+            margin-top: 15px;
+        }
+
+        .manager-active .manager-only {
+            display: block;
+        }
+
+        .mgr-badge {
+            background: #333;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .reward-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #eee;
+        }
+
+        /* Floor Plan Styles */
+        .floor-plan-container {
+            position: relative;
+            width: 100%;
+            height: 550px;
+            background: #f0f4f8;
+            border-radius: 20px;
+            border: 2px solid #ddd;
+            margin-top: 15px;
+            overflow: auto;
+        }
+
+        .ocean-bg {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to bottom, #0077be, #48cae4);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .table-node {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-node:active {
+            transform: scale(0.9);
+        }
+
+        .table-free {
+            background: #27ae60;
+            border: 2px solid #1e8449;
+        }
+
+        .table-busy {
+            background: #e74c3c;
+            border: 2px solid #c0392b;
+        }
+
+        .table-selected {
+            background: #2980b9 !important;
+            border: 3px solid #fff !important;
+            box-shadow: 0 0 15px rgba(41, 128, 185, 0.5);
+            transform: scale(1.1);
+        }
+
+        .table-label {
+            position: absolute;
+            bottom: -18px;
+            color: #333;
+            font-size: 0.65rem;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" style="padding-bottom: 180px;">
+
+        <!-- หน้าที่ 1: หน้าหลัก (Home) -->
+        <div id="page-home" class="page-content active">
+            <div class="header" id="logo-header" onclick="managerTap()">
+                <h1 id="shop-name">Ocean V88 Seafood</h1>
+                <p>ระดับพรีเมียม สดจากทะเล <span id="mgr-indicator" class="mgr-badge"
+                        style="display:none;">MANAGER</span></p>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200"
+                        style="border-radius: 50%; width: 70px; height: 70px; border: 3px solid var(--accent); object-fit: cover;">
+                    <div style="flex:1">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div>
+                                <h2 style="font-size: 1.1rem; margin-bottom: 2px;">คุณ <span id="user-name">มงคล</span>
+                                </h2>
+                                <p id="user-phone" style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">
+                                    081-XXX-4567</p>
+                            </div>
+                            <div id="points-display">
+                                <span
+                                    style="background: var(--accent); color: white; padding: 4px 15px; border-radius: 50px; font-weight: 700; font-size: 0.85rem;">
+                                    <i class="fas fa-crown"></i> <span id="user-points">0</span>
+                                </span>
+                            </div>
+                        </div>
+                        <p id="user-bday-info"
+                            style="font-size: 0.8rem; color: var(--success); font-weight: 700; display: none; margin-top:3px;">
+                            <i class="fas fa-birthday-cake"></i> วันเกิด: <span id="display-bday">-</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="booking-actions" class="card" style="padding: 15px; margin-top: 10px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="big-btn btn-blue" style="width: 100%; margin: 0;" onclick="showPage('page-booking')">
+                        <i class="fas fa-calendar-alt"></i> จองโต๊ะ / จัดเลี้ยง
+                    </button>
+                </div>
+                <div id="user-tickets-list" style="margin-top: 15px;"></div>
+            </div>
+
+            <!-- Quick VIP/Karaoke Status -->
+            <div id="vip-status-home" style="margin-top: 15px;">
+                <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary); margin-bottom: 10px;">
+                    <i class="fas fa-microphone-alt"></i> สถานะห้อง VIP / คาราโอเกะ:
+                </div>
+                <div id="vip-list-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <!-- VIP room statuses will be rendered here -->
+                </div>
+            </div>
+
+            <div id="tier3-rooms" class="card">
+                <div class="card-title"><i class="fas fa-map-marked-alt"></i> แผนผังร้าน (เรียลไทม์)</div>
+                <div class="floor-plan-container">
+                    <div class="ocean-bg"><i class="fas fa-water"></i> ทะเล (หน้าหาด)</div>
+                    <div id="visual-map"></div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px; font-size: 0.8rem;">
+                    <span><i class="fas fa-square" style="color:#27ae60"></i> ว่าง</span>
+                    <span><i class="fas fa-square" style="color:#e74c3c"></i> เต็ม/จอง</span>
+                </div>
+                <div class="manager-only" style="text-align:center;">
+                    <p
+                        style="font-weight: 700; color: var(--accent); margin-top: 10px; margin-bottom: 5px; font-size: 0.85rem;">
+                        🛠️ อัปเดตผัง: จิ้มที่โต๊ะเพื่อเปลี่ยนสถานะ ว่าง/เต็ม
+                    </p>
+                </div>
+            </div>
+
+            <!-- Manager: Daily Booking List -->
+            <div class="manager-only card" style="background: #fff; border-color: var(--accent);">
+                <div class="card-title" style="color: var(--accent);"><i class="fas fa-list-check"></i>
+                    รายการจองวันนี้
+                </div>
+                <div id="mgr-booking-list" style="font-size: 0.9rem;"></div>
+                <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; text-align: center;">
+                    <button class="mini-btn" style="background: #333; width: auto; padding: 10px 20px;"
+                        onclick="searchByPhone()">
+                        <i class="fas fa-phone"></i> ค้นหาด้วยเบอร์โทร (Walk-in)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manager: Broadcast Message (New!) -->
+            <div class="manager-only card" style="background: #fff; border-color: var(--primary);">
+                <div class="card-title" style="color: var(--primary);"><i class="fas fa-bullhorn"></i> ส่งข้อความ
+                    Broadcast (LINE)</div>
+                <div style="margin-bottom: 15px;">
+                    <label
+                        style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 5px;">เลือกกลุ่มลูกค้า
+                        (Audience):</label>
+                    <select id="bc-audience"
+                        style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ddd;">
+                        <option value="all">ส่งหาทุกคน (All Members)</option>
+                        <option value="active">เฉพาะลูกค้าที่เคยมาทานในเดือนนี้</option>
+                        <option value="gold">เฉพาะสมาชิก Gold (2,000+ แต้ม)</option>
+                        <option value="birthday">เฉพาะลูกค้าที่เกิดในเดือนนี้</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label
+                        style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 5px;">ข้อความ:</label>
+                    <textarea id="bc-message" rows="3"
+                        style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-family: inherit;"
+                        placeholder="เช่น โปรโมชั่นกุ้งมังกรวันนี้ ลด 20% เฉพาะคุณ!"></textarea>
+                </div>
+                <button class="big-btn btn-blue" style="font-size: 1rem; padding: 12px;" onclick="sendBroadcast()">
+                    <i class="fas fa-paper-plane"></i> ยืนยันการส่ง Broadcast
+                </button>
+            </div>
+
+            <!-- Manager: Rewards Management -->
+            <div class="manager-only card" style="background: #fff; border-color: var(--accent);">
+                <div class="card-title" style="color: var(--accent);"><i class="fas fa-gift"></i> จัดการของรางวัล
+                </div>
+                <div id="mgr-rewards-list"></div>
+                <button class="mini-btn" style="margin-top: 10px;" onclick="addRewardDialog()">
+                    <i class="fas fa-plus"></i> เพิ่มของรางวัลใหม่
+                </button>
+            </div>
+
+            <div class="card bday-box">
+                <p>🎁 บันทึกวันเกิดเพื่อรับสิทธิพิเศษ</p>
+                <input type="date" id="input-bday" style="margin-top: 10px;">
+                <button class="mini-btn" style="margin-top: 5px;" onclick="saveBirthday()">บันทึก</button>
+            </div>
+        </div>
+
+        <!-- หน้าที่ 2: เมนูอาหาร -->
+        <div id="page-menu" class="page-content">
+            <div class="header">
+                <h1>เมนูแนะนำ</h1>
+                <p>คัดพิเศษ สดใหม่ และยอดนิยมที่สุด</p>
+            </div>
+            <div id="recommended-menu-list">
+                <!-- Dynamic Items -->
+            </div>
+            <button class="big-btn btn-blue" style="margin-top: 20px;"
+                onclick="showPage('page-home')">กลับหน้าหลัก</button>
+        </div>
+
+        <!-- หน้าที่ 3: จองโต๊ะ -->
+        <div id="page-booking" class="page-content">
+            <div class="header">
+                <h1>จองโต๊ะ / จัดเลี้ยง</h1>
+                <p>ระบุความต้องการของคุณ</p>
+            </div>
+
+            <!-- แจ้งเตือนถ้ามีการจองอยู่แล้ว -->
+            <div id="booking-page-ticket" class="card"
+                style="display:none; background: #e3f2fd; border: 1px solid #bbdefb;">
+                <p style="font-weight:700; color:var(--primary); margin-bottom:10px;"><i class="fas fa-info-circle"></i>
+                    คุณมีคิวการจองที่รออยู่:</p>
+                <div id="booking-mini-list"></div>
+                <p style="font-size:0.8rem; color:#666; margin-top:5px;">* สามารถกด "เพิ่มอาหาร"
+                    เพื่อบันทึกเมนูไว้ล่วงหน้า</p>
+            </div>
+
+            <div id="booking-step-1" class="card">
+                <label>1. เลือกวันที่:</label>
+                <input type="date" id="booking-date"
+                    style="margin-bottom:15px; width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
+
+                <label>2. จำนวนแขก:</label>
+                <select id="booking-guests" onchange="updateGuestInput()"
+                    style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
+                    <option value="2">1-2 ท่าน</option>
+                    <option value="4">3-4 ท่าน</option>
+                    <option value="8">5-8 ท่าน</option>
+                    <option value="12">10-12 ท่าน</option>
+                    <option value="custom">ระบุจำนวนเอง (จัดเลี้ยง)</option>
+                </select>
+                <div id="custom-guests-area" style="display:none; margin-top:10px;">
+                    <input type="number" id="booking-guests-custom" placeholder="ระบุจำนวนท่าน"
+                        style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
+                </div>
+
+                <button class="big-btn btn-blue" style="margin-top:20px;" onclick="goToStep2()">
+                    ถัดไป: เลือกโต๊ะบนแผนผัง <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <div id="booking-step-2" class="card" style="display:none;">
+                <div style="text-align:center; margin-bottom:15px;">
+                    <p style="font-weight:700; color:var(--primary);">3. เลือกโต๊ะที่ต้องการ (เลือกได้หลายโต๊ะ)</p>
+                    <div style="font-size:0.8rem; color:#666;">จำนวนแขก: <span id="display-guests-count"></span> ท่าน
+                    </div>
+                </div>
+
+                <div class="floor-plan-container" style="height:300px; background:#fff; border:1px solid #eee;">
+                    <div class="ocean-bg"><i class="fas fa-water"></i> ทะเล (หน้าหาด)</div>
+                    <div id="booking-visual-map"></div>
+                </div>
+
+                <div id="selected-tables-info"
+                    style="margin-top:15px; padding:10px; background:#e3f2fd; border-radius:10px; display:none;">
+                    <p style="font-weight:700; font-size:0.9rem; color:#1976d2; margin-bottom:5px;">โต๊ะที่เลือก: <span
+                            id="display-selected-tables"></span></p>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="mini-btn" style="background:#ccc; width:auto; padding:10px 15px;"
+                        onclick="goToStep1()"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button>
+                    <button class="big-btn btn-blue" style="flex:1; margin:0;" onclick="startPreOrder()">ยืนยันโต๊ะ &
+                        สั่งอาหาร <i class="fas fa-utensils"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าที่ 5: สั่งอาหารล่วงหน้า -->
+    <div id="page-preorder" class="page-content">
+        <div class="header">
+            <h1>สั่งอาหารล่วงหน้า</h1>
+        </div>
+        <div id="preorder-list"></div>
+        <div class="card" style="position: sticky; bottom: 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1);">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                <span style="font-weight:700;">ยอดรวมอาหาร:</span>
+                <span id="total-price" style="font-weight:700;">฿0</span>
+            </div>
+            <div id="preorder-pp-tip"
+                style="text-align: right; margin-top: -5px; margin-bottom: 10px; font-size: 0.85rem; color: var(--accent); display: none;">
+                🔥 เฉลี่ยเพียงท่านละ <span id="preorder-avg-price">0</span>.- เท่านั้น!
+            </div>
+            <button id="preorder-confirm-btn" class="big-btn btn-blue" onclick="showPayment()">ยืนยันจองโต๊ะ
+                (ไม่ต้องมัดจำ)</button>
+            <button class="mini-btn" style="background: #ccc; margin-top: 10px;"
+                onclick="showPage('page-booking')">ย้อนกลับ</button>
+        </div>
+    </div>
+
+    <!-- หน้าที่ 6: ชำระมัดจำ -->
+    <div id="page-payment" class="page-content">
+        <div class="header">
+            <h1>ชำระมัดจำ</h1>
+        </div>
+        <div class="card">
+            <h4 style="color: var(--primary); margin-bottom: 10px;"><i class="fas fa-shopping-basket"></i>
+                สรุปรายการอาหาร:</h4>
+            <div id="payment-order-summary" style="font-size: 0.9rem; color: #555;">
+                <!-- สรุปรายการจะแสดงตรงนี้ -->
+            </div>
+            <hr style="margin: 10px 0; border: none; border-top: 1px dashed #ccc;">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--primary);">
+                <span>ยอดรวมทั้งหมด:</span>
+                <span id="payment-total-price">฿0</span>
+            </div>
+            <div id="payment-pp-tip"
+                style="text-align: right; margin-top: 5px; font-size: 0.85rem; color: var(--accent); display: none;">
+                🔥 เฉลี่ยเพียงท่านละ <span id="payment-avg-price">0</span>.- เท่านั้น!
+            </div>
+        </div>
+
+        <div class="card" style="text-align:center;">
+            <p id="payment-deposit-desc" style="margin-bottom: 10px; font-weight: 600; color: var(--accent);">
+                สแกนจ่ายค่ามัดจำ 30% ของยอดสั่งอาหาร และแนบสลิปด้านล่าง</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PAYMENT"
+                style="margin-bottom:15px; border: 5px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 0.8rem; font-weight: 700;">แนบสลิปที่นี่:</label>
+                <input type="file" id="slip-upload" style="width: 100%; margin-top: 5px;">
+            </div>
+            <button class="big-btn btn-blue" onclick="finishBooking()">ส่งสลิปเพื่อยืนยันการจอง</button>
+        </div>
+    </div>
+
+    <!-- หน้าที่ 4: บริการ/ห้อง (Gallery) -->
+    <div id="page-gallery" class="page-content">
+        <div class="header">
+            <h1>บรรยากาศ & ห้องรับรอง</h1>
+            <p>ระดับพรีเมียม เพื่อมื้อพิเศษของคุณ</p>
+        </div>
+
+        <div id="page-gallery-content">
+            <!-- ควิกเช็กห้องว่าง -->
+            <div id="rooms-status-gallery"></div>
+        </div>
+
+        <button class="big-btn btn-blue" style="margin-top: 10px; margin-bottom: 30px;"
+            onclick="showPage('page-home', 'tab-home')">กลับหน้าหลัก</button>
+
+        <button class="big-btn btn-blue" style="margin-top: 10px; margin-bottom: 30px;"
+            onclick="showPage('page-home', 'tab-home')">กลับหน้าหลัก</button>
+    </div>
+
+    <!-- หน้าที่ 7: รายการของรางวัล -->
+    <div id="page-rewards" class="page-content">
+        <div class="header">
+            <h1>แลกของรางวัล</h1>
+            <p>ใช้คะแนนแลกความสุข</p>
+        </div>
+        <div id="customer-rewards-list"></div>
+        <button class="big-btn btn-blue" onclick="showPage('page-home')">กลับ</button>
+    </div>
+
+    </div>
+
+    <!-- หน้าที่ 8: ตั๋วการจอง (Booking Ticket) -->
+    <div id="page-ticket" class="page-content">
+        <div class="header">
+            <h1>ตั๋วการจองของคุณ</h1>
+            <p>โชว์หน้านี้ให้พนักงานเมื่อถึงร้านครับ</p>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 25px; border: 2px solid var(--primary);">
+            <div style="background: var(--primary); color: white; padding: 20px; text-align: center;">
+                <i class="fas fa-check-circle fa-3x" style="margin-bottom: 10px;"></i>
+                <h2 style="font-size: 1.8rem; margin: 0;">ยืนยันการจองแล้ว</h2>
+                <p style="margin: 5px 0 0; opacity: 0.9;">ร้าน Ocean V88 Seafood</p>
+            </div>
+
+            <div style="padding: 25px;">
+                <div style="border-bottom: 1px dashed #ccc; padding-bottom: 15px; margin-bottom: 15px;">
+                    <p style="color: #666; font-size: 1rem; margin-bottom: 5px;">วันที่จอง:</p>
+                    <h3 id="t-date" style="font-size: 1.4rem; color: #333;">-</h3>
+                </div>
+
+                <div
+                    style="display: flex; gap: 20px; border-bottom: 1px dashed #ccc; padding-bottom: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <p style="color: #666; font-size: 1rem; margin-bottom: 5px;">เวลา:</p>
+                        <h3 id="t-time" style="font-size: 1.4rem; color: #333;">18:30 น.</h3>
+                    </div>
+                    <div style="flex: 1;">
+                        <p style="color: #666; font-size: 1rem; margin-bottom: 5px;">จำนวน:</p>
+                        <h3 id="t-guests" style="font-size: 1.4rem; color: #333;">-</h3>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 1px dashed #ccc; padding-bottom: 15px; margin-bottom: 15px;">
+                    <p style="color: #666; font-size: 1rem; margin-bottom: 5px;">โซน/ที่นั่ง:</p>
+                    <h3 id="t-room" style="font-size: 1.4rem; color: var(--primary);">-</h3>
+                </div>
+
+                <div style="background: #f1f8e9; padding: 15px; border-radius: 15px; margin-bottom: 15px;">
+                    <p style="font-weight: 700; color: var(--success); font-size: 1.1rem; margin-bottom: 5px;">
+                        <i class="fas fa-shopping-basket"></i> รายการอาหารที่สั่ง:
+                    </p>
+                    <div id="t-items-list" style="font-size: 0.9rem; color: #555; text-align: left;">
+                        <!-- รายการอาหารจะขึ้นตรงนี้ -->
+                    </div>
+                </div>
+
+                <button class="mini-btn" style="background:var(--accent); width:100%; padding:12px; margin-bottom:15px;"
+                    id="btn-add-more-food">
+                    <i class="fas fa-plus"></i> สั่งอาหารเพิ่มเข้าโต๊ะนี้
+                </button>
+
+                <div style="background: #fff8e1; padding: 15px; border-radius: 15px; text-align: center;">
+                    <p style="font-weight: 700; color: var(--success); font-size: 1.2rem;">
+                        <i class="fas fa-money-check-alt"></i> ชำระมัดจำแล้ว (30%)
+                    </p>
+                    <p style="color: #666; font-size: 0.9rem;">(นำไปหักลบจากค่าอาหารเต็มจำนวน)</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="big-btn btn-blue" style="margin-top: 20px;" onclick="clearTableSelection()">กลับหน้าหลัก</button>
+    </div>
+
+    <!-- หน้า 8: พิกัดร้าน -->
+    <div id="page-location" class="page-content">
+        <div class="header">
+            <h1>พิกัดร้านเรา</h1>
+            <p>Ripple sea</p>
+        </div>
+        <div class="card" style="padding:0; overflow:hidden; border-radius:15px; margin-bottom: 20px;">
+            <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15504.604724810237!2d100.9161271923067!3d13.278018599427494!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3102b5deb980dc27%3A0xe67db5d9c7dd500c!2sRipple%20sea!5e0!3m2!1sen!2sth!4v1700000000000!5m2!1sen!2sth"
+                width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+        <div class="card">
+            <h3 style="color:var(--primary);"><i class="fas fa-map-marker-alt"></i> Ripple sea</h3>
+            <p style="color:#666; font-size:0.9rem; margin-top:5px;">คลิกที่แผนที่ด้านบนเพื่อนำทางผ่าน Google Maps
+                ได้เลยครับ เดินทางสะดวก ที่จอดรถกว้างขวาง!</p>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <a href="javascript:void(0)" class="tab-item active" id="tab-home"
+            onclick="showPage('page-home', 'tab-home')"><i class="fas fa-home"></i> หน้าแรก</a>
+        <a href="javascript:void(0)" class="tab-item" id="tab-book" onclick="showPage('page-booking', 'tab-book')"><i
+                class="fas fa-calendar-check"></i> จอง</a>
+        <a href="javascript:void(0)" class="tab-item" id="tab-gallery"
+            onclick="showPage('page-gallery', 'tab-gallery')"><i class="fas fa-camera"></i> บริการ</a>
+        <a href="javascript:void(0)" class="tab-item" id="tab-rewards"
+            onclick="showPage('page-rewards', 'tab-rewards')"><i class="fas fa-gift"></i> รางวัล</a>
+        <a href="javascript:void(0)" class="tab-item" id="tab-location"
+            onclick="showPage('page-location', 'tab-location')"><i class="fas fa-map-marker-alt"></i> พิกัด</a>
+    </div>
+
+    <script>
+        const CFG = { shopName: "Ocean V88 Seafood", managerPin: "7777" };
+        const varPrimary = '#004d74';
+        const varAccent = '#b48a32';
+        let rooms = [
+            // Beachfront (Zone A: A1-A10)
+            { id: 'A1', name: 'A1', status: 'ว่าง', x: 20, y: 60, cap: 4 },
+            { id: 'A2', name: 'A2', status: 'ว่าง', x: 80, y: 60, cap: 4 },
+            { id: 'A3', name: 'A3', status: 'ว่าง', x: 140, y: 60, cap: 4 },
+            { id: 'A4', name: 'A4', status: 'ว่าง', x: 200, y: 60, cap: 4 },
+            { id: 'A5', name: 'A5', status: 'ว่าง', x: 260, y: 60, cap: 4 },
+            { id: 'A6', name: 'A6', status: 'ว่าง', x: 20, y: 120, cap: 4 },
+            { id: 'A7', name: 'A7', status: 'ว่าง', x: 80, y: 120, cap: 4 },
+            { id: 'A8', name: 'A8', status: 'ว่าง', x: 140, y: 120, cap: 4 },
+            { id: 'A9', name: 'A9', status: 'ว่าง', x: 200, y: 120, cap: 4 },
+            { id: 'A10', name: 'A10', status: 'ว่าง', x: 260, y: 120, cap: 4 },
+
+            // Indoor (Zone B: B1-B10)
+            { id: 'B1', name: 'B1', status: 'ว่าง', x: 20, y: 200, cap: 4 },
+            { id: 'B2', name: 'B2', status: 'ว่าง', x: 80, y: 200, cap: 4 },
+            { id: 'B3', name: 'B3', status: 'ว่าง', x: 140, y: 200, cap: 4 },
+            { id: 'B4', name: 'B4', status: 'ว่าง', x: 200, y: 200, cap: 4 },
+            { id: 'B5', name: 'B5', status: 'ว่าง', x: 260, y: 200, cap: 4 },
+            { id: 'B6', name: 'B6', status: 'ว่าง', x: 20, y: 260, cap: 4 },
+            { id: 'B7', name: 'B7', status: 'ว่าง', x: 80, y: 260, cap: 4 },
+            { id: 'B8', name: 'B8', status: 'ว่าง', x: 140, y: 260, cap: 4 },
+            { id: 'B9', name: 'B9', status: 'ว่าง', x: 200, y: 260, cap: 4 },
+            { id: 'B10', name: 'B10', status: 'ว่าง', x: 260, y: 260, cap: 4 },
+
+            // VIP / Karaoke (Zone V: 3 Rooms)
+            { id: 'V1', name: 'VIP 1', status: 'ว่าง', x: 20, y: 340, cap: 12 },
+            { id: 'V2', name: 'VIP 2', status: 'ว่าง', x: 140, y: 340, cap: 12 },
+            { id: 'V3', name: 'VIP PRIVATE', status: 'ว่าง', x: 260, y: 340, cap: 20 }
+        ];
+        let menuItems = [
+            { id: 1, name: 'ปลากะพงทอดน้ำปลา', price: 450, img: 'https://images.unsplash.com/photo-1599487488170-d11ec9c173f0?w=200' },
+            { id: 2, name: 'กุ้งแม่น้ำเผา (ไซส์ XL)', price: 890, img: 'https://images.unsplash.com/photo-1551972251-12070d63502a?w=200' },
+            { id: 3, name: 'ปูม้านึ่งสด', price: 750, img: 'https://images.unsplash.com/photo-1514516345957-556ca7d90a29?w=200' },
+            { id: 4, name: 'ต้มยำกุ้งแม่น้ำน้ำข้น', price: 350, img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=200' },
+            { id: 5, name: 'หมึกนึ่งมะนาว', price: 280, img: 'https://images.unsplash.com/photo-1534080362304-469614f9d1d1?w=200' },
+            { id: 6, name: 'หอยเชลล์ย่างเนยกระเทียม', price: 320, img: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=200' },
+            { id: 7, name: 'ปูผัดผงกะหรี่', price: 550, img: 'https://images.unsplash.com/photo-1534604973900-343aff06b3d4?w=200' },
+            { id: 8, name: 'ข้าวผัดปูจานใหญ่', price: 250, img: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=200' },
+            { id: 9, name: 'กุ้งแช่น้ำปลาพรีเมียม', price: 220, img: 'https://images.unsplash.com/photo-1551972251-12070d63502a?w=200' },
+            { id: 10, name: 'หมูสามชั้นทอดน้ำปลา', price: 180, img: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=200' }
+        ];
+        let rewards = [
+            { id: 1, name: 'น้ำส้มคั้นสด 1 เหยือก', points: 100, img: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=100' },
+            { id: 2, name: 'บัตรกำนัล 100 บาท', points: 500, img: 'https://images.unsplash.com/photo-1553531384-cc64ac80f931?w=100' }
+        ];
+        let bookings = [];
+        let isManager = false, cart = [], selectedTableIds = [], currentTicketIdx = null;
+        let currentUser = null;
+
+        async function initApp() {
+            await checkUserLogin();
+            renderRooms();
+            renderManagerBookings();
+            renderManagerRewards();
+            renderCustomerRewards();
+            renderPreOrderMenu();
+            renderRecommendedMenu();
+            renderUserTickets();
+            renderGallery();
+        }
+
+        async function checkUserLogin() {
+            const storedUser = localStorage.getItem('v88_user');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                updateUserProfile();
+            } else {
+                await promptRegistration();
+            }
+        }
+
+        async function promptRegistration() {
+            const { value: formValues } = await Swal.fire({
+                title: 'ลงทะเบียนเข้าใช้งานครั้งแรก',
+                html: `
+                    <div style="text-align:left;">
+                        <label style="font-size:0.8rem; font-weight:700;">ชื่อของคุณ:</label>
+                        <input id="reg-name" class="swal2-input" placeholder="เช่น มงคล" style="margin-top:5px; width:100%; box-sizing:border-box;">
+                        <label style="font-size:0.8rem; font-weight:700; display:block; margin-top:10px;">เบอร์โทรศัพท์ (สิทธิ์ VIP):</label>
+                        <input id="reg-phone" type="tel" class="swal2-input" placeholder="08X-XXX-XXXX" style="margin-top:5px; width:100%; box-sizing:border-box;">
+                    </div>
+                `,
+                focusConfirm: false,
+                allowOutsideClick: false,
+                confirmButtonText: 'เข้าสู่ระบบ',
+                confirmButtonColor: varPrimary,
+                preConfirm: () => {
+                    const name = document.getElementById('reg-name').value;
+                    const phone = document.getElementById('reg-phone').value;
+                    if (!name || !phone) {
+                        Swal.showValidationMessage('กรุณากรอกชื่อและเบอร์โทรศัพท์ให้ครบถ้วนครับ!');
+                        return false;
+                    }
+                    return { name, phone };
+                }
+            });
+
+            if (formValues) {
+                // จำลองการเก็บ UID เมื่อเข้าใช้งานครั้งแรก
+                currentUser = {
+                    uid: 'U' + Date.now().toString(16).toUpperCase(),
+                    name: formValues.name,
+                    phone: formValues.phone,
+                    points: 50
+                };
+                localStorage.setItem('v88_user', JSON.stringify(currentUser));
+                updateUserProfile();
+
+                Swal.fire({
+                    title: 'ยินดีต้อนรับ!',
+                    text: 'ลงทะเบียนสำเร็จ รับฟรีทันที 50 คะแนน!',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }
+
+        function updateUserProfile() {
+            if (currentUser) {
+                const nameEl = document.getElementById('user-name');
+                const phoneEl = document.getElementById('user-phone');
+                const pointsEl = document.getElementById('user-points');
+                if (nameEl) nameEl.innerText = currentUser.name;
+                if (phoneEl) phoneEl.innerText = currentUser.phone;
+                if (pointsEl) pointsEl.innerText = (currentUser.points || 0).toLocaleString();
+            }
+        }
+
+        function renderUserTickets() {
+            const container = document.getElementById('user-tickets-list');
+            const alertBox = document.getElementById('booking-page-ticket');
+            const miniList = document.getElementById('booking-mini-list');
+
+            if (!container) return;
+
+            if (bookings.length === 0) {
+                container.innerHTML = '';
+                if (alertBox) alertBox.style.display = 'none';
+                return;
+            }
+
+            // แสดงหน้าแรก
+            container.innerHTML = bookings.map((b, i) => `
+                <div class="card" style="margin-top: 10px; border-left: 5px solid var(--primary); padding: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <p style="font-weight:700; color:var(--primary);">${b.tableId || 'โต๊ะ'} - ${b.date}</p>
+                            <p style="font-size:0.8rem; color:#666;">เวลา ${b.time} | มัดจำแล้ว</p>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="mini-btn" style="background:var(--accent); width:auto; padding:5px 12px;" onclick="viewTicketDetails(${i})">คุณมีการจอง</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // แสดงรายการจองในหน้าจอง (เน้นให้เพิ่มอาหารจากที่นี่)
+            if (alertBox) {
+                alertBox.style.display = 'block';
+                miniList.innerHTML = bookings.map((b, i) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:10px; background:#fff; border-radius:10px;">
+                        <span style="font-size:0.9rem;">• <b>${b.tableId || 'โต๊ะ'}</b> (${b.date})</span>
+                        <button class="mini-btn" style="background:var(--primary); width:auto; padding:5px 12px;" onclick="addFoodToBooking(${i})">
+                            <i class="fas fa-plus"></i> เพิ่มอาหาร
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function viewTicketDetails(idx) {
+            currentTicketIdx = idx;
+            const b = bookings[idx];
+            document.getElementById('t-date').innerText = b.date;
+            document.getElementById('t-room').innerText = b.tableId || 'โต๊ะปกติ';
+            document.getElementById('t-time').innerText = b.time;
+            document.getElementById('t-guests').innerText = b.guests || '2 ท่าน';
+
+            // แสดงรายการอาหารในตั๋ว
+            const itemList = document.getElementById('t-items-list');
+            if (b.items && b.items.length > 0) {
+                itemList.innerHTML = b.items.map(it => `<div>• ${it.name} x ${it.qty}</div>`).join('');
+            } else {
+                itemList.innerHTML = '<i style="color:#999;">ยังไม่มีรายการอาหาร</i>';
+            }
+
+            document.getElementById('btn-add-more-food').onclick = () => addFoodToBooking(idx);
+            showPage('page-ticket');
+        }
+
+        function addFoodToBooking(idx) {
+            currentTicketIdx = idx;
+            cart = [];
+            renderPreOrderMenu();
+            calculateTotal();
+
+            // เปลี่ยนปุ่มเป็น "ยืนยันสั่งเพิ่ม" และข้ามหน้ามัดจำ
+            const confirmBtn = document.getElementById('preorder-confirm-btn');
+            if (confirmBtn) {
+                confirmBtn.innerText = "ยืนยันการสั่งอาหารเพิ่ม (ไม่มีค่ามัดจำ)";
+                confirmBtn.setAttribute('onclick', 'finishBooking()');
+            }
+
+            showPage('page-preorder');
+        }
+
+        function renderRecommendedMenu() {
+            const list = document.getElementById('recommended-menu-list');
+            if (!list) return;
+            list.innerHTML = menuItems.map(m => `
+                <div class="menu-item" onclick="viewFullImage('${m.img}', '${m.name}')">
+                    <img src="${m.img}" class="menu-img">
+                    <div style="flex:1">
+                        <h3 style="font-size: 1.1rem; color: var(--primary);">${m.name}</h3>
+                        <p style="color:var(--accent); font-weight:700; font-size:1.2rem; margin-top:5px;">฿${m.price}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRooms(targetId = 'visual-map') {
+            const container = document.getElementById(targetId);
+            if (!container) return;
+
+            const mapHtml = rooms.map((r, i) => {
+                const isSelected = selectedTableIds.includes(r.id);
+                const statusClass = r.status === 'ว่าง' ? 'table-free' : 'table-busy';
+                const selectedClass = isSelected ? 'table-selected' : '';
+
+                return `
+                    <div class="table-node ${statusClass} ${selectedClass}" 
+                         style="left: ${r.x}px; top: ${r.y}px;"
+                         onclick="${isManager ? `toggleRoomStatus(${i})` : `selectFromMap('${r.id}', '${targetId}')`}">
+                        ${r.id}
+                        <span class="table-label">${r.name} (${r.cap})</span>
+                    </div>
+                `;
+            }).join('');
+            container.innerHTML = mapHtml;
+            renderGallery(); // อัปเดตหน้าบริการด้วย
+        }
+
+        function toggleRoomStatus(idx) {
+            const r = rooms[idx];
+            // สลับสถานะ ว่าง <-> เต็ม
+            r.status = r.status === 'ว่าง' ? 'เต็ม' : 'ว่าง';
+
+            // อัปเดตผังและ UI จุดอื่นๆ
+            renderRooms();
+            renderGallery();
+
+            Swal.fire({
+                title: `เปลี่ยนสถานะ ${r.id}`,
+                text: `อัปเดตสถานะ ${r.id} เป็น "${r.status}" แล้ว`,
+                icon: 'success',
+                toast: true,
+                position: 'top-end',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+
+        function selectFromMap(id, targetId) {
+            const room = rooms.find(r => r.id === id);
+            if (room.status === 'เต็ม') {
+                Swal.fire('ขออภัย', 'โต๊ะนี้ถูกจองแล้วครับ กรุณาเลือกโต๊ะอื่น', 'warning');
+                return;
+            }
+
+            if (targetId === 'visual-map') {
+                showPage('page-booking');
+                selectedTableIds = [id];
+                goToStep2();
+                return;
+            }
+            const idx = selectedTableIds.indexOf(id);
+            if (idx === -1) {
+                const guestCount = getGuestCount();
+                const totalCap = selectedTableIds.reduce((sum, tid) => sum + (rooms.find(r => r.id === tid).cap || 4), 0);
+
+                if (totalCap >= guestCount) {
+                    return Swal.fire('ที่นั่งเพียงพอแล้ว', `โต๊ะที่เลือก รองรับได้ ${totalCap} ท่านแล้วครับ ซึ่งเพียงพอสำหรับจำนวน ${guestCount} ท่านแล้วครับ`, 'info');
+                }
+
+                // ตรวจสอบแนวโต๊ะ (Alignment Check)
+                if (selectedTableIds.length > 0) {
+                    const first = rooms.find(r => r.id === selectedTableIds[0]);
+                    if (selectedTableIds.length === 1) {
+                        if (room.x !== first.x && room.y !== first.y) {
+                            return Swal.fire('ต่อโต๊ะไม่ได้', 'กรุณาเลือกโต๊ะที่อยู่ในแถวหรือแนวตั้งเดียวกันครับ', 'warning');
+                        }
+                    } else {
+                        const second = rooms.find(r => r.id === selectedTableIds[1]);
+                        const axis = first.x === second.x ? 'x' : 'y';
+                        if (axis === 'x' && room.x !== first.x) return Swal.fire('ผิดแนว', 'เลือกได้เฉพาะโต๊ะในแนวตั้งเดียวกันครับ', 'warning');
+                        if (axis === 'y' && room.y !== first.y) return Swal.fire('ผิดแถว', 'เลือกได้เฉพาะโต๊ะในแถวนอนเดียวกันครับ', 'warning');
+                    }
+                }
+                selectedTableIds.push(id);
+                Swal.fire({ title: `เพิ่ม ${id}`, icon: 'success', toast: true, position: 'top', timer: 1000, showConfirmButton: false });
+            } else {
+                selectedTableIds.splice(idx, 1);
+            }
+
+            updateSelectedTablesInfo();
+            renderRooms('booking-visual-map');
+        }
+
+        function updateSelectedTablesInfo() {
+            const info = document.getElementById('selected-tables-info');
+            const display = document.getElementById('display-selected-tables');
+            if (info && display) {
+                const guestCount = getGuestCount();
+                const currentCap = selectedTableIds.reduce((sum, tid) => sum + (rooms.find(r => r.id === tid).cap || 4), 0);
+
+                if (selectedTableIds.length > 0) {
+                    info.style.display = 'block';
+                    let statusColor = currentCap >= guestCount ? 'var(--success)' : '#e67e22';
+                    display.innerHTML = `${selectedTableIds.join(', ')} <br> <span style="color:${statusColor}; font-size:0.8rem; font-weight:700;">(รองรับได้ ${currentCap}/${guestCount} ท่าน)</span>`;
+                } else {
+                    info.style.display = 'none';
+                }
+            }
+        }
+
+        function updateGuestInput() {
+            const val = document.getElementById('booking-guests').value;
+            const area = document.getElementById('custom-guests-area');
+            if (area) area.style.display = val === 'custom' ? 'block' : 'none';
+        }
+
+        function goToStep1() {
+            document.getElementById('booking-step-1').style.display = 'block';
+            document.getElementById('booking-step-2').style.display = 'none';
+        }
+
+        function goToStep2() {
+            const date = document.getElementById('booking-date').value;
+            if (!date) return Swal.fire('เตือน', 'กรุณาเลือกวันที่ก่อนครับ', 'warning');
+
+            let guests = document.getElementById('booking-guests').value;
+            if (guests === 'custom') guests = document.getElementById('booking-guests-custom').value;
+            if (!guests) return Swal.fire('เตือน', 'กรุณาระบุจำนวนแขกก่อนครับ', 'warning');
+
+            document.getElementById('display-guests-count').innerText = guests;
+            document.getElementById('booking-step-1').style.display = 'none';
+            document.getElementById('booking-step-2').style.display = 'block';
+
+            updateSelectedTablesInfo();
+            renderRooms('booking-visual-map');
+        }
+
+        function clearTableSelection() {
+            selectedTableIds = [];
+            currentTicketIdx = null;
+            goToStep1();
+            showPage('page-home', 'tab-home');
+            renderRooms();
+        }
+
+        function renderManagerBookings() {
+            document.getElementById('mgr-booking-list').innerHTML = bookings.map((b, i) => {
+                const statusBadge = b.confirmed
+                    ? '<span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">ยืนยันแล้ว</span>'
+                    : '<span style="background:#fff3e0; color:#ef6c00; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">รอยืนยัน</span>';
+
+                return `
+                    <div style="border-bottom:1px solid #eee; padding:10px 0; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:5px; margin-bottom:3px;">
+                                <strong>${b.name}</strong> ${statusBadge}
+                            </div>
+                            <small style="color:#666;"><i class="fas fa-calendar-day"></i> ${b.date} | ${b.time}</small><br>
+                            <small>โต๊ะ: <b>${b.tableId}</b> | มัดจำ: ${b.deposit}</small>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            ${!b.confirmed ? `<button class="mini-btn" style="width:auto; padding:5px 12px; background:var(--success); font-weight:700;" onclick="acceptBooking(${i})">รับจอง</button>` : ''}
+                            <button class="mini-btn" style="width:auto; padding:5px 10px; background:var(--accent);" onclick="updateBookingTime(${i})">แก้เวลา</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function acceptBooking(idx) {
+            const b = bookings[idx];
+            b.confirmed = true;
+
+            // เปลี่ยนสีโต๊ะในผังทันที (Real-time update)
+            const tableIds = b.tableId.split(',').map(s => s.trim());
+            tableIds.forEach(tid => {
+                const room = rooms.find(r => r.id === tid);
+                if (room) room.status = 'เต็ม';
+            });
+
+            Swal.fire({
+                title: 'รับจองสำเร็จ!',
+                text: `ยืนยันการจองของ ${b.name} และล็อกโต๊ะ ${b.tableId} เรียบร้อยครับ`,
+                icon: 'success',
+                confirmButtonColor: varPrimary
+            });
+
+            renderManagerBookings();
+            renderRooms();
+            renderUserTickets();
+        }
+
+        function renderManagerRewards() {
+            const list = document.getElementById('mgr-rewards-list');
+            if (list) list.innerHTML = rewards.map((r, i) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:#f9f9f9; margin-bottom:5px; border-radius:8px; border:1px solid #eee;">
+                    <span style="font-size:0.85rem;">${r.name} (${r.points} แต้ม)</span>
+                    <div style="display:flex; gap:5px;">
+                        <button class="mini-btn" style="width:auto; padding:5px 8px; background:var(--primary);" onclick="broadcastRewardDialog(${i})"><i class="fas fa-bullhorn"></i></button>
+                        <button class="mini-btn" style="width:auto; padding:5px 8px; background:#e74c3c;" onclick="removeReward(${i})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function broadcastRewardDialog(idx) {
+            const r = rewards[idx];
+            const { value: formValues } = await Swal.fire({
+                title: 'บอร์ดแคสต์รางวัล',
+                html: `
+                    <div style="text-align:left;">
+                        <label style="font-size:0.8rem; font-weight:700;">ส่งหาใคร:</label>
+                        <select id="rbc-audience" class="swal2-select" style="margin:5px 0 15px; width:100%;">
+                            <option value="all">ทุกคน (All Members)</option>
+                            <option value="active">เฉพาะลูกค้าที่เคยมาทานในเดือนนี้</option>
+                            <option value="gold">เฉพาะสมาชิก Gold (2,000+ แต้ม)</option>
+                            <option value="birthday">เฉพาะลูกค้าที่เกิดในเดือนนี้</option>
+                        </select>
+                        <label style="font-size:0.8rem; font-weight:700;">ข้อความ:</label>
+                        <textarea id="rbc-message" class="swal2-textarea" style="margin:5px 0; height:100px;">หิวหรือยัง? ใช้แต้มแลก "${r.name}" ได้แล้ววันนี้ที่ Ocean V88!</textarea>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'ส่งบอร์ดแคสต์',
+                confirmButtonColor: '#27ae60',
+                preConfirm: () => {
+                    return {
+                        audience: document.getElementById('rbc-audience').value,
+                        message: document.getElementById('rbc-message').value
+                    }
+                }
+            });
+
+            if (formValues) {
+                const audienceText = document.getElementById('rbc-audience').options[document.getElementById('rbc-audience').selectedIndex].text;
+                Swal.fire({
+                    title: 'กำลังส่ง...',
+                    html: `ส่งหา: <b>${audienceText}</b><br>ข้อความ: "${formValues.message}"`,
+                    didOpen: () => { Swal.showLoading(); },
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    Swal.fire('สำเร็จ!', 'ส่งข้อความโปรโมทของรางวัลเรียบร้อยแล้ว', 'success');
+                });
+            }
+        }
+
+        function renderCustomerRewards() {
+            const list = document.getElementById('customer-rewards-list');
+            if (list) list.innerHTML = rewards.map(r => `<div class="reward-card"><img src="${r.img}" style="width:60px; height:60px; border-radius:10px;"><div style="flex:1"><h4>${r.name}</h4><p style="color:var(--accent); font-weight:700;">${r.points} คะแนน</p></div><button class="mini-btn" style="width:auto; padding:8px 12px;" onclick="redeemReward('${r.name}')">แลก</button></div>`).join('');
+        }
+
+        function redeemReward(name) {
+            Swal.fire({
+                title: 'ยืนยันการแลกรางวัล?',
+                text: `คุณต้องการใช้คะแนนเพื่อแลก "${name}" ใช่หรือไม่?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: varPrimary,
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'ยืนยันแลกรับ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'แลกรางวัลสำเร็จ!',
+                        text: `รหัสรับรางวัลของคุณคือ: ${Math.random().toString(36).substr(2, 6).toUpperCase()}\nกรุณาโชว์หน้านี้ให้พนักงานเพื่อรับสิทธิ์ครับ`,
+                        icon: 'success',
+                        confirmButtonColor: varPrimary
+                    });
+                }
+            });
+        }
+
+        function renderPreOrderMenu() {
+            document.getElementById('preorder-list').innerHTML = menuItems.map(m => {
+                const cartItem = cart.find(c => c.id === m.id);
+                const qty = cartItem ? cartItem.qty : 0;
+                return `
+                    <div class="menu-item">
+                        <img src="${m.img}" class="menu-img" onclick="viewFullImage('${m.img}', '${m.name}')">
+                        <div style="flex:1">
+                            <h4>${m.name}</h4>
+                            <p style="color:var(--accent); font-weight:700;">฿${m.price}</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button class="mini-btn" style="width:30px; height:30px; padding:0; background:#eee; color:#333;" onclick="updateCart(${m.id}, -1)">-</button>
+                            <span style="font-weight:700; min-width:20px; text-align:center;">${qty}</span>
+                            <button class="mini-btn" style="width:30px; height:30px; padding:0; background:var(--primary);" onclick="updateCart(${m.id}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCart(id, change) {
+            const item = menuItems.find(m => m.id === id);
+            let cartItem = cart.find(c => c.id === id);
+
+            if (!cartItem && change > 0) {
+                cartItem = { ...item, qty: 1 };
+                cart.push(cartItem);
+            } else if (cartItem) {
+                cartItem.qty += change;
+                if (cartItem.qty <= 0) {
+                    cart = cart.filter(c => c.id !== id);
+                }
+            }
+
+            renderPreOrderMenu();
+            calculateTotal();
+
+            if (change > 0) {
+                Swal.fire({ title: 'เพิ่มแล้ว!', icon: 'success', toast: true, position: 'top-end', timer: 800, showConfirmButton: false });
+            }
+        }
+
+        function getGuestCount() {
+            let guests = '1';
+            if (currentTicketIdx !== null && bookings[currentTicketIdx]) {
+                guests = bookings[currentTicketIdx].guests || '1';
+            } else {
+                const gSelect = document.getElementById('booking-guests');
+                if (gSelect) {
+                    guests = gSelect.value === 'custom' ? document.getElementById('booking-guests-custom').value : gSelect.value;
+                }
+            }
+            const matches = (guests || '1').toString().match(/\d+/g);
+            if (!matches) return 1;
+            return Math.max(...matches.map(Number));
+        }
+
+        function calculateTotal() {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            document.getElementById('total-price').innerText = `฿${total.toLocaleString()}`;
+
+            // คำนวณรายหัว
+            const guestCount = getGuestCount();
+            const tip = document.getElementById('preorder-pp-tip');
+            const avgDisp = document.getElementById('preorder-avg-price');
+            if (tip && avgDisp && guestCount > 1 && total > 0) {
+                tip.style.display = 'block';
+                avgDisp.innerText = Math.ceil(total / guestCount).toLocaleString();
+            } else if (tip) {
+                tip.style.display = 'none';
+            }
+
+            // เปลี่ยนปุ่มกดยืนยันตามยอดอาหาร
+            const confirmBtn = document.getElementById('preorder-confirm-btn');
+            if (confirmBtn) {
+                if (total > 0) {
+                    confirmBtn.innerText = 'ชำระเงินมัดจำ (30%)';
+                    confirmBtn.style.background = 'var(--primary)';
+                } else {
+                    confirmBtn.innerText = 'ยืนยันจองโต๊ะ (ไม่ต้องมัดจำ)';
+                    confirmBtn.style.background = 'var(--success)';
+                }
+            }
+        }
+
+        async function searchByPhone() {
+            const { value: phone } = await Swal.fire({
+                title: 'ค้นหาด้วยเบอร์โทร',
+                input: 'tel',
+                inputLabel: 'ใส่เบอร์โทรศัพท์ลูกค้า',
+                inputPlaceholder: '0812345678',
+                showCancelButton: true,
+                confirmButtonText: 'ค้นหา',
+                confirmButtonColor: '#004d74'
+            });
+
+            if (phone) {
+                // ค้นหาการจอง
+                const bookingIdx = bookings.findIndex(b => (b.phone && b.phone.replace(/-/g, '').includes(phone.replace(/-/g, ''))) || phone === '0811111111');
+
+                if (bookingIdx !== -1) {
+                    const b = bookings[bookingIdx];
+                    Swal.fire({
+                        title: `พบข้อมูล: ${b.name}`,
+                        text: `เบอร์โทร: ${b.phone} | เวลา: ${b.time}`,
+                        icon: 'info',
+                        showCancelButton: true,
+                        showDenyButton: true,
+                        confirmButtonText: 'แก้ไขเวลาจอง',
+                        denyButtonText: 'เติมแต้มลูกค้า',
+                        cancelButtonText: 'ปิด',
+                        confirmButtonColor: varAccent,
+                        denyButtonColor: varPrimary
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateBookingTime(bookingIdx);
+                        } else if (result.isDenied) {
+                            addPointsDialog(b.name, b.phone);
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'ไม่พบรายการจอง',
+                        text: 'ไม่พบรายการจองของเบอร์โทรศัพท์นี้ แต่อาจสามารถเติมแต้มได้',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'ลงบิล & เติมแต้ม',
+                        cancelButtonText: 'ปิด',
+                        confirmButtonColor: varPrimary
+                    }).then(res => {
+                        if (res.isConfirmed) addPointsDialog(`ลูกค้าเบอร์ ${phone}`, phone);
+                    });
+                }
+            }
+        }
+
+        async function updateBookingTime(idx) {
+            const { value: newTime } = await Swal.fire({
+                title: 'แก้ไขเวลาการจอง',
+                input: 'time',
+                inputLabel: 'เลือกเวลาใหม่',
+                inputValue: bookings[idx].time.includes(':') ? bookings[idx].time : '18:00',
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกเวลาใหม่',
+                confirmButtonColor: '#27ae60'
+            });
+
+            if (newTime) {
+                bookings[idx].time = newTime;
+                renderManagerBookings();
+                Swal.fire('สำเร็จ', `เปลี่ยนเวลาจองเป็น ${newTime} เรียบร้อยแล้ว`, 'success');
+            }
+        }
+
+        async function addPointsDialog(name, phone) {
+            const { value: bill } = await Swal.fire({ title: `เติมแต้มให้ ${name}`, input: 'number', inputLabel: 'ยอดบิล (บาท)', showCancelButton: true });
+            if (bill) {
+                const pts = Math.floor(bill / 25);
+
+                // อัปเดตคะแนนให้ currentUser ทันทีถ้าระบบเช็คเบอร์ตรงกัน (จำลองการดึง API)
+                if (currentUser && currentUser.phone === phone) {
+                    currentUser.points = (currentUser.points || 0) + pts;
+                    localStorage.setItem('v88_user', JSON.stringify(currentUser));
+                    updateUserProfile();
+                }
+
+                Swal.fire('สำเร็จ', `เติมแต้มให้ ${name} แล้ว ${pts} คะแนน`, 'success');
+            }
+        }
+
+        async function addRewardDialog() {
+            const { value: form } = await Swal.fire({
+                title: 'เพิ่มรางวัลใหม่ (Upload to R2)',
+                html: `
+                    <div style="text-align:left;">
+                        <label style="font-size:0.8rem; font-weight:700;">ชื่อของรางวัล:</label>
+                        <input id="sw1" class="swal2-input" placeholder="เช่น กุ้งมังกร" style="margin-top:5px;">
+                        <label style="font-size:0.8rem; font-weight:700;">คะแนนที่ใช้:</label>
+                        <input id="sw2" class="swal2-input" type="number" placeholder="500" style="margin-top:5px;">
+                        <label style="font-size:0.8rem; font-weight:700;">รูปภาพรางวัล (จากมือถือ):</label>
+                        <input id="sw-img-file" type="file" accept="image/*" class="swal2-file" style="margin-top:5px; width:100%;">
+                    </div>
+                `,
+                preConfirm: () => {
+                    const file = document.getElementById('sw-img-file').files[0];
+                    return [
+                        document.getElementById('sw1').value,
+                        document.getElementById('sw2').value,
+                        file ? URL.createObjectURL(file) : 'https://via.placeholder.com/100?text=Gift'
+                    ]
+                }
+            });
+            if (form && form[0] && form[1]) {
+                rewards.push({
+                    id: Date.now(),
+                    name: form[0],
+                    points: parseInt(form[1]),
+                    img: form[2]
+                });
+                renderManagerRewards();
+                renderCustomerRewards();
+            }
+        }
+
+        function removeReward(i) { rewards.splice(i, 1); renderManagerRewards(); renderCustomerRewards(); }
+        function toggleRoomStatus(i) { rooms[i].status = rooms[i].status === 'ว่าง' ? 'เต็ม' : 'ว่าง'; renderRooms(); }
+        function toggleRoomSelect() { document.getElementById('room-select-area').style.display = document.getElementById('booking-type').value === 'karaoke' ? 'block' : 'none'; }
+        function startPreOrder() {
+            if (selectedTableIds.length === 0) return Swal.fire('เตือน', 'กรุณาเลือกโต๊ะอย่างน้อย 1 โต๊ะบนแผนผังครับ', 'warning');
+
+            const guestCount = getGuestCount();
+            const currentCap = selectedTableIds.reduce((sum, tid) => sum + (rooms.find(r => r.id === tid).cap || 4), 0);
+
+            if (currentCap < guestCount) {
+                return Swal.fire('ที่นั่งไม่พอ', `สำหรับลูกค้า ${guestCount} ท่าน โต๊ะที่เลือกยังรองรับได้เพียง ${currentCap} ท่านครับ กรุณาเลือกโต๊ะเพิ่มในแนวเดียวกันครับ`, 'warning');
+            }
+
+            currentTicketIdx = null; // จองใหม่
+            const confirmBtn = document.getElementById('preorder-confirm-btn');
+            if (confirmBtn) {
+                confirmBtn.setAttribute('onclick', 'showPayment()');
+            }
+            calculateTotal();
+
+            Swal.fire({
+                title: 'แนะนำสั่งอาหารล่วงหน้า 🍽️',
+                text: 'เพื่อให้คุณลูกค้าไม่ต้องรออาหารนานเมื่อมาถึงร้าน ทางร้านแนะนำให้เลือกสั่งอาหารล่วงหน้าไว้ได้เลยครับ!',
+                icon: 'info',
+                confirmButtonText: 'เลือกเมนูอาหาร',
+                confirmButtonColor: '#004d74'
+            }).then(() => {
+                showPage('page-preorder');
+            });
+        }
+        function showPayment() {
+            if (cart.length === 0) {
+                Swal.fire({
+                    title: 'ยืนยันการจอง',
+                    text: 'คุณไม่ได้สั่งอาหารล่วงหน้า ต้องการจองเฉพาะโต๊ะ โดยไม่มัดจำ ใช่มั้ยครับ?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'ใช่, ฉันต้องการจองโต๊ะ',
+                    cancelButtonText: 'กลับไปเลือกอาหาร',
+                    confirmButtonColor: '#27ae60'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.currentDepositAmount = 0;
+                        finishBooking(true);
+                    }
+                });
+                return;
+            }
+
+            // แสดงสรุปรายการอาหารในหน้าชำระเงิน
+            const summaryContainer = document.getElementById('payment-order-summary');
+            if (summaryContainer) {
+                summaryContainer.innerHTML = cart.map(item => `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span>${item.name} x ${item.qty}</span>
+                        <span>฿${(item.price * item.qty).toLocaleString()}</span>
+                    </div>
+                `).join('');
+            }
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const deposit = Math.round(total * 0.3);
+
+            window.currentDepositAmount = deposit;
+
+            const totalDisplay = document.getElementById('payment-total-price');
+            if (totalDisplay) totalDisplay.innerText = `฿${total.toLocaleString()}`;
+
+            const depositDisplay = document.getElementById('payment-deposit-desc');
+            if (depositDisplay) depositDisplay.innerText = `สแกนจ่ายค่ามัดจำ 30% ของยอดสั่งอาหาร (จำนวน ฿${deposit.toLocaleString()}) และแนบสลิปด้านล่าง`;
+
+            // คำนวณรายหัวหน้าชำระเงิน
+            const guestCount = getGuestCount();
+            const tip = document.getElementById('payment-pp-tip');
+            const avgDisp = document.getElementById('payment-avg-price');
+            if (tip && avgDisp && guestCount > 1 && total > 0) {
+                tip.style.display = 'block';
+                avgDisp.innerText = Math.ceil(total / guestCount).toLocaleString();
+            } else if (tip) {
+                tip.style.display = 'none';
+            }
+
+            showPage('page-payment');
+        }
+        function finishBooking(skipPayment = false) {
+            const isAddingFood = currentTicketIdx !== null && bookings[currentTicketIdx] !== undefined;
+
+            if (!isAddingFood && !skipPayment) {
+                const slipInput = document.getElementById('slip-upload');
+                if (!slipInput || !slipInput.value) return Swal.fire('เตือน', 'แนบทิ้งสลิปก่อนครับ', 'warning');
+            }
+
+            const date = document.getElementById('booking-date').value || (isAddingFood ? bookings[currentTicketIdx].date : '');
+            let roomNames = 'โต๊ะปกติ';
+            if (selectedTableIds.length > 0) {
+                roomNames = selectedTableIds.join(', ');
+            } else if (isAddingFood) {
+                roomNames = bookings[currentTicketIdx].tableId;
+            }
+
+            let guests = '1-2 ท่าน';
+            const guestSelect = document.getElementById('booking-guests');
+            if (guestSelect) {
+                if (guestSelect.value === 'custom') guests = (document.getElementById('booking-guests-custom').value || '0') + ' ท่าน';
+                else guests = guestSelect.options[guestSelect.selectedIndex].text;
+            }
+
+            Swal.fire({
+                title: isAddingFood ? 'สั่งอาหารเพิ่มสำเร็จ!' : 'ยืนยันการจองสำเร็จ!',
+                text: isAddingFood ? 'เราบันทึกรายการอาหารเพิ่มให้แล้วครับ' : 'เราได้รับสลิปแล้ว ทีมงานจะยืนยันการจองใน 15 นาทีครับ',
+                icon: 'success',
+                confirmButtonColor: '#004d74'
+            }).then(() => {
+                const savedItems = JSON.parse(JSON.stringify(cart)); // คัดลอกรายการอาหาร
+
+                if (isAddingFood) {
+                    if (!bookings[currentTicketIdx].items) bookings[currentTicketIdx].items = [];
+                    savedItems.forEach(newItem => {
+                        const oldItem = bookings[currentTicketIdx].items.find(it => it.id === newItem.id);
+                        if (oldItem) oldItem.qty += newItem.qty;
+                        else bookings[currentTicketIdx].items.push(newItem);
+                    });
+                } else {
+                    bookings.push({
+                        id: Date.now(),
+                        name: 'ลูกค้า (จองใหม่)',
+                        phone: '081-XXX-4567',
+                        time: '18:30',
+                        date: date,
+                        tableId: roomNames,
+                        guests: guests,
+                        deposit: `จ่ายแล้ว ฿${(window.currentDepositAmount || 0).toLocaleString()} (30%)`,
+                        confirmed: false,
+                        items: savedItems
+                    });
+                }
+
+                cart = [];
+                selectedTableIds = [];
+                currentTicketIdx = null;
+
+                goToStep1();
+                renderRooms();
+                renderManagerBookings();
+                renderUserTickets();
+                renderPreOrderMenu();
+                showPage('page-home', 'tab-home');
+            });
+        }
+
+        function viewFullImage(img, title) {
+            Swal.fire({
+                title: title,
+                imageUrl: img,
+                imageAlt: title,
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+
+        function showPage(p, t) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(p).classList.add('active');
+            if (t) { document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); document.getElementById(t).classList.add('active'); }
+            window.scrollTo(0, 0);
+        }
+        function saveBirthday() {
+            const bday = document.getElementById('input-bday').value;
+            if (!bday) return Swal.fire('เตือน', 'กรุณาเลือกวันที่ก่อนครับ', 'warning');
+
+            // อัปเดตข้อมูลบน Profile ด้านบน
+            document.getElementById('display-bday').innerText = bday;
+            document.getElementById('user-bday-info').style.display = 'block';
+
+            // ซ่อนกล่องบันทึกวันเกิด
+            document.querySelector('.bday-box').style.display = 'none';
+
+            Swal.fire('ขอบคุณครับ!', 'บันทึกข้อมูลสมาชิกและวันเกิดเรียบร้อยแล้ว', 'success');
+        }
+        function managerTap() { tapCount = (window.tapCount || 0) + 1; window.tapCount = tapCount; if (tapCount >= 5) { window.tapCount = 0; promptManagerPin(); } setTimeout(() => window.tapCount = 0, 2000); }
+        async function promptManagerPin() {
+            const { value: pin } = await Swal.fire({ title: 'PIN', input: 'password' });
+            if (pin === CFG.managerPin) { isManager = true; document.body.classList.add('manager-active'); document.getElementById('mgr-indicator').style.display = 'inline-block'; renderRooms(); renderManagerBookings(); renderManagerRewards(); renderGallery(); Swal.fire('ยินดีต้อนรับ', 'เข้าสู่โหมดผู้จัดการ', 'success'); }
+        }
+
+        async function sendBroadcast() {
+            const audience = document.getElementById('bc-audience').value;
+            const message = document.getElementById('bc-message').value;
+            const audienceText = document.getElementById('bc-audience').options[document.getElementById('bc-audience').selectedIndex].text;
+
+            if (!message) return Swal.fire('แจ้งเตือน', 'กรุณาใส่ข้อความที่จะส่งครับ', 'warning');
+
+            Swal.fire({
+                title: 'ยืนยันการส่ง?',
+                html: `กลุ่มเป้าหมาย: <b>${audienceText}</b><br><br>ข้อความ: "${message}"`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ส่งเลย',
+                confirmButtonColor: '#27ae60'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    Swal.fire({
+                        title: 'กำลังส่ง...',
+                        html: 'ระบบกำลังส่งข้อความหาลูกค้าผ่าน LINE API',
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                    setTimeout(() => {
+                        Swal.fire('สำเร็จ!', `ส่งข้อความหาลูกค้ากลุ่ม ${audienceText} เรียบร้อยแล้ว`, 'success');
+                        document.getElementById('bc-message').value = '';
+                    }, 2000);
+                }
+            });
+        }
+
+
+        function startBookingRoom(roomId) {
+            const room = rooms.find(r => r.id === roomId);
+            if (room && room.status === 'เต็ม') {
+                return Swal.fire('ขออภัย', 'ห้องนี้ถูกจองแล้วครับ กรุณาเลือกห้องอื่นหรือวันอื่น', 'warning');
+            }
+
+            // ตั้งค่าสถานะการจองตามห้องที่เลือกจากหน้า Gallery
+            selectedTableIds = [roomId];
+
+            // อิงตามความจุห้อง
+            const defaultGuests = room ? (room.cap > 12 ? 'custom' : room.cap) : '4';
+            const guestSelect = document.getElementById('booking-guests');
+            if (guestSelect) {
+                guestSelect.value = defaultGuests;
+                if (defaultGuests === 'custom') {
+                    document.getElementById('custom-guests-area').style.display = 'block';
+                    document.getElementById('booking-guests-custom').value = room.cap;
+                }
+                updateGuestInput();
+            }
+
+            showPage('page-booking');
+            goToStep2(); // ข้ามไปหน้าเลือกโต๊ะเลย (เพราะเลือกมาแล้ว)
+            renderRooms('booking-visual-map');
+            updateSelectedTablesInfo();
+        }
+
+        function renderGallery() {
+            const galleryContainer = document.getElementById('rooms-status-gallery');
+            const homeVipContainer = document.getElementById('vip-list-container');
+
+            // กรองเฉพาะห้อง VIP/Karaoke (Zone V)
+            const vRooms = rooms.filter(r => r.id && (r.id.startsWith('VIP') || r.id.startsWith('V')));
+            const roomImages = {
+                'V1': 'https://images.unsplash.com/photo-1590674000184-d10e94e92e3e?w=600',
+                'V2': 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=600',
+                'V3': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600'
+            };
+
+            // 1. อัปเดตหน้าบริการ (Gallery)
+            if (galleryContainer) {
+                galleryContainer.innerHTML = vRooms.map(r => {
+                    const img = roomImages[r.id] || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600';
+                    const statusColor = r.status === 'ว่าง' ? 'var(--success)' : '#e74c3c';
+                    const statusText = r.status === 'ว่าง' ? 'ว่าง (พร้อมบริการ)' : 'เต็ม (มีผู้ใช้งาน)';
+
+                    return `
+                        <div class="card" style="padding: 10px; margin-bottom: 20px; position:relative;">
+                            <div style="position:absolute; top:20px; right:20px; z-index:10; background:${statusColor}; color:#fff; padding:5px 15px; border-radius:50px; font-size:0.8rem; font-weight:700; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+                                ${statusText}
+                            </div>
+                            <img src="${img}" style="width: 100%; border-radius: 15px; height:200px; object-fit:cover;">
+                            <div style="padding: 15px 5px;">
+                                <h3 style="color: var(--primary); font-size: 1.25rem;">${r.name}</h3>
+                                <p style="font-size: 0.9rem; color: #666; margin: 5px 0;">ความจุ: ${r.cap} ท่าน | กิจกรรม: คาราโอเกะ/จัดเลี้ยง</p>
+                                <button class="mini-btn" style="background:var(--primary); width:auto; padding:8px 20px; margin-top:10px;" onclick="startBookingRoom('${r.id}')">จองห้องนี้</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 2. อัปเดตหน้าบ้าน (Home Quick Status)
+            if (homeVipContainer) {
+                homeVipContainer.innerHTML = vRooms.map(r => {
+                    const statusColor = r.status === 'ว่าง' ? 'var(--success)' : '#e74c3c';
+                    const dotColor = r.status === 'ว่าง' ? '#27ae60' : '#e74c3c';
+                    const statusLabel = r.status === 'ว่าง' ? 'ว่าง' : 'มีลูกค้า';
+                    return `
+                        <div style="background:#fff; padding:12px; border-radius:12px; display:flex; align-items:center; gap:10px; border:1px solid #eee; box-shadow:0 2px 5px rgba(0,0,0,0.05);" onclick="showPage('page-gallery')">
+                            <div style="width:10px; height:10px; border-radius:50%; background:${dotColor};"></div>
+                            <div style="flex:1">
+                                <div style="font-size:0.85rem; font-weight:700; color:#333;">${r.name}</div>
+                                <div style="font-size:0.75rem; color:${statusColor}; font-weight:700;">${statusLabel}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+
+</html>

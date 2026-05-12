@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, deposit_code TEXT, owner_uid TEXT, owner_name TEXT, owner_phone TEXT, item_name TEXT, price TEXT, image_key TEXT, status TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS staff_access (user_id TEXT PRIMARY KEY, name TEXT, status TEXT, role TEXT);

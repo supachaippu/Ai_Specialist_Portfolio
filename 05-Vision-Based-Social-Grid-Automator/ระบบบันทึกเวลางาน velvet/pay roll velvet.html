@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundabout 90s Payroll (V34: Smart PDF Name Match)</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&display=swap');
+        
+        body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #334155; }
+        .container { max-width: 1250px; margin: 0 auto; background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        h1 { margin-bottom: 20px; text-align: center; color: #0f172a; font-weight: 800; }
+        
+        /* Tabs */
+        .tab-buttons { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; color: #64748b; font-weight: 600; border-radius: 6px; }
+        .tab-btn:hover { background-color: #f8fafc; color: #2563eb; }
+        .tab-btn.active { background-color: #eff6ff; color: #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Upload */
+        .upload-row { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .upload-card { 
+            border: 2px dashed #cbd5e1; padding: 25px; border-radius: 10px; width: 42%; text-align: center; 
+            cursor: pointer; transition: 0.2s; background: #f8fafc; position: relative;
+        }
+        .upload-card:hover { border-color: #2563eb; background: #eff6ff; }
+        .upload-card.active { border-color: #16a34a; background: #f0fdf4; border-style: solid; }
+        .icon { font-size: 30px; margin-bottom: 5px; display: block; }
+
+        /* Buttons */
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-primary:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        
+        .btn-excel { background-color: #16a34a; color: white; display: none; margin-left: 10px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-excel:hover { background-color: #15803d; transform: translateY(-1px); }
+
+        .btn-print { background-color: #ea580c; color: white; display: none; margin-left: 10px; }
+        .btn-print:hover { background-color: #c2410c; }
+
+        .btn-outline { background: white; border: 1px solid #2563eb; color: #2563eb; padding: 6px 12px; font-size: 14px; margin-top: 8px; }
+        .btn-red { background-color: #ef4444; color: white; font-size: 12px; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; background: white; }
+        th, td { border-bottom: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background-color: #f8fafc; font-weight: 600; color: #475569; white-space: nowrap; }
+        tr:hover { background-color: #f1f5f9; }
+
+        .error-report { display: none; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        .error-box { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-width: 300px; }
+        .bg-red-light { background-color: #fef2f2; border-color: #fecaca; }
+        .bg-yellow-light { background-color: #fffbeb; border-color: #fcd34d; }
+        .badge-count { background: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 800; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-content { background-color: white; margin: 10% auto; padding: 25px; border-radius: 12px; width: 320px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-btn { display: block; width: 100%; margin: 10px 0; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💰 ระบบคำนวณเงินเดือน Soundabout 90s (V34)</h1>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('calc')">📊 คำนวณ & ตรวจสอบ</button>
+        <button class="tab-btn" onclick="switchTab('manage')">👥 ฐานข้อมูล & เงินเดือน</button>
+    </div>
+
+    <div id="tab-calc" class="tab-content active">
+        <div class="upload-row">
+            <label class="upload-card" id="box-db">
+                <span class="icon">📂</span>
+                <b>1. อัปเดตรายชื่อ (Excel)</b>
+                <div style="font-size:13px; color:#64748b; margin-top:5px;">(ถ้ามีแก้ไข)</div>
+                <input type="file" id="fileDB" accept=".xlsx, .xls" style="display:none;">
+                <span id="name-db" style="display:block; margin-top:8px; color:#16a34a; font-weight:bold;"></span>
+                <button class="btn-outline" onclick="event.preventDefault(); downloadTemplate()">📥 โหลดฟอร์ม</button>
+            </label>
+
+            <label class="upload-card" id="box-pdf">
+                <span class="icon">📄</span>
+                <b>2. ไฟล์สแกนนิ้ว (PDF)</b>
+                <div style="font-size:13px; color:#64748b; margin-top:5px;">(Velvet / Standard Format)</div>
+                <input type="file" id="filePDF" accept=".pdf" style="display:none;">
+                <span id="name-pdf" style="display:block; margin-top:8px; color:#16a34a; font-weight:bold;"></span>
+            </label>
+        </div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <button id="calcBtn" class="btn btn-primary" onclick="startCalculation()" disabled>🚀 เริ่มคำนวณเงินเดือน</button>
+            <button id="exportBtn" class="btn btn-excel" onclick="exportFullExcel()">📥 ดาวน์โหลด Excel (รวมทุกแบบ)</button>
+            <button id="printBtn" class="btn btn-print" onclick="printEmployeeReport()">📄 พิมพ์ใบแจ้งเวลา (PDF)</button>
+        </div>
+        
+        <div id="statusMsg" style="text-align:center; margin-top:10px; font-weight:bold; color:#16a34a; min-height:24px;"></div>
+
+        <div id="errorSection" class="error-report">
+            <div class="error-box bg-red-light">
+                <div style="font-weight:bold; color:#b91c1c; margin-bottom:10px;">❌ ลืมสแกนออก (ปรับ 500) <span id="countOut" class="badge-count">0</span></div>
+                <div class="table-responsive" style="max-height:200px;"><table id="tableForgotOut"><thead><tr><th>วันที่</th><th>ชื่อ</th><th>เวลาที่มี</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="error-box bg-yellow-light">
+                <div style="font-weight:bold; color:#b45309; margin-bottom:10px;">⚠️ ลืมสแกนเข้า (หักค่าแรง) <span id="countIn" class="badge-count">0</span></div>
+                <div class="table-responsive" style="max-height:200px;"><table id="tableForgotIn"><thead><tr><th>วันที่</th><th>ชื่อ</th><th>เวลาที่มี</th></tr></thead><tbody></tbody></table></div>
+            </div>
+        </div>
+
+        <div id="resultArea" style="display:none; margin-top:40px;">
+            <h3 style="border-left:5px solid #2563eb; padding-left:10px; color:#0f172a;">📝 รายละเอียดรายวัน</h3>
+            <p style="color:#64748b; font-size:14px; margin-bottom:15px;">*กดปุ่ม <b>"✏️ แก้ไข"</b> ที่ท้ายแถว เพื่อเปลี่ยนสถานะได้</p>
+            <div class="table-responsive">
+                <table id="dailyTable">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>เข้า</th><th>ออก</th>
+                            <th style="color:#b91c1c;">สาย</th><th style="color:#b91c1c;">ออกก่อน</th><th style="color:#b91c1c;">หัก</th>
+                            <th style="color:#15803d;">OT</th><th style="color:#15803d;">ได้</th>
+                            <th>หมายเหตุ</th><th>แก้ไข</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-manage" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3>จัดการฐานข้อมูล & เงินเดือน</h3>
+            <div>
+                <button class="btn-outline" onclick="exportCurrentDB()">📤 Export DB</button>
+                <button class="btn-outline" style="color:#dc2626; border-color:#dc2626;" onclick="resetDefaultDB()">↺ รีเซ็ต</button>
+            </div>
+        </div>
+        <div style="background:#f8fafc; padding:20px; border-radius:12px; margin-bottom:25px; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+            <div><label style="font-size:12px; font-weight:bold;">ID</label><br><input type="number" id="newId" style="padding:10px; border:1px solid #cbd5e1; border-radius:6px; width:60px;"></div>
+            <div><label style="font-size:12px; font-weight:bold;">ชื่อเล่น (Eng)</label><br><input type="text" id="newNick" style="padding:10px; border:1px solid #cbd5e1; border-radius:6px; width:100px;"></div>
+            <div><label style="font-size:12px; font-weight:bold;">ชื่อจริง-สกุล</label><br><input type="text" id="newThaiName" style="padding:10px; border:1px solid #cbd5e1; border-radius:6px; width:180px;"></div>
+            <div><label style="font-size:12px; font-weight:bold;">ตำแหน่ง</label><br>
+                <select id="newRole" style="padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="Service">Service</option><option value="Kitchen">Kitchen</option><option value="Security">Security</option>
+                    <option value="PR">PR</option><option value="Sound">Sound</option><option value="Manager">Manager</option><option value="VIP">VIP</option>
+                </select>
+            </div>
+            <div><label style="font-size:12px; font-weight:bold;">เงินเดือน</label><br><input type="number" id="newSalary" style="padding:10px; border:1px solid #cbd5e1; border-radius:6px; width:100px;"></div>
+            <button class="btn btn-primary" onclick="addEmployee()" style="margin-bottom:2px;">+ เพิ่ม</button>
+        </div>
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+            <table id="empTable">
+                <thead><tr><th>ID</th><th>ชื่อเล่น</th><th>ชื่อจริง</th><th>ตำแหน่ง</th><th>เงินเดือน</th><th>ลบ</th></tr></thead>
+                <tbody id="empTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">✏️ แก้ไขสถานะ</h3>
+        <div id="modalInfo" style="color:#64748b; margin-bottom:20px; font-size:14px;"></div>
+        <button class="modal-btn" style="background:#f1f5f9; color:#334155;" onclick="setEditType('normal')">✅ ปกติ (คำนวณอัตโนมัติ)</button>
+        <button class="modal-btn" style="background:#fee2e2; color:#991b1b;" onclick="setEditType('forgot_out')">❌ ลืมสแกนออก (ปรับ 500)</button>
+        <button class="modal-btn" style="background:#fef3c7; color:#92400e;" onclick="setEditType('forgot_in')">⚠️ ลืมสแกนเข้า (หักค่าแรง 1 วัน)</button>
+        <button class="modal-btn" style="background:#dcfce7; color:#166534;" onclick="setEditType('clear')">🛡️ ยกเว้นโทษ (ไม่หักเงิน)</button>
+        <button class="modal-btn" style="border:1px solid #e2e8f0; background:white; margin-top:15px;" onclick="closeModal()">ยกเลิก</button>
+    </div>
+</div>
+
+<script>
+    const RULES = {
+        'Service': {start: '16:00', end: '02:00', late: 20, early: 20, ot_rate: 0},
+        'Kitchen': {start: '16:00', end: '01:00', late: 20, early: 20, ot_rate: 0},
+        'PR':      {start: '19:00', end: '02:00', late: 20, early: 20, ot_rate: 0},
+        'Security':{start: '19:10', end: '02:00', late: 20, early: 20, ot_rate: 0.69444},
+        'Manager': {start: '00:00', end: '00:00', late: 0, early: 0, ot_rate: 0},
+        'Sound':   {start: '00:00', end: '00:00', late: 0, early: 0, ot_rate: 0},
+        'VIP':     {start: '00:00', end: '00:00', late: 0, early: 0, ot_rate: 0}
+    };
+    const DEFAULT_DB = {
+        2: {name: 'Nam', thai_name: 'นภาพร แสงสวรรค์', role: 'Service', salary: 0},
+        3: {name: 'Jin', thai_name: 'กรรณิการ์ ขวัญแก้ว', role: 'Service', salary: 0},
+        4: {name: 'Poo', thai_name: 'พรพรรณ เพลินบุญ', role: 'Service', salary: 0},
+        9: {name: 'New', thai_name: 'น.ส กัญญารัตน์ ถาลากแก้ว', role: 'Service', salary: 0},
+        10: {name: 'Kwan', thai_name: 'กนกลักษณ์ สายคำมูล', role: 'Service', salary: 0},
+        14: {name: 'Meaw', thai_name: 'ศศิธร ทองสุข', role: 'Service', salary: 0},
+        15: {name: 'Toguard', thai_name: 'สามารถ นาคศรี', role: 'Security', salary: 0},
+        18: {name: 'Fanta', thai_name: 'สาวิตรี  บุญกอง', role: 'Service', salary: 0},
+        19: {name: 'Tay', thai_name: 'ประภาศรี น้อมกราบ', role: 'Service', salary: 0},
+        20: {name: 'Poom', thai_name: 'ภาคภูมิ มิ่งโสภา', role: 'Service', salary: 0},
+        21: {name: 'Film', thai_name: 'กชชนก เติมสุขศิริ', role: 'PR', salary: 0},
+        22: {name: 'Nan', thai_name: 'สุดาภรณ์ จงใจดี', role: 'Service', salary: 0},
+        23: {name: 'Nid', thai_name: 'สุมณฑา ชุ่มดอนไพร', role: 'Service', salary: 0},
+        24: {name: 'Jeab', thai_name: 'Socheat', role: 'Service', salary: 0},
+        28: {name: 'Moo', thai_name: 'นัฐพร วาทศิลป์', role: 'Kitchen', salary: 0},
+        30: {name: 'Fern', thai_name: 'ลัดดาภรณ์ โคตรหา', role: 'Service', salary: 0},
+        31: {name: 'Gege', thai_name: 'สิน', role: 'Kitchen', salary: 0},
+        32: {name: 'Wan', thai_name: 'สุพัตรา น้อยสุข', role: 'Kitchen', salary: 0},
+        33: {name: 'Top', thai_name: 'คมสิทธิ์ สันติเสวี', role: 'Manager', salary: 0},
+        34: {name: 'Eng', thai_name: 'ชลิดา สดาชัย', role: 'Kitchen', salary: 0},
+        38: {name: 'Den', thai_name: 'นายสมพงษ์ ชานนตรี', role: 'Sound', salary: 0},
+        45: {name: 'Kai', thai_name: 'เบว กง', role: 'Kitchen', salary: 0},
+        47: {name: 'Pean', thai_name: 'Mrs. Sophorn nun', role: 'Kitchen', salary: 0},
+        52: {name: 'Kron', thai_name: 'นายอรรถพล อ่อนศรี', role: 'Service', salary: 0},
+        54: {name: 'May', thai_name: 'วริศรา สังข์เงิน', role: 'Service', salary: 0},
+        57: {name: 'Miw', thai_name: 'สุภัญญา กล้าหาญ', role: 'Service', salary: 0},
+        59: {name: 'Fern', thai_name: 'ลัดดาภรณ์ โคตรหา', role: 'Service', salary: 0},
+        60: {name: 'Num', thai_name: 'กฤตภัค ฉายจะเจริญ', role: 'Service', salary: 0},
+        63: {name: 'Mao', thai_name: 'อุทยาน คำภูษา', role: 'Security', salary: 0},
+        71: {name: 'Fah', thai_name: 'ประมวลศรี พันธ์พิมพ์', role: 'Service', salary: 0},
+        75: {name: 'My', thai_name: 'ฐิติมา บุญมาก', role: 'Service', salary: 0},
+        78: {name: 'Chat', thai_name: 'ไลเฮียง นวล', role: 'Service', salary: 0},
+        81: {name: 'Song', thai_name: 'จอ ซาน', role: 'Service', salary: 0},
+        82: {name: 'Four', thai_name: 'พงศกร เวชไธสง', role: 'Service', salary: 0},
+        83: {name: 'Bell', thai_name: 'จุณทิกา หงษ์สา', role: 'Service', salary: 0}
+    };
+
+    let LOCAL_DB = {};
+    let UPLOADED_DB = null;
+    let pdfFile = null;
+    let DAILY_DATA = [];
+    const STORAGE_KEY = 'SOUNDABOUT_DB_V33';
+
+    function init() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if(stored) {
+            const parsed = JSON.parse(stored);
+            LOCAL_DB = Object.keys(parsed).length < 5 ? JSON.parse(JSON.stringify(DEFAULT_DB)) : parsed;
+        } else {
+            LOCAL_DB = JSON.parse(JSON.stringify(DEFAULT_DB));
+        }
+        renderEmpTable();
+    }
+    function saveDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB)); renderEmpTable(); }
+    
+    function addEmployee() {
+        const id = document.getElementById('newId').value;
+        const nick = document.getElementById('newNick').value;
+        const thai = document.getElementById('newThaiName').value;
+        const role = document.getElementById('newRole').value;
+        const salary = parseFloat(document.getElementById('newSalary').value) || 0;
+        if(!id || !nick) return alert('กรอกข้อมูลให้ครบ');
+        LOCAL_DB[id] = {name: nick, thai_name: thai, role: role, salary: salary};
+        saveDB();
+        ['newId','newNick','newThaiName','newSalary'].forEach(k=>document.getElementById(k).value='');
+    }
+    function deleteEmployee(id) { if(confirm('ลบ?')) { delete LOCAL_DB[id]; saveDB(); } }
+    function renderEmpTable() {
+        const tbody = document.getElementById('empTableBody');
+        tbody.innerHTML = '';
+        for(const id in LOCAL_DB) {
+            const e = LOCAL_DB[id];
+            tbody.innerHTML += `<tr><td>${id}</td><td><b>${e.name}</b></td><td>${e.thai_name}</td><td>${e.role}</td><td>${e.salary||'-'}</td><td><button class="btn-red" onclick="deleteEmployee('${id}')">ลบ</button></td></tr>`;
+        }
+    }
+    function exportCurrentDB() {
+        const arr = [];
+        for(const id in LOCAL_DB) arr.push({ID:id, NickName:LOCAL_DB[id].name, ThaiName:LOCAL_DB[id].thai_name, Role:LOCAL_DB[id].role, Salary:LOCAL_DB[id].salary});
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(arr), "Employees"); XLSX.writeFile(wb, "Soundabout_DB.xlsx");
+    }
+    function resetDefaultDB() { if(confirm('Reset?')) { LOCAL_DB = JSON.parse(JSON.stringify(DEFAULT_DB)); saveDB(); } }
+    function downloadTemplate() {
+        const arr = [{ID:99, NickName:'Example', ThaiName:'ชื่อจริง', Role:'Service', Salary:15000}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(arr), "Template"); XLSX.writeFile(wb, "Template.xlsx");
+    }
+
+    document.getElementById('fileDB').addEventListener('change', function(e) {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            const db = {};
+            arr.forEach(r => db[r.ID] = {name:r.NickName, thai_name:r.ThaiName||'', role:r.Role||'Service', salary:r.Salary||0});
+            UPLOADED_DB = db;
+            document.getElementById('box-db').classList.add('active');
+            document.getElementById('name-db').innerText = file.name;
+            checkReady();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+    document.getElementById('filePDF').addEventListener('change', function(e) {
+        pdfFile = e.target.files[0];
+        if(pdfFile) {
+            document.getElementById('box-pdf').classList.add('active');
+            document.getElementById('name-pdf').innerText = pdfFile.name;
+            checkReady();
+        }
+    });
+    function checkReady() { document.getElementById('calcBtn').disabled = !pdfFile; }
+
+    async function startCalculation() {
+        document.getElementById('statusMsg').innerHTML = '<div class="loader"></div> กำลังอ่าน PDF...';
+        try {
+            await processPDF();
+            document.getElementById('statusMsg').innerHTML = '✅ เรียบร้อย!';
+            document.getElementById('exportBtn').style.display = 'inline-block';
+            document.getElementById('printBtn').style.display = 'inline-block';
+            document.getElementById('errorSection').style.display = 'flex';
+            document.getElementById('resultArea').style.display = 'block';
+        } catch(err) {
+            document.getElementById('statusMsg').innerHTML = '❌ ' + err.message;
+            console.error(err);
+        }
+    }
+
+    async function processPDF() {
+        const data = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data}).promise;
+        const raw = [];
+        const DB = UPLOADED_DB || LOCAL_DB;
+
+        // สร้าง Mapping: ชื่อ -> ID (Reverse Lookup)
+        const nameToId = {};
+        for(const id in DB) {
+            const n = DB[id].name.toLowerCase().trim();
+            nameToId[n] = id;
+            // เพิ่มการรองรับกรณีชื่อใน PDF มีข้อความต่อท้าย เช่น "Bart Content" ให้หาเจอ "Bart"
+            // (ใช้ logic การ match ที่ยืดหยุ่นกว่านี้ด้านล่าง)
+        }
+        
+        for(let pageNum=1; pageNum<=pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const content = await page.getTextContent();
+            
+            // ใช้เทคนิคการรวม text items ที่อยู่ในบรรทัดเดียวกัน (Y ใกล้เคียงกัน)
+            const lines = {};
+            content.items.forEach(item => {
+                const y = Math.round(item.transform[5]); // พิกัด Y
+                if(!lines[y]) lines[y] = [];
+                lines[y].push({x: item.transform[4], text: item.str});
+            });
+
+            // เรียงบรรทัดจากบนลงล่าง
+            const sortedY = Object.keys(lines).map(Number).sort((a,b)=>b-a);
+
+            for(const y of sortedY) {
+                // เรียงข้อความในบรรทัดจากซ้ายไปขวา
+                lines[y].sort((a,b)=>a.x-b.x);
+                const textLine = lines[y].map(i=>i.text).join(' ').trim();
+                
+                // --- REGEX MATCHING ---
+                // รองรับรูปแบบ: "Name <เว้นวรรค> Timestamp"
+                // ตัวอย่าง: "Bart content 17-02-2026 00:34"
+                // หรือ "Nam 15-02-2026 08:30"
+                
+                // Regex 1: หา Timestamp ที่ถูกต้องก่อน (\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\s+\d{1,2}:\d{2})
+                const timeMatch = textLine.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})\s+(\d{1,2}):(\d{2})/);
+                
+                if(timeMatch) {
+                    const fullDateStr = timeMatch[0];
+                    const namePart = textLine.replace(fullDateStr, '').trim(); // ตัดเวลาออก เหลือแต่ชื่อ
+
+                    // พยายาม Match ชื่อกับ DB
+                    let matchedID = null;
+                    const searchName = namePart.toLowerCase();
+
+                    // 1. ลองหาแบบตรงตัว
+                    if(nameToId[searchName]) {
+                        matchedID = nameToId[searchName];
+                    } 
+                    // 2. ลองหาแบบ partial (เช่นใน PDF เป็น "Bart content" แต่ใน DB คือ "Bart")
+                    else {
+                        for(const dbNameLower in nameToId) {
+                            // ถ้าชื่อใน PDF ขึ้นต้นด้วยชื่อใน DB (เช่น "bart content" startsWith "bart")
+                            if(searchName.startsWith(dbNameLower)) {
+                                matchedID = nameToId[dbNameLower];
+                                break;
+                            }
+                            // หรือถ้าชื่อใน PDF มีชื่อใน DB เป็นส่วนประกอบ
+                            if(searchName.includes(dbNameLower) && dbNameLower.length > 2) {
+                                matchedID = nameToId[dbNameLower];
+                                break;
+                            }
+                        }
+                    }
+
+                    if(matchedID) {
+                        const day = parseInt(timeMatch[1]);
+                        const month = parseInt(timeMatch[2]);
+                        let year = parseInt(timeMatch[3]);
+                        if(year < 100) year += 2000;
+                        const h = parseInt(timeMatch[4]);
+                        const m = parseInt(timeMatch[5]);
+                        
+                        raw.push({ID: parseInt(matchedID), Name: DB[matchedID].name, TS: new Date(year, month-1, day, h, m)});
+                    }
+                }
+            }
+        }
+        
+        if(raw.length === 0) throw new Error("ไม่พบข้อมูลสแกน (ตรวจสอบไฟล์ PDF หรือชื่อไม่ตรงกับฐานข้อมูล)");
+        
+        // --- PROCESS DATA (Group by Person & Date) ---
+        const groups = {};
+        raw.forEach(r => {
+            let sDate = new Date(r.TS);
+            sDate.setHours(sDate.getHours() - 6); // ตัดรอบวัน
+            const k = `${r.ID}_${sDate.toISOString().split('T')[0]}`;
+            if(!groups[k]) groups[k] = {ID:r.ID, Date:sDate, Times:[], Manual: null};
+            groups[k].Times.push(r.TS);
+        });
+        
+        DAILY_DATA = [];
+        for(const k in groups) {
+            const validTimes = [];
+            const dupTimes = [];
+            
+            if(groups[k].Times.length > 0) {
+                groups[k].Times.sort((a,b)=>a-b);
+                let lastValid = groups[k].Times[0];
+                validTimes.push(lastValid);
+                
+                for(let i=1; i<groups[k].Times.length; i++) {
+                    const t = groups[k].Times[i];
+                    if(t - lastValid > 1800000) { // 30 mins debounce
+                        validTimes.push(t);
+                        lastValid = t;
+                    } else {
+                        dupTimes.push(t);
+                    }
+                }
+            }
+            groups[k].Times = validTimes;
+            groups[k].dupTimes = dupTimes;
+            
+            DAILY_DATA.push(calculateOneDay(groups[k], DB));
+        }
+        renderErrorSummary();
+        renderDailyTable();
+    }
+
+    function calculateOneDay(g, DB) {
+        const emp = DB[g.ID] || {name:'Unknown', role:'Service', salary:0};
+        const rule = RULES[emp.role] || RULES['Service'];
+        let checkIn = g.Times[0], checkOut = g.Times[g.Times.length-1];
+        let isSingle = g.Times.length === 1 || (checkOut - checkIn < 120000);
+        if(g.Manual) isSingle = (g.Manual === 'single');
+
+        const base = new Date(g.Date);
+        const [sH,sM] = rule.start.split(':').map(Number);
+        const [eH,eM] = rule.end.split(':').map(Number);
+        const start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), sH, sM);
+        let end = new Date(base.getFullYear(), base.getMonth(), base.getDate(), eH, eM);
+        if(eH < 12) end.setDate(end.getDate()+1);
+
+        let late=0, early=0, ot=0, deduct=0, otPay=0, remark=[], errorType=null;
+        const dailyWage = emp.salary > 0 ? (emp.salary/30) : 500;
+        const noFine = ['Manager','Sound','VIP'].includes(emp.role);
+
+        if(g.dupTimes && g.dupTimes.length > 0) {
+            const dStr = g.dupTimes.map(d=>`${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`).join(',');
+            remark.push(`⚠️ สแกนซ้ำ (${dStr})`);
+        }
+
+        if(g.Manual) {
+            if(g.Manual==='forgot_out') { deduct=500; remark.push('❌ ไม่ได้สแกนออก (แก้ไข)'); checkOut=null; errorType='forgot_out'; }
+            else if(g.Manual==='forgot_in') { deduct=dailyWage; remark.push('⚠️ ไม่ได้สแกนเข้า (แก้ไข)'); checkOut=checkIn; checkIn=null; errorType='forgot_in'; }
+            else if(g.Manual==='clear') { deduct=0; remark.push('🛡️ ยกเว้น'); }
+            else if(g.Manual==='normal') { g.Manual=null; }
+        }
+
+        if(!g.Manual) {
+            if(isSingle) {
+                if(!noFine) {
+                    const th = new Date(start.getTime() + 5*3600000);
+                    if(checkIn < th) { deduct=500; remark.push('❌ ไม่ได้สแกนออก'); checkOut=null; errorType='forgot_out'; }
+                    else { deduct=dailyWage; remark.push('⚠️ ไม่ได้สแกนเข้า'); checkOut=checkIn; checkIn=null; errorType='forgot_in'; }
+                } else checkOut=null;
+            } else {
+                if(!noFine) {
+                    if(checkIn > start) {
+                        late = Math.floor((checkIn - start)/60000);
+                        deduct += late * rule.late;
+                    }
+                    if(checkOut < end) {
+                        early = Math.floor((end - checkOut)/60000);
+                        deduct += early * rule.early;
+                    }
+                    else if(checkOut > end && rule.ot_rate > 0) {
+                        ot = Math.floor((checkOut - end)/60000);
+                        otPay += ot * rule.ot_rate;
+                    }
+                }
+            }
+        }
+
+        return {
+            key: `${g.ID}_${g.Date.getTime()}`, rawGroup:g, dateStr: g.Date.toISOString().split('T')[0],
+            id:g.ID, name:emp.name, role:emp.role, salary:emp.salary,
+            in:checkIn, out:checkOut, late:late, early:early, ot:ot, deduct:Math.round(deduct), otPay:Math.round(otPay),
+            remark:remark.join(', '), errorType:errorType
+        };
+    }
+
+    function renderErrorSummary() {
+        const outB=document.querySelector('#tableForgotOut tbody'); const inB=document.querySelector('#tableForgotIn tbody');
+        outB.innerHTML=''; inB.innerHTML=''; let cO=0, cI=0;
+        DAILY_DATA.forEach(d=>{
+            if(d.errorType==='forgot_out') { cO++; outB.innerHTML+=`<tr><td>${d.dateStr}</td><td>${d.name}</td><td>${fmtTime(d.in)}</td></tr>`; }
+            else if(d.errorType==='forgot_in') { cI++; inB.innerHTML+=`<tr><td>${d.dateStr}</td><td>${d.name}</td><td>${fmtTime(d.out)}</td></tr>`; }
+        });
+        document.getElementById('countOut').innerText=cO; document.getElementById('countIn').innerText=cI;
+        document.querySelector('.bg-red-light').style.display = cO>0?'block':'none';
+        document.querySelector('.bg-yellow-light').style.display = cI>0?'block':'none';
+    }
+
+    function renderDailyTable() {
+        const tb=document.getElementById('dailyBody'); tb.innerHTML='';
+        DAILY_DATA.forEach((r,i)=>{
+            tb.innerHTML+=`<tr>
+                <td>${r.dateStr}</td><td>${r.name}</td><td>${r.role}</td>
+                <td>${fmtTime(r.in)}</td><td>${fmtTime(r.out)}</td>
+                <td style="${r.late>0?'color:red':''}">${r.late||'-'}</td>
+                <td style="${r.early>0?'color:red':''}">${r.early||'-'}</td>
+                <td style="${r.deduct>0?'color:red':''}">${r.deduct||'-'}</td>
+                <td style="${r.ot>0?'color:green':''}">${r.ot||'-'}</td>
+                <td style="${r.otPay>0?'color:green':''}">${r.otPay||'-'}</td>
+                <td>${r.remark}</td>
+                <td><button class="btn-outline" onclick="openEdit(${i})">✏️</button></td>
+            </tr>`;
+        });
+    }
+
+    let curIdx=-1;
+    function openEdit(i) { curIdx=i; document.getElementById('modalInfo').innerHTML=`${DAILY_DATA[i].name} (${DAILY_DATA[i].dateStr})`; document.getElementById('editModal').style.display='block'; }
+    function setEditType(t) { 
+        if(curIdx===-1) return;
+        DAILY_DATA[curIdx].rawGroup.Manual = t;
+        const DB = UPLOADED_DB||LOCAL_DB;
+        DAILY_DATA[curIdx] = calculateOneDay(DAILY_DATA[curIdx].rawGroup, DB);
+        renderErrorSummary(); renderDailyTable(); closeModal();
+    }
+    function closeModal() { document.getElementById('editModal').style.display='none'; curIdx=-1; }
+
+    function exportFullExcel() {
+        if(DAILY_DATA.length === 0) return alert("ไม่มีข้อมูล");
+        const sorted = [...DAILY_DATA].sort((a,b) => a.name.localeCompare(b.name) || a.dateStr.localeCompare(b.dateStr));
+        const grp = {}; const sumAdmin = {};
+        sorted.forEach(d => {
+            if(!grp[d.name]) grp[d.name] = {info:d, rec:[], sLate:0, sEarly:0, sOT:0};
+            grp[d.name].rec.push(d); grp[d.name].sLate += d.late; grp[d.name].sEarly += d.early; grp[d.name].sOT += d.ot;
+            if(!sumAdmin[d.id]) sumAdmin[d.id] = {id:d.id, name:d.name, role:d.role, salary:d.salary, days:0, otMin:0, otPay:0, deduct:0};
+            sumAdmin[d.id].days++; sumAdmin[d.id].otMin += d.ot; sumAdmin[d.id].otPay += d.otPay; sumAdmin[d.id].deduct += d.deduct;
+        });
+
+        const wb = XLSX.utils.book_new();
+        const rows1 = [];
+        rows1.push([{v:"Soundabout 90s - ใบแจ้งเวลาทำงาน", s:{font:{bold:true, sz:14}}}]); rows1.push([]);
+        for(const k in grp) {
+            const g = grp[k];
+            rows1.push([{ v: `${g.info.name} (${g.info.role})`, s: { font: { bold: true, color: { rgb: "1E3A8A" } } } }]);
+            rows1.push(["วันที่","เข้า","ออก","สาย","ออกก่อน","OT","หมายเหตุ"]);
+            g.rec.forEach(r => rows1.push([r.dateStr, fmtTime(r.in), fmtTime(r.out), r.late||"-", r.early||"-", r.ot||"-", r.remark]));
+            rows1.push(["รวม", "", "", g.sLate, g.sEarly, g.sOT, ""]); rows1.push([]);
+        }
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows1), "พนักงาน");
+
+        const arr2 = Object.values(sumAdmin).map(s=>({ID:s.id, Name:s.name, Days:s.days, OT_Pay:s.otPay, Deduct:s.deduct, Net:s.otPay-s.deduct}));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(arr2), "Admin");
+
+        XLSX.writeFile(wb, `Payroll_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    async function printEmployeeReport() {
+        if(DAILY_DATA.length===0) return alert("ไม่มีข้อมูล");
+        const grp={}; 
+        DAILY_DATA.sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{ 
+            if(!grp[d.name]) grp[d.name]={info:d, rec:[], sLate:0, sEarly:0, sOT:0}; 
+            grp[d.name].rec.push(d); grp[d.name].sLate+=d.late; grp[d.name].sEarly+=d.early; grp[d.name].sOT+=d.ot; 
+        });
+
+        const w=window.open('','_blank');
+        let h=`<html><head><title>Payroll</title><style>body{font-family:sans-serif;padding:20px} table{width:100%;border-collapse:collapse;font-size:12px} th,td{border:1px solid #ccc;padding:5px;text-align:center}</style></head><body><h2>ใบแจ้งเวลา</h2>`;
+        for(let k in grp){
+            let g=grp[k]; h+=`<h3>${g.info.name} (${g.info.role})</h3><table><tr><th>วันที่</th><th>เข้า</th><th>ออก</th><th>สาย</th><th>ออกก่อน</th><th>OT</th><th>หมายเหตุ</th></tr>`;
+            g.rec.forEach(r=>{ h+=`<tr><td>${r.dateStr}</td><td>${fmtTime(r.in)}</td><td>${fmtTime(r.out)}</td><td>${r.late||'-'}</td><td>${r.early||'-'}</td><td>${r.ot||'-'}</td><td>${r.remark}</td></tr>`; });
+            h+=`<tr><td colspan="3">รวม</td><td>${g.sLate}</td><td>${g.sEarly}</td><td>${g.sOT}</td><td></td></tr></table><hr>`;
+        }
+        h+=`</body></html>`; w.document.write(h); w.document.close(); setTimeout(()=>{w.print()},500);
+    }
+
+    function fmtTime(d) { return d ? `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}` : '-'; }
+    function switchTab(t) {
+        document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+        document.getElementById(`tab-${t}`).classList.add('active');
+        document.querySelector(`.tab-btn[onclick="switchTab('${t}')"]`).classList.add('active');
+    }
+
+    init();
+</script>
+</body>
+</html>

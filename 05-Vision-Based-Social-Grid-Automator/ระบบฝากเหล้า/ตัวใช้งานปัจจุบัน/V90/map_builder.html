@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>V88 Map Builder</title>
+    <script src="map_config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #0f172a;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        .grid-container {
+            width: 800px;
+            height: 600px;
+            background: #1e293b;
+            position: relative;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            background-image: linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .table-node {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: black;
+            cursor: grab;
+            border: 2px solid white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            user-select: none;
+        }
+
+        .table-node:active {
+            cursor: grabbing;
+        }
+
+        .table-node {
+            resize: both;
+            overflow: hidden;
+            min-width: 20px;
+            min-height: 20px;
+        }
+
+        .type-VVIP {
+            background: #FBBF24;
+            border-radius: 5px;
+        }
+
+        /* เหลี่ยมขอบมน */
+        .type-VIP {
+            background: #c084fc;
+            border-radius: 50%;
+        }
+
+        /* วงกลม */
+        .type-Normal {
+            background: #38bdf8;
+            border-radius: 5px;
+        }
+
+        .type-Small {
+            background: #f87171;
+            border-radius: 50%;
+        }
+
+        .struct-node {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.5);
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+            cursor: grab;
+            border: 1px dashed rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            user-select: none;
+        }
+
+        .struct-node:active {
+            cursor: grabbing;
+            border-color: #f97316;
+        }
+
+        .struct-node {
+            resize: both;
+            overflow: hidden;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .lasso-box {
+            position: absolute;
+            border: 1px dashed #f97316;
+            background: rgba(249, 115, 22, 0.2);
+            pointer-events: none;
+            z-index: 2000;
+        }
+    </style>
+</head>
+
+<body class="p-8 flex gap-8 h-screen overflow-hidden">
+
+    <!-- Left Panel: Form & Tools -->
+    <div class="w-1/3 bg-[#1e293b] p-6 rounded-2xl border border-gray-700 flex flex-col gap-4 overflow-y-auto">
+        <h1 class="text-2xl font-black text-orange-500">🗺️ V88 Map Builder</h1>
+        <p class="text-xs text-gray-400">เครื่องมือสร้างแผนผังโต๊ะแบบ ลาก-วาง (Visual Drag & Drop)</p>
+
+        <div class="bg-gray-800 p-4 rounded-xl space-y-3">
+            <h3 class="font-bold">1. ลากรูปผังร้านมาเป็นพื้นหลัง (สำหรับ Draft)</h3>
+            <input type="file" id="bg-upload" accept="image/*"
+                class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+                onchange="loadBackgroundImage(event)">
+            <p class="text-[10px] text-gray-500">* ภาพจะไม่ถูกบันทึก เอาไว้ใช้กะระยะวางโต๊ะคร่าวๆ</p>
+        </div>
+
+        <details class="bg-gray-800 p-4 rounded-xl cursor-pointer select-none" id="price-settings-container"
+            onclick="setTimeout(renderColorPrices, 100)">
+            <summary class="font-bold text-yellow-500">⚙️ ตั้งค่าราคาบัตรตามสีโซน</summary>
+            <div class="grid grid-cols-2 gap-2 text-[10px] mt-3 cursor-auto uppercase">
+                <div>
+                    <label class="text-gray-400">ค่าเก้าอี้เสริม (บาท/ตัว)</label>
+                    <input type="number" id="c-extra" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                        value="200">
+                </div>
+                <div>
+                    <label class="text-gray-400">ค่าล็อคโต๊ะชัวร์ (บาท)</label>
+                    <input type="number" id="c-lock" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                        value="500">
+                </div>
+            </div>
+            <div id="color-price-list" class="space-y-2 mt-3 cursor-auto">
+                <p class="text-xs text-gray-500 text-center">กำลังโหลดสีจากผัง...</p>
+            </div>
+        </details>
+
+        <div class="bg-gray-800 p-4 rounded-xl space-y-3">
+            <h3 class="font-bold text-blue-400">2. เพิ่มโต๊ะ / แก้ไขที่เลือก <span id="sel-count"
+                    class="text-xs font-normal text-white bg-blue-600 px-2 py-1 rounded">0 table</span></h3>
+            <p class="text-[10px] text-gray-400">👉 กด Shift + คลิก เพื่อเลือกทีละหลายโต๊ะ หรือ ลากคลุม (Lasso)
+                เพื่อเลือกกลุ่ม</p>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                    <label class="text-xs text-gray-400">รหัส/ชื่อโต๊ะ</label>
+                    <input type="text" id="t-name" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                        value="VVIP1">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">ประเภท (โซนสี)</label>
+                    <select id="t-type" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                        onchange="updateDefaultColor()">
+                        <option value="VVIP">VVIP (โซฟาตัว U)</option>
+                        <option value="VIP">VIP (โซฟากลม)</option>
+                        <option value="Normal">Normal (โต๊ะเหลี่ยม)</option>
+                        <option value="Small">Small (โต๊ะยืนกลม)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">สีของโต๊ะ</label>
+                    <input type="color" id="t-color"
+                        class="w-full h-9 bg-gray-900 border border-gray-700 p-1 rounded cursor-pointer"
+                        value="#FBBF24">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">ความจุ (คน)</label>
+                    <input type="number" id="t-cap" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                        value="6">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">เสริมเก้าอี้สูงสุด</label>
+                    <input type="number" id="t-extra" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                        value="2">
+                </div>
+                <div class="col-span-2">
+                    <label class="text-xs text-gray-400">ราคาพิเศษเฉพาะโต๊ะ (เว้นว่างเพื่อใช้ราคาตามสี)</label>
+                    <input type="number" id="t-price"
+                        class="w-full bg-gray-900 border border-gray-700 p-2 rounded text-yellow-400"
+                        placeholder="ดึงราคาตามสีอัตโนมัติ">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <button onclick="addTable()"
+                    class="w-full bg-blue-600 hover:bg-blue-500 p-2 rounded font-bold transition">➕ เพิ่มโต๊ะ</button>
+                <button onclick="updateSelectedProperties()"
+                    class="w-full bg-orange-600 hover:bg-orange-500 p-2 rounded font-bold transition text-xs">✏️
+                    อัปเดตที่เลือก</button>
+            </div>
+
+            <div class="bg-gray-900 p-2 rounded border border-gray-700 mt-2">
+                <p class="text-xs font-bold text-gray-300 mb-2">🛠️ เครื่องมือจัดแนว (ยึดตามอันแรกที่เลือก)</p>
+                <div class="grid grid-cols-3 gap-1">
+                    <button onclick="alignSelected('x')"
+                        class="bg-slate-700 hover:bg-slate-600 p-1 rounded text-[10px] text-white">แถว X ตรงกัน</button>
+                    <button onclick="alignSelected('y')"
+                        class="bg-slate-700 hover:bg-slate-600 p-1 rounded text-[10px] text-white">แถว Y ตรงกัน</button>
+                    <button onclick="matchSelectedSize()"
+                        class="bg-slate-700 hover:bg-slate-600 p-1 rounded text-[10px] text-white">ขนาดเท่ากัน</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl space-y-3">
+            <h3 class="font-bold">3. เพิ่มจุดหลัก (Station / โซนร้าน)</h3>
+            <div class="flex gap-2 text-sm">
+                <input type="text" id="s-name" class="w-full bg-gray-900 border border-gray-700 p-2 rounded"
+                    placeholder="เช่น ห้องน้ำ, บาร์ใหม่">
+                <button onclick="addStation()"
+                    class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded font-bold whitespace-nowrap">➕
+                    เพิ่มจุด</button>
+            </div>
+            <p class="text-[10px] text-gray-500">* ดับเบิลคลิก (Double-click) ที่โต๊ะหรือจุดหลักบนแผนผัง
+                เพื่อเปลี่ยนชื่อได้ตลอดเวลา</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl flex-1 flex flex-col gap-2">
+            <h3 class="font-bold text-green-400">4. บันทึกและส่งออกไป Master App อัตโนมัติ</h3>
+            <p class="text-xs text-gray-400 mb-2">เมื่อพอใจกับผังแล้ว กดปุ่มนี้ ระบบจะสร้างไฟล์และเชื่อมให้ App
+                อัตโนมัติ (ไม่ต้องก๊อปวาง)</p>
+            <textarea id="output-code"
+                class="w-full flex-1 bg-black text-green-400 p-3 rounded font-mono text-[10px] border border-gray-700 h-24"
+                readonly placeholder="รออัปเดตผัง..."></textarea>
+            <button onclick="generateCode()"
+                class="w-full bg-green-600 hover:bg-green-500 p-3 rounded font-bold transition">💾 บันทึกและส่งออกไป
+                Master App</button>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl space-y-3">
+            <h3 class="font-bold text-yellow-400">5. โหลดผังที่เคยทำไว้ (Import Code)</h3>
+            <p class="text-[10px] text-gray-400">ถ้ามีโค้ดที่ก๊อปไว้ สามารถนำมาวางที่ช่องนี้เพื่อเรียกผังขึ้นมา
+                หรือกดปุ่มด้านล่างเพื่อดึงจากไฟล์ล่าสุด</p>
+            <textarea id="import-code"
+                class="w-full flex-1 bg-gray-900 text-yellow-400 p-3 rounded font-mono text-[10px] border border-gray-700 h-20"
+                placeholder="วางโค้ด window.MAP_CONFIG หรือ JSON ที่นี่..."></textarea>
+            <div class="flex gap-2 text-sm mt-2">
+                <button onclick="loadPastedCode()"
+                    class="flex-1 bg-yellow-600 hover:bg-yellow-500 p-2 rounded font-bold transition text-[11px]">📥
+                    โหลดจากช่องวางโค้ด</button>
+                <button onclick="loadFromConfigFile()"
+                    class="flex-1 bg-green-600 hover:bg-green-500 p-2 rounded font-bold transition text-[11px]">♻️
+                    ดึงไฟล์ล่าสุด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Visual Editor -->
+    <div class="flex-1 flex flex-col items-center">
+        <h2 class="font-bold text-gray-400 mb-4">ชั้น 1 (ลากโต๊ะและจุดหลักเพื่อจัดตำแหน่ง)</h2>
+        <div id="grid-container" class="grid-container">
+            <!-- Background structural elements to help visualize -->
+            <div id="struct-stage" class="struct-node" style="top: 12px; left: 160px; width: 480px; height: 72px;"
+                onmousedown="dragMouseDown(event)" ondblclick="renameNode(event)" data-type="struct" data-class="stage">
+                STAGE / เวที</div>
+            <div id="struct-entrance" class="struct-node" style="top: 510px; left: 16px; width: 120px; height: 60px;"
+                onmousedown="dragMouseDown(event)" ondblclick="renameNode(event)" data-type="struct"
+                data-class="entrance-left">ENTRANCE</div>
+            <div id="struct-dj" class="struct-node" style="top: 420px; left: 640px; width: 144px; height: 150px;"
+                onmousedown="dragMouseDown(event)" ondblclick="renameNode(event)" data-type="struct"
+                data-class="counter-bar">BAR / DJ</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-4">* โต๊ะหรือเวทีที่คลิกล่าสุดจะมีขอบสีส้ม กด "Backspace" เพื่อลบโต๊ะ/จุดได้
+            | ดับเบิลคลิกเพื่อแก้ชื่อ</p>
+    </div>
+
+    <script>
+        let tables = [];
+        let tableIdCounter = 1;
+        let stationIdCounter = 1;
+        let colorPrices = {};
+
+        function renderColorPrices() {
+            const list = document.getElementById('color-price-list');
+            if (!list) return;
+            const uniqueColors = [...new Set(tables.map(t => t.color))].filter(Boolean);
+
+            if (uniqueColors.length === 0) {
+                list.innerHTML = '<p class="text-[10px] text-gray-500">กรุณาสร้างโต๊ะและกำหนดสีก่อนตั้งราคา</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            uniqueColors.forEach(color => {
+                const val = colorPrices[color] || '';
+                list.innerHTML += `
+                <div class="flex items-center gap-2 text-[10px]">
+                    <div class="w-6 h-6 rounded-full border border-gray-500 flex-shrink-0" style="background-color: ${color}"></div>
+                    <input type="number" class="w-full bg-gray-900 border border-gray-700 p-2 rounded color-price-input" 
+                        data-color="${color}" value="${val}" placeholder="ระบุราคา" onchange="updateColorPrice('${color}', this.value)">
+                    <span class="text-gray-400">บาท</span>
+                </div>`;
+            });
+        }
+
+        function updateColorPrice(color, val) {
+            colorPrices[color] = Number(val) || 0;
+            saveToLocal();
+        }
+
+        function saveToLocal() {
+            localStorage.setItem('v88_map_draft', JSON.stringify({
+                tables, tableIdCounter, stationIdCounter, colorPrices
+            }));
+        }
+
+        let selectedElement = null;
+
+        const container = document.getElementById('grid-container');
+        // Container is 800x600. Grid is logically 100x100 for percent.
+        // So 1% X = 8px, 1% Y = 6px.
+
+        function getPx(percentX, percentY) {
+            return { x: percentX * 8, y: percentY * 6 };
+        }
+
+        function getPercent(pxX, pxY) {
+            return { x: Math.round(pxX / 8), y: Math.round(pxY / 6) };
+        }
+
+        function createNode(t) {
+            const el = document.createElement('div');
+            el.className = `table-node type-${t.type}`;
+            el.innerText = t.name;
+            el.dataset.id = t.id;
+
+            // Base size based on capacity (visual only)
+            let w = 40, h = 40;
+            if (t.cap >= 6) { w = 60; h = 60; }
+            else if (t.cap === 4) { w = 50; h = 50; }
+            else { w = 35; h = 35; }
+
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+
+            if (t.color) el.style.backgroundColor = t.color;
+
+            const pxPos = getPx(t.x, t.y);
+            el.style.left = pxPos.x + 'px';
+            el.style.top = pxPos.y + 'px';
+
+            el.onmousedown = dragMouseDown;
+            el.ondblclick = renameNode;
+            container.appendChild(el);
+            return el;
+        }
+
+        function addStation() {
+            const name = document.getElementById('s-name').value || 'จุดใหม่';
+            const el = document.createElement('div');
+            el.className = `struct-node`;
+            el.innerText = name;
+            el.dataset.type = 'struct';
+            el.dataset.class = `station-${stationIdCounter++}`;
+            el.style.width = '120px';
+            el.style.height = '60px';
+            el.style.top = '250px';
+            el.style.left = '350px';
+            el.onmousedown = dragMouseDown;
+            el.ondblclick = renameNode;
+            container.appendChild(el);
+            document.getElementById('s-name').value = '';
+            saveToLocal();
+        }
+
+        function renameNode(e) {
+            e.stopPropagation();
+            const currentName = e.target.innerText;
+            const newName = prompt("แก้ไขชื่อ/รหัส:", currentName);
+            if (newName !== null && newName.trim() !== '') {
+                e.target.innerText = newName.trim();
+                // Update underlying array if it's a table
+                if (e.target.dataset.id) {
+                    const t = tables.find(t => t.id == e.target.dataset.id);
+                    if (t) t.name = newName.trim();
+                }
+                saveToLocal();
+            }
+        }
+
+        function addTable() {
+            const name = document.getElementById('t-name').value;
+            const type = document.getElementById('t-type').value;
+            const cap = parseInt(document.getElementById('t-cap').value);
+            const extra = parseInt(document.getElementById('t-extra').value);
+            const color = document.getElementById('t-color').value;
+            const price = document.getElementById('t-price').value;
+
+            const t = { id: tableIdCounter++, name, type, cap, extra, color, price, x: 50, y: 50 }; // Default center
+            tables.push(t);
+            createNode(t);
+            saveToLocal();
+
+            // Auto increment name for convenience (e.g. VVIP1 -> VVIP2)
+            const match = name.match(/^([a-zA-Z\u0E00-\u0E7F]+)(\d+)$/); // Support Thai characters too
+            if (match) {
+                document.getElementById('t-name').value = match[1] + (parseInt(match[2]) + 1);
+            }
+        }
+
+        function updateDefaultColor() {
+            const type = document.getElementById('t-type').value;
+            const colorInput = document.getElementById('t-color');
+            if (type === 'VVIP') colorInput.value = '#FBBF24';
+            else if (type === 'VIP') colorInput.value = '#c084fc';
+            else if (type === 'Normal') colorInput.value = '#38bdf8';
+            else if (type === 'Small') colorInput.value = '#f87171';
+        }
+
+        function loadBackgroundImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    container.style.backgroundImage = `url('${e.target.result}')`;
+                    container.style.backgroundSize = 'contain';
+                    container.style.backgroundRepeat = 'no-repeat';
+                    container.style.backgroundPosition = 'center';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- Drag & Drop & Multi-Select Logic ---
+        let dragEl = null, pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        let selectedElements = [];
+        let isLassoing = false;
+        let lassoStartX = 0, lassoStartY = 0;
+        let lassoDiv = null;
+
+        // Container mouseDown for lasso
+        container.addEventListener('mousedown', (e) => {
+            if (e.target !== container) return; // Only start lasso if clicking empty space
+            e.preventDefault();
+            isLassoing = true;
+
+            if (!e.shiftKey) {
+                clearSelection();
+            }
+
+            const rect = container.getBoundingClientRect();
+            lassoStartX = e.clientX - rect.left;
+            lassoStartY = e.clientY - rect.top;
+
+            lassoDiv = document.createElement('div');
+            lassoDiv.className = 'lasso-box';
+            lassoDiv.style.left = lassoStartX + 'px';
+            lassoDiv.style.top = lassoStartY + 'px';
+            lassoDiv.style.width = '0px';
+            lassoDiv.style.height = '0px';
+            container.appendChild(lassoDiv);
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            if (!isLassoing || !lassoDiv) return;
+            const rect = container.getBoundingClientRect();
+            let curX = e.clientX - rect.left;
+            let curY = e.clientY - rect.top;
+
+            // Constrain
+            if (curX < 0) curX = 0; if (curX > 800) curX = 800;
+            if (curY < 0) curY = 0; if (curY > 600) curY = 600;
+
+            const x = Math.min(curX, lassoStartX);
+            const y = Math.min(curY, lassoStartY);
+            const w = Math.abs(curX - lassoStartX);
+            const h = Math.abs(curY - lassoStartY);
+
+            lassoDiv.style.left = x + 'px';
+            lassoDiv.style.top = y + 'px';
+            lassoDiv.style.width = w + 'px';
+            lassoDiv.style.height = h + 'px';
+        });
+
+        container.addEventListener('mouseup', (e) => {
+            if (!isLassoing || !lassoDiv) return;
+            isLassoing = false;
+
+            const lRect = lassoDiv.getBoundingClientRect();
+
+            // Find intersecting nodes
+            document.querySelectorAll('.table-node, .struct-node').forEach(node => {
+                const nRect = node.getBoundingClientRect();
+                if (
+                    nRect.left < lRect.right &&
+                    nRect.right > lRect.left &&
+                    nRect.top < lRect.bottom &&
+                    nRect.bottom > lRect.top
+                ) {
+                    if (!selectedElements.includes(node)) {
+                        selectedElements.push(node);
+                    }
+                }
+            });
+
+            lassoDiv.remove();
+            lassoDiv = null;
+            updateSelectionVisuals();
+        });
+
+        function clearSelection() {
+            selectedElements = [];
+            updateSelectionVisuals();
+        }
+
+        function updateSelectionVisuals() {
+            document.querySelectorAll('.table-node, .struct-node').forEach(n => {
+                if (n.classList.contains('struct-node')) n.style.borderColor = 'rgba(255,255,255,0.4)';
+                else n.style.borderColor = 'white';
+                n.style.zIndex = 1;
+            });
+
+            selectedElements.forEach(el => {
+                el.style.borderColor = '#f97316';
+                el.style.zIndex = 1000;
+            });
+
+            document.getElementById('sel-count').innerText = `${selectedElements.length} rows`;
+
+            if (selectedElements.length > 0) {
+                // Populate form based on first selected item
+                const first = selectedElements[0];
+                if (first.dataset.id) {
+                    const t = tables.find(x => x.id == first.dataset.id);
+                    if (t) {
+                        document.getElementById('t-name').value = t.name || '';
+                        document.getElementById('t-type').value = t.type || 'Normal';
+                        document.getElementById('t-color').value = t.color || '#FBBF24';
+                        document.getElementById('t-cap').value = t.cap || 4;
+                        document.getElementById('t-extra').value = t.extra || 0;
+                        document.getElementById('t-price').value = t.price || '';
+                    }
+                }
+            }
+        }
+
+        function dragMouseDown(e) {
+            const rect = e.target.getBoundingClientRect();
+            if (e.clientX > rect.right - 15 && e.clientY > rect.bottom - 15) {
+                return;
+            }
+
+            e.preventDefault();
+            dragEl = e.target;
+
+            if (e.shiftKey) {
+                if (selectedElements.includes(dragEl)) {
+                    selectedElements = selectedElements.filter(el => el !== dragEl);
+                } else {
+                    selectedElements.push(dragEl);
+                }
+            } else {
+                if (!selectedElements.includes(dragEl)) {
+                    selectedElements = [dragEl];
+                }
+            }
+
+            updateSelectionVisuals();
+
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+
+            // Move all selected nodes by delta
+            selectedElements.forEach(el => {
+                let newTop = el.offsetTop - pos2;
+                let newLeft = el.offsetLeft - pos1;
+
+                if (newTop < 0) newTop = 0;
+                if (newLeft < 0) newLeft = 0;
+                if (newTop > 600 - el.offsetHeight) newTop = 600 - el.offsetHeight;
+                if (newLeft > 800 - el.offsetWidth) newLeft = 800 - el.offsetWidth;
+
+                el.style.top = newTop + "px";
+                el.style.left = newLeft + "px";
+            });
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+
+            selectedElements.forEach(el => {
+                if (el.dataset.id) {
+                    const t = tables.find(x => x.id == el.dataset.id);
+                    if (t) {
+                        const pct = getPercent(el.offsetLeft, el.offsetTop);
+                        t.x = pct.x;
+                        t.y = pct.y;
+                    }
+                }
+            });
+            saveToLocal();
+            dragEl = null;
+        }
+
+        // --- Bulk Features ---
+        function updateSelectedProperties() {
+            if (selectedElements.length === 0) return;
+            const type = document.getElementById('t-type').value;
+            const cap = parseInt(document.getElementById('t-cap').value);
+            const extra = parseInt(document.getElementById('t-extra').value);
+            const color = document.getElementById('t-color').value;
+            const price = document.getElementById('t-price').value;
+
+            selectedElements.forEach(el => {
+                if (el.dataset.id) {
+                    const t = tables.find(x => x.id == el.dataset.id);
+                    if (t) {
+                        t.type = type;
+                        t.cap = cap;
+                        t.extra = extra;
+                        t.color = color;
+                        t.price = price;
+
+                        el.className = `table-node type-${type}`;
+                        el.style.backgroundColor = color;
+                    }
+                }
+            });
+            saveToLocal();
+        }
+
+        function alignSelected(axis) {
+            if (selectedElements.length < 2) return;
+            const ref = selectedElements[0];
+            const refTop = ref.offsetTop;
+            const refLeft = ref.offsetLeft;
+
+            selectedElements.forEach(el => {
+                if (axis === 'x') el.style.top = refTop + 'px'; // Align X axis (Horizontal Row -> match Top)
+                if (axis === 'y') el.style.left = refLeft + 'px'; // Align Y axis (Vertical Col -> match Left)
+
+                if (el.dataset.id) {
+                    const t = tables.find(x => x.id == el.dataset.id);
+                    if (t) {
+                        const pct = getPercent(el.offsetLeft, el.offsetTop);
+                        t.x = pct.x;
+                        t.y = pct.y;
+                    }
+                }
+            });
+            saveToLocal();
+        }
+
+        function matchSelectedSize() {
+            if (selectedElements.length < 2) return;
+            const ref = selectedElements[0];
+            const w = ref.style.width || ref.offsetWidth + 'px';
+            const h = ref.style.height || ref.offsetHeight + 'px';
+
+            selectedElements.forEach(el => {
+                el.style.width = w;
+                el.style.height = h;
+            });
+            saveToLocal();
+        }
+
+        // Delete active on Backspace/Del
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'Backspace' || e.key === 'Delete') && selectedElements.length > 0) {
+                // To avoid triggering when typing in inputs
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+                selectedElements.forEach(el => {
+                    if (el.dataset.type === 'struct') {
+                        el.remove();
+                    } else {
+                        const id = el.dataset.id;
+                        tables = tables.filter(t => t.id != id);
+                        el.remove();
+                    }
+                });
+                selectedElements = [];
+                updateSelectionVisuals();
+                saveToLocal();
+            }
+        });
+
+        // --- Generate Code ---
+        function generateCode() {
+            const allTablesData = {
+                "1": tables.map(t => {
+                    const nodeEl = Array.from(document.querySelectorAll('.table-node')).find(n => n.dataset.id == t.id);
+                    let sx = 6, sy = 6;
+                    if (nodeEl) {
+                        sx = Math.max(1, Math.round(nodeEl.offsetWidth / 8));
+                        sy = Math.max(1, Math.round(nodeEl.offsetHeight / 6));
+                    }
+                    return {
+                        id: t.id.toString(),
+                        table_number: t.name,
+                        table_type: t.type,
+                        capacity: t.cap,
+                        x_position: Math.max(1, t.x),
+                        y_position: Math.max(1, t.y),
+                        span_x: sx,
+                        span_y: sy,
+                        is_available: true,
+                        allow_extra_chairs: t.extra > 0,
+                        max_extra_chairs: t.extra,
+                        custom_color: t.color,
+                        price: t.price || ""
+                    };
+                }),
+                "2": [] // Can be added later if needed
+            };
+
+            let structCode = "";
+            let htmlCode = `<div id="restaurant-layout" class="animate-fade">\n`;
+
+            // Calculate CSS grid positions for structural elements
+            document.querySelectorAll('.struct-node').forEach(el => {
+                const pctPos = getPercent(el.offsetLeft, el.offsetTop);
+                const pctWidth = Math.max(1, Math.round(el.offsetWidth / 8));
+                const pctHeight = Math.max(1, Math.round(el.offsetHeight / 6));
+
+                let gx = pctPos.x <= 0 ? 1 : pctPos.x;
+                let gy = pctPos.y <= 0 ? 1 : pctPos.y;
+
+                const className = el.dataset.class;
+                structCode += `.${className} { grid-column: ${gx} / span ${pctWidth}; grid-row: ${gy} / span ${pctHeight}; }\n`;
+                htmlCode += `    <div class="${className}">${el.innerText}</div>\n`;
+            });
+
+            htmlCode += `</div>`;
+
+            // Collect Pricing
+            const concertDetails = {
+                extra_chair_price: Number(document.getElementById('c-extra').value) || 0,
+                lock_table_price: Number(document.getElementById('c-lock').value) || 0,
+                colorPrices: colorPrices,
+                privilege_vvip: "โซฟาติดขอบเวที", privilege_vip: "มองเห็นชัดเจน",
+                privilege_normal: "โต๊ะนั่งสบาย", privilege_small: "โต๊ะยืนชิลๆ"
+            };
+
+            const mapConfig = {
+                allTables: allTablesData,
+                concertDetails: concertDetails,
+                structCSS: structCode,
+                structHTML: htmlCode
+            };
+
+            const finalCode = `window.MAP_CONFIG = ${JSON.stringify(mapConfig, null, 4)};`;
+
+            const out = document.getElementById('output-code');
+            out.value = finalCode;
+            out.select();
+            document.execCommand('copy');
+
+            // Auto Update File
+            fetch('http://localhost:8085/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: finalCode })
+            }).then(r => r.json())
+                .then(d => {
+                    if (d.success) alert("✅ สร้างผังและอัปเดตไฟล์ map_config.js ให้กับ Master App อัตโนมัติแล้ว!\n(ระบบบันทึก State อัตโนมัติ ไม่ต้องกลัวหายแม้รีเฟรชหน้า)");
+                    else alert("⚠️ บันทึกไฟล์อัตโนมัติล้มเหลว กรุณาคัดลอกโค้ดไปวางเอง");
+                })
+                .catch(e => {
+                    alert("⚠️ ไม่พบเซิร์ฟเวอร์บันทึกไฟล์ (map_server.py)!\nกรุณาคัดลอกโค้ดด้านบนไปวางใน map_config.js ด้วยตัวเอง");
+                });
+        }
+
+        function clearAll() {
+            document.querySelectorAll('.table-node, .struct-node').forEach(e => e.remove());
+            tables = [];
+            selectedElements = []; // Reset selected elements
+        }
+
+        function loadFromLocal() {
+            const dataStr = localStorage.getItem('v88_map_draft');
+            if (dataStr) {
+                const data = JSON.parse(dataStr);
+                tables = data.tables || [];
+                tableIdCounter = data.tableIdCounter || 1;
+                stationIdCounter = data.stationIdCounter || 1;
+                colorPrices = data.colorPrices || {};
+
+                tables.forEach(t => createNode(t));
+
+                if (data.stations) {
+                    data.stations.forEach(s => {
+                        const el = document.createElement('div');
+                        el.className = 'struct-node';
+                        el.innerText = s.name;
+                        el.dataset.type = 'struct';
+                        el.dataset.class = s.id;
+                        el.style.width = s.w;
+                        el.style.height = s.h;
+                        el.style.left = s.x;
+                        el.style.top = s.y;
+                        el.onmousedown = dragMouseDown;
+                        el.ondblclick = renameNode;
+                        container.appendChild(el);
+                    });
+                }
+                renderColorPrices(); // Render prices after loading
+            } else {
+                loadFromConfigFile();
+            }
+        }
+
+        function buildMapFromConfig(configObj) {
+            clearAll();
+            tableIdCounter = 1;
+            stationIdCounter = 1;
+
+            if (configObj.allTables && configObj.allTables['1']) {
+                configObj.allTables['1'].forEach(t => {
+                    const tableObj = {
+                        id: tableIdCounter++,
+                        name: t.table_number,
+                        type: t.table_type,
+                        cap: t.capacity,
+                        extra: t.max_extra_chairs || 0,
+                        color: t.custom_color || '',
+                        price: t.price || '',
+                        x: Math.max(1, t.x_position),
+                        y: Math.max(1, t.y_position)
+                    };
+                    tables.push(tableObj);
+
+                    const el = createNode(tableObj);
+                    if (t.span_x) el.style.width = (t.span_x * 8) + 'px';
+                    if (t.span_y) el.style.height = (t.span_y * 6) + 'px';
+                });
+            }
+
+            if (configObj.structCSS && configObj.structHTML) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = configObj.structHTML;
+                const structNodes = tempDiv.querySelectorAll('#restaurant-layout > div');
+
+                structNodes.forEach(sNode => {
+                    if (sNode.tagName.toLowerCase() === 'div' && sNode.className) {
+                        const sClass = sNode.className;
+                        const sName = sNode.innerText.trim();
+
+                        const el = document.createElement('div');
+                        el.className = 'struct-node';
+                        el.innerText = sName;
+                        el.dataset.type = 'struct';
+                        el.dataset.class = sClass;
+                        el.onmousedown = dragMouseDown;
+                        el.ondblclick = renameNode;
+
+                        // Parse CSS to find positions
+                        const cssRegex = new RegExp(`\\.${sClass}\\s*\\{[^}]*grid-column:\\s*(\\d+)[^\\d]*(\\d+)[^}]*grid-row:\\s*(\\d+)[^\\d]*(\\d+)`, 'i');
+                        const match = configObj.structCSS.match(cssRegex);
+
+                        if (match) {
+                            const gx = parseInt(match[1]);
+                            const gWidth = parseInt(match[2]);
+                            const gy = parseInt(match[3]);
+                            const gHeight = parseInt(match[4]);
+
+                            el.style.left = getPx(gx, 0).x + 'px';
+                            el.style.top = getPx(0, gy).y + 'px';
+                            el.style.width = (gWidth * 8) + 'px';
+                            el.style.height = (gHeight * 6) + 'px';
+                        } else {
+                            el.style.width = '120px';
+                            el.style.height = '60px';
+                            el.style.left = '200px';
+                            el.style.top = '200px';
+                        }
+
+                        stationIdCounter++;
+                        container.appendChild(el);
+                    }
+                });
+            }
+
+            if (configObj.concertDetails) {
+                document.getElementById('c-extra').value = configObj.concertDetails.extra_chair_price || 0;
+                document.getElementById('c-lock').value = configObj.concertDetails.lock_table_price || 0;
+                colorPrices = configObj.concertDetails.colorPrices || {};
+                renderColorPrices();
+            }
+
+            saveToLocal();
+            alert("✅ นำเข้าข้อมูลสำเร็จ!");
+        }
+
+        function loadFromConfigFile() {
+            if (window.MAP_CONFIG) {
+                if (confirm("คุณต้องการโหลดข้อมูลจากไฟล์ (map_config.js) ล่าสุดหรือไม่?\nการกระทำนี้จะแทนที่ผังบนหน้าจอทั้งหมด")) {
+                    buildMapFromConfig(window.MAP_CONFIG);
+                }
+            } else {
+                alert("⚠️ ยังไม่มีไฟล์ map_config.js หรือไฟล์ว่างเปล่า");
+            }
+        }
+
+        function loadPastedCode() {
+            const raw = document.getElementById('import-code').value.trim();
+            if (!raw) return alert('กรุณาวางโค้ดก่อน');
+
+            try {
+                let configObj = {};
+
+                // 1. Try JSON directly (if they pasted pure JSON from allTables object)
+                if (raw.startsWith('{') && raw.endsWith('}')) {
+                    try {
+                        const directJson = JSON.parse(raw);
+                        if (directJson["1"] || directJson.allTables) {
+                            configObj = directJson.allTables ? directJson : { allTables: directJson };
+                        }
+                    } catch (e) { }
+                }
+
+                // 2. Try parsing the generated raw output string (HTML + JS + CSS)
+                if (!configObj.allTables) {
+                    const htmlMatch = raw.match(/<div id="restaurant-layout"[\s\S]*?<\/div>/);
+                    const tablesMatch = raw.match(/const allTables\s*=\s*(\{[\s\S]*?\});/);
+                    const cssMatch = raw.match(/\/\* ----------------------------- \*\/[\s\S]*?\/\* ----------------------------- \*\/[\s\n]*([\s\S]*)/);
+
+                    if (tablesMatch) {
+                        try {
+                            // Using a safer eval alternative via Function constructor for the raw JS object
+                            configObj.allTables = new Function("return " + tablesMatch[1])();
+                        } catch (e) {
+                            console.error("Error parsing allTables:", e);
+                        }
+                    }
+
+                    if (htmlMatch) configObj.structHTML = htmlMatch[0];
+                    if (cssMatch) configObj.structCSS = cssMatch[1];
+                }
+
+                // 3. Fallback to extracting window.MAP_CONFIG
+                if (!configObj.allTables) {
+                    let jsonStr = raw.replace(/^window\.MAP_CONFIG\s*=\s*/, '');
+                    jsonStr = jsonStr.replace(/;$/, '');
+                    configObj = JSON.parse(jsonStr);
+                }
+
+                if (configObj.allTables) {
+                    if (confirm("ต้องการโหลดผังจากโค้ดที่วางไว้หรือไม่?\nการกระทำนี้จะแทนที่ผังบนหน้าจอทั้งหมด")) {
+                        buildMapFromConfig(configObj);
+                    }
+                } else {
+                    alert('⚠️ รูปแบบ JSON/Code ไม่ถูกต้อง! โปรดตรวจสอบให้แน่ใจว่าวางโค้ดมาครบ');
+                }
+            } catch (e) {
+                alert('⚠️ รูปแบบ JSON/Code ไม่ถูกต้อง! โปรดค้นหา window.MAP_CONFIG หรือวางให้ครบทั้งหมด');
+                console.error(e);
+            }
+        }
+
+        // Initialize state
+        window.onload = loadFromLocal;
+
+        // Hook saveToLocal to interactions
+        container.addEventListener('mouseup', saveToLocal);
+        document.addEventListener('keydown', () => setTimeout(saveToLocal, 100)); // Delete event
+    </script>
+</body>
+
+</html>

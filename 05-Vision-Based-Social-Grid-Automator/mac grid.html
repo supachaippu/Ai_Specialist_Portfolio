@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Social Grid Pro (Mac & Safari Ready)</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { 
+            font-family: 'Kanit', sans-serif; background-color: #f8fafc; color: #334155; 
+            overflow: hidden; position: fixed; width: 100%; height: 100%; 
+            /* ปรับ user-select ให้ใช้งานบน Desktop ได้สะดวกขึ้น แต่ยังห้ามเลือก Text มั่วๆ */
+            -webkit-user-select: none; user-select: none;
+        }
+        .app-container { display: flex; flex-direction: column; height: 100%; padding-bottom: env(safe-area-inset-bottom); }
+        .scroll-y { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+        
+        /* Template Cards */
+        .template-card { 
+            border: 2px solid transparent; background: white; border-radius: 8px; 
+            cursor: pointer; position: relative; overflow: hidden; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 4px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 50px; 
+            transition: all 0.2s ease;
+        }
+        .template-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .template-card:active { transform: scale(0.95); }
+        .template-card.active { border-color: #3b82f6; background: #eff6ff; box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3); }
+        .template-card.recommend { border: 1px solid #f59e0b; background: #fffbeb; }
+        .template-card.recommend.active { border-color: #d97706; background: #fef3c7; }
+        
+        .badge-rec { position: absolute; top: 0; right: 0; background: #f59e0b; color: white; font-size: 7px; padding: 1px 4px; border-bottom-left-radius: 4px; font-weight: bold; z-index: 10; }
+        .t-label { font-size: 8px; color: #64748b; font-weight: 600; text-align: center; line-height: 1; margin-top: 2px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .template-card.active .t-label { color: #2563eb; }
+
+        /* Icons & Ratios (Same as before) */
+        .icon-box { width: 100%; display: grid; gap: 1px; background: #cbd5e1; border-radius: 2px; overflow: hidden; pointer-events: none; }
+        .cell { background: #94a3b8; }
+        .template-card.active .cell { background: #60a5fa; }
+
+        /* Ratios Classes */
+        .real-t1 { aspect-ratio: 5/3; grid-template-columns: 1fr 3fr 1fr; grid-template-rows: 1fr; }
+        .real-t2 { aspect-ratio: 1.38/1; grid-template-columns: repeat(6, 1fr); grid-template-rows: 3fr 2fr; } .real-t2 .c-top { grid-column: span 3; } .real-t2 .c-bot { grid-column: span 2; }
+        .real-t3 { aspect-ratio: 1/1; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+        .real-v12 { aspect-ratio: 1/1; grid-template-columns: 1.5fr 1fr; grid-template-rows: 1fr 1fr; } .real-v12 .c-main { grid-row: span 2; }
+        .real-v13 { aspect-ratio: 1/1; grid-template-columns: 1.5fr 1fr; grid-template-rows: 1fr 1fr 1fr; } .real-v13 .c-main { grid-row: span 3; }
+        .real-h12 { aspect-ratio: 1/1; grid-template-columns: 1fr 1fr; grid-template-rows: 1.5fr 1fr; } .real-h12 .c-main { grid-column: span 2; }
+        .real-h13 { aspect-ratio: 1/1; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1.5fr 1fr; } .real-h13 .c-main { grid-column: span 3; }
+        .real-ig-sq { aspect-ratio: 1/1; width: 60%; margin: 0 auto; background: #94a3b8; border-radius: 2px; }
+        .real-ig-pt { aspect-ratio: 4/5; width: 50%; margin: 0 auto; background: #94a3b8; border-radius: 2px; }
+        .real-ig-st { aspect-ratio: 9/16; width: 35%; margin: 0 auto; background: #94a3b8; border-radius: 2px; }
+
+        /* Canvas Container */
+        #gridContainerWrapper { width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #e2e8f0; padding: 20px; border-radius: 8px; min-height: 300px; }
+        #gridContainer { 
+            background-color: #fff; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 16px 16px; 
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15); position: relative; width: 100%; height: auto !important; 
+            border: 4px solid white; border-radius: 4px; 
+            transition: border-color 0.2s;
+        }
+        /* Drop Zone Highlight Global */
+        #gridContainer.global-drag-over { border-color: #3b82f6; background-color: #eff6ff; }
+
+        .slot-wrapper { 
+            position: absolute; overflow: hidden; background: rgba(255,255,255,0.5); border: 1px solid #fff; box-sizing: border-box; 
+            transition: border 0.1s;
+        }
+        
+        /* Canvas Cursor Logic */
+        canvas { width: 100%; height: 100%; display: block; object-fit: fill; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+
+        .swap-handle { 
+            position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; 
+            background: rgba(15, 23, 42, 0.8); color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; z-index: 20; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 10px; cursor: move;
+            transition: transform 0.2s;
+        }
+        .swap-handle:hover { transform: scale(1.1); background: #2563eb; }
+
+        /* Drag Visuals */
+        .drag-highlight { border: 3px solid #3b82f6 !important; background-color: rgba(59, 130, 246, 0.1) !important; z-index: 10; }
+        .hidden { display: none !important; }
+        .section-title { font-size: 10px; font-weight: bold; color: #64748b; margin-bottom: 6px; margin-top: 8px; display: flex; align-items: center; }
+        
+        .guide-box { background: #ecfeff; border: 1px solid #cffafe; border-radius: 6px; padding: 8px; margin-top: 5px; margin-bottom: 5px; font-size: 10px; color: #0e7490; display: flex; flex-direction: column; gap: 2px; }
+        
+        /* Modal */
+        #download-modal { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #f8fafc; width: 100%; max-width: 400px; max-height: 85vh; border-radius: 16px; overflow-y: auto; padding: 0; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .modal-header { padding: 15px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .dl-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .dl-img-wrap { width: 100%; background: #eee; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; border: 1px solid #ddd; }
+        .dl-img-large { max-width: 100%; max-height: 250px; display: block; object-fit: contain; }
+        .dl-btn { background: #2563eb; color: white; border-radius: 50px; padding: 8px 20px; font-size: 12px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3); transition: transform 0.1s; }
+        .dl-btn:hover { background: #1d4ed8; }
+        
+        /* Input Focus for Desktop */
+        input:focus, select:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+    </style>
+</head>
+<body class="text-sm">
+
+    <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-50 p-6">
+        <div class="bg-white w-full max-w-sm p-8 rounded-3xl shadow-xl text-center border border-slate-100">
+            <h1 class="text-2xl font-bold text-slate-800 mb-1">SOCIAL GRID PRO</h1>
+            <p class="text-slate-400 text-xs mb-6">Desktop & Mac Edition</p>
+            <div class="space-y-3">
+                <input type="tel" id="loginPhone" placeholder="รหัสผ่าน" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-lg rounded-xl px-4 py-2 text-center focus:outline-none transition">
+                <button onclick="attemptLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition">เข้าใช้งาน</button>
+                <button onclick="attemptGuest()" class="w-full bg-white hover:bg-slate-50 text-slate-500 font-medium py-3 rounded-xl border border-slate-200 transition">ทดลองใช้ฟรี</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="download-modal" class="hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><h3 class="font-bold text-slate-800">ดาวน์โหลดรูปภาพ</h3><p class="text-[10px] text-slate-400">คลิกขวา "Save Image As" หรือกดปุ่ม</p></div>
+                <button onclick="closeDownloadModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="dl-list" class="p-4 flex flex-col gap-4"></div>
+        </div>
+    </div>
+
+    <div id="app-wrapper" class="hidden app-container">
+        <div class="bg-white px-4 py-3 shadow-sm border-b border-slate-100 flex justify-between items-center z-10">
+            <div class="flex items-center gap-2">
+                <span id="userStatusBadge" class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">GUEST</span>
+                <span class="text-xs font-bold text-slate-700 ml-2">SOCIAL GRID PRO</span>
+            </div>
+            <button onclick="location.reload()" class="text-slate-400 hover:text-red-500 transition px-2"><i class="fas fa-power-off"></i></button>
+        </div>
+
+        <div class="flex-grow flex flex-col md:flex-row h-full overflow-hidden">
+            
+            <div class="w-full md:w-80 bg-white border-r border-slate-100 flex flex-col z-20 shadow-md">
+                <div class="p-3 space-y-3 scroll-y flex-grow">
+                    
+                    <div class="flex bg-slate-100 p-1 rounded-lg gap-1">
+                        <button class="flex-1 py-1.5 rounded-md text-[10px] font-bold transition bg-white text-slate-800 shadow-sm" id="tab-fb" onclick="setPlatform('fb')">Facebook</button>
+                        <button class="flex-1 py-1.5 rounded-md text-[10px] font-bold transition text-slate-500 hover:bg-white/50" id="tab-ig" onclick="setPlatform('ig')">Instagram</button>
+                        <button class="flex-1 py-1.5 rounded-md text-[10px] font-bold transition text-slate-500 hover:bg-white/50" id="tab-tt" onclick="setPlatform('tt')">TikTok</button>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Branding</span>
+                            <div class="flex gap-1">
+                                <button onclick="document.getElementById('logoInput').click()" class="bg-white hover:bg-blue-50 text-blue-600 px-2 py-1 rounded text-[10px] font-bold border border-blue-100 transition"><i class="fas fa-camera mr-1"></i> เพิ่มโลโก้</button>
+                                <button onclick="removeLogo()" class="text-red-400 hover:text-red-600 text-[10px] font-bold px-1">ลบ</button>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="logoPos" class="cursor-pointer bg-white text-[10px] p-1.5 rounded border border-slate-200 w-2/3 text-slate-600 focus:ring-1 focus:ring-blue-500" onchange="drawAllSlots()"><option value="bc" selected>⬇ ล่างกลาง</option><option value="br">↘ ล่างขวา</option><option value="bl">↙ ล่างซ้าย</option><option value="c">⏺ ตรงกลาง</option><option value="tc">⬆ บนกลาง</option><option value="tr">↗ บนขวา</option><option value="tl">↖ บนซ้าย</option></select>
+                            <select id="logoSize" class="cursor-pointer bg-white text-[10px] p-1.5 rounded border border-slate-200 w-1/3 text-slate-600" onchange="drawAllSlots()"><option value="0.15">เล็ก</option><option value="0.25" selected>กลาง</option><option value="0.35">ใหญ่</option></select>
+                        </div>
+                        <input type="file" id="logoInput" accept="image/*" class="hidden" onchange="handleLogoUpload(this.files[0])">
+                    </div>
+
+                    <div>
+                        <h3 id="layoutTitle" class="text-[9px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Facebook Layouts</h3>
+                        <div id="panel-fb">
+                            <div class="section-title text-amber-600"><i class="fas fa-star mr-1"></i> แนะนำ</div>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div class="template-card recommend active" onclick="selectLayout('fb_t2')" id="btn_fb_t2">
+                                    <div class="badge-rec">BEST</div>
+                                    <div class="icon-box real-t2"><div class="cell c-top"></div><div class="cell c-top"></div><div class="cell c-bot"></div><div class="cell c-bot"></div><div class="cell c-bot"></div></div>
+                                    <div class="t-label">Album 5</div>
+                                </div>
+                                <div class="template-card recommend" onclick="selectLayout('fb_t3')" id="btn_fb_t3">
+                                    <div class="badge-rec">HOT</div>
+                                    <div class="icon-box real-t3"><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+                                    <div class="t-label">Album 4</div>
+                                </div>
+                            </div>
+                            
+                            <div id="layout-guide-fb" class="guide-box">
+                                <div id="guide-title-fb" class="guide-title"></div>
+                                <div id="guide-desc-fb"></div>
+                            </div>
+
+                            <div class="section-title"><i class="fas fa-th-large mr-1"></i> รูปแบบอื่นๆ</div>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div class="template-card" onclick="selectLayout('fb_t1')" id="btn_fb_t1">
+                                    <div class="icon-box real-t1"><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+                                    <div class="t-label">Album 3</div>
+                                </div>
+                                <div class="template-card" onclick="selectLayout('fb_v12')" id="btn_fb_v12"><div class="icon-box real-v12"><div class="cell c-main"></div><div class="cell"></div><div class="cell"></div></div><div class="t-label">ตั้ง 1+2</div></div>
+                                <div class="template-card" onclick="selectLayout('fb_v13')" id="btn_fb_v13"><div class="icon-box real-v13"><div class="cell c-main"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div><div class="t-label">ตั้ง 1+3</div></div>
+                                <div class="template-card" onclick="selectLayout('fb_h12')" id="btn_fb_h12"><div class="icon-box real-h12"><div class="cell c-main"></div><div class="cell"></div><div class="cell"></div></div><div class="t-label">นอน 1+2</div></div>
+                                <div class="template-card" onclick="selectLayout('fb_h13')" id="btn_fb_h13"><div class="icon-box real-h13"><div class="cell c-main"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div><div class="t-label">นอน 1+3</div></div>
+                            </div>
+                        </div>
+                        
+                        <div id="panel-ig" class="hidden grid grid-cols-3 gap-2">
+                            <div class="template-card" onclick="selectLayout('ig_sq')" id="btn_ig_sq"><div class="real-ig-sq"></div><div class="t-label">IG 1:1</div></div>
+                            <div class="template-card" onclick="selectLayout('ig_pt')" id="btn_ig_pt"><div class="real-ig-pt"></div><div class="t-label">IG 4:5</div></div>
+                            <div class="template-card" onclick="selectLayout('ig_st')" id="btn_ig_st"><div class="real-ig-st"></div><div class="t-label">Story</div></div>
+                        </div>
+                        
+                        <div id="panel-tt" class="hidden grid grid-cols-3 gap-2">
+                            <div class="template-card" onclick="selectLayout('tt_mode')" id="btn_tt_mode"><div class="real-ig-st"></div><div class="t-label">9:16</div></div>
+                        </div>
+                    </div>
+                    
+                    <div class="block md:hidden pb-20"></div>
+                </div>
+            </div>
+
+            <div class="flex-grow bg-slate-100 flex flex-col relative overflow-hidden">
+                <div class="flex-grow scroll-y p-4 flex flex-col items-center">
+                    
+                    <div class="text-center mb-2 text-[10px] text-slate-400 hidden md:block">
+                        <i class="fas fa-info-circle mr-1"></i> ลากไฟล์รูปจากเครื่องวางลงในช่องได้เลย
+                    </div>
+
+                    <div id="gridContainerWrapper">
+                        <div id="gridContainer"></div>
+                    </div>
+
+                    <div class="flex justify-center gap-6 mt-4 text-[10px] text-slate-500 select-none">
+                        <span><i class="fas fa-mouse-pointer mr-1"></i> คลิกลากเพื่อเลื่อน</span>
+                        <span><i class="fas fa-search-plus mr-1"></i> Scroll เพื่อซูม</span>
+                        <span><i class="fas fa-file-import mr-1"></i> Drag & Drop รูปได้</span>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-40 flex gap-3 bg-white/90 backdrop-blur-md p-2 px-4 rounded-full shadow-2xl border border-white/50">
+                    <button onclick="document.getElementById('mainInput').click()" class="tooltip-btn w-10 h-10 bg-slate-700 hover:bg-slate-800 rounded-full text-white flex items-center justify-center transition" title="เพิ่มรูปภาพ"><i class="fas fa-images"></i></button>
+                    <button onclick="document.getElementById('splitInput').click()" class="w-10 h-10 bg-slate-700 hover:bg-slate-800 rounded-full text-white flex items-center justify-center transition" title="ตัดภาพใหญ่"><i class="fas fa-cut"></i></button>
+                    <button onclick="fitAllImages()" class="w-10 h-10 bg-slate-700 hover:bg-slate-800 rounded-full text-white flex items-center justify-center transition" title="จัดพอดีกรอบ"><i class="fas fa-compress"></i></button>
+                    <div class="w-px h-6 bg-slate-300 my-auto mx-1"></div>
+                    <button onclick="showDownloadModal()" class="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full text-white flex items-center justify-center shadow-lg transform hover:scale-105 transition"><i class="fas fa-download text-lg"></i></button>
+                    
+                    <input type="file" id="mainInput" multiple accept="image/*" class="hidden" onchange="handleFiles(this.files)">
+                    <input type="file" id="splitInput" accept="image/*" class="hidden" onchange="handleSplitImage(this.files[0])">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const VIP_PHONE = '1234';
+        let currentUserType = 'GUEST', isDragging = false, activeSlotIndex = null, lastX = 0, lastY = 0, rafId = null, dragSourceIndex = null, currentLayoutKey = 'fb_t2', slotsData = [], logoImg = null;
+
+        // Prevent Default Drag behavior globally to allow custom drop zones
+        window.addEventListener('dragover', function(e) { e.preventDefault(); }, false);
+        window.addEventListener('drop', function(e) { e.preventDefault(); }, false);
+
+        function attemptLogin() {
+            const phone = document.getElementById('loginPhone').value.replace(/\D/g,'');
+            if(!phone) return alert('กรุณากรอกเบอร์โทรศัพท์');
+            loginSuccess(phone === VIP_PHONE ? 'VIP' : 'MEMBER');
+        }
+        function attemptGuest() { loginSuccess('GUEST'); }
+        function loginSuccess(type) {
+            currentUserType = type;
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+            const badge = document.getElementById('userStatusBadge');
+            badge.innerText = type;
+            badge.className = `text-[10px] font-bold px-2 py-1 rounded-md ${type==='VIP'?'bg-yellow-100 text-yellow-700':(type==='MEMBER'?'bg-blue-100 text-blue-700':'bg-slate-100 text-slate-500')}`;
+            initGrid();
+        }
+
+        const layouts = {
+            'fb_t1': { displayW: 5, displayH: 3, title: "Album 3 ภาพ", guide: "• 1,3: 400x1200 (1:3)<br>• 2: 1200x1200 (1:1)", slots: [ { dX:0, dY:0, dW:20, dH:100, w:400, h:1200 }, { dX:20, dY:0, dW:60, dH:100, w:1200, h:1200 }, { dX:80, dY:0, dW:20, dH:100, w:400, h:1200 } ] },
+            'fb_t2': { displayW: 1.385, displayH: 1, title: "Album 5 ภาพ", guide: "• บน 2: 1:1<br>• ล่าง 3: 3:2", slots: [ { dX:0, dY:0, dW:50, dH:69.23, w:1200, h:1200 }, { dX:50, dY:0, dW:50, dH:69.23, w:1200, h:1200 }, { dX:0, dY:69.23, dW:33.33, dH:30.77, w:1200, h:800 }, { dX:33.33, dY:69.23, dW:33.33, dH:30.77, w:1200, h:800 }, { dX:66.66, dY:69.23, dW:33.33, dH:30.77, w:1200, h:800 } ] },
+            'fb_t3': { displayW: 1, displayH: 1, title: "Album 4 ภาพ", guide: "• ทุกรูป: 1:1 (จัตุรัส)", slots: [ { dX:0, dY:0, dW:50, dH:50, w:1080, h:1080 }, { dX:50, dY:0, dW:50, dH:50, w:1080, h:1080 }, { dX:0, dY:50, dW:50, dH:50, w:1080, h:1080 }, { dX:50, dY:50, dW:50, dH:50, w:1080, h:1080 } ] },
+            'fb_v12': { displayW:1, displayH:1, title:"ตั้ง 1+2", guide:"", slots: [{ dX:0, dY:0, dW:50, dH:100, w:1000, h:2000 }, { dX:50, dY:0, dW:50, dH:50, w:1000, h:1000 }, { dX:50, dY:50, dW:50, dH:50, w:1000, h:1000 }] },
+            'fb_v13': { displayW:1, displayH:1, title:"ตั้ง 1+3", guide:"", slots: [{ dX:0, dY:0, dW:50, dH:100, w:1000, h:2000 }, { dX:50, dY:0, dW:50, dH:33.33, w:1000, h:666 }, { dX:50, dY:33.33, dW:50, dH:33.33, w:1000, h:666 }, { dX:50, dY:66.66, dW:50, dH:33.33, w:1000, h:666 }] },
+            'fb_h12': { displayW:1, displayH:1, title:"นอน 1+2", guide:"", slots: [{ dX:0, dY:0, dW:100, dH:50, w:2000, h:1000 }, { dX:0, dY:50, dW:50, dH:50, w:1000, h:1000 }, { dX:50, dY:50, dW:50, dH:50, w:1000, h:1000 }] },
+            'fb_h13': { displayW:1, displayH:1, title:"นอน 1+3", guide:"", slots: [{ dX:0, dY:0, dW:100, dH:50, w:2000, h:1000 }, { dX:0, dY:50, dW:33.33, dH:50, w:666, h:1000 }, { dX:33.33, dY:50, dW:33.33, dH:50, w:666, h:1000 }, { dX:66.66, dY:50, dW:33.33, dH:50, w:666, h:1000 }] },
+            'ig_sq': { displayW: 1, displayH: 1, title:"Instagram 1:1", slots: [{ dX:0, dY:0, dW:100, dH:100, w:1080, h:1080 }] },
+            'ig_pt': { displayW: 4, displayH: 5, title:"Instagram 4:5", slots: [{ dX:0, dY:0, dW:100, dH:100, w:1080, h:1350 }] },
+            'ig_st': { displayW: 9, displayH: 16, title:"Story 9:16", slots: [{ dX:0, dY:0, dW:100, dH:100, w:1080, h:1920 }] },
+            'tt_mode': { displayW: 9, displayH: 16, title:"TikTok 9:16", slots: [{ dX:0, dY:0, dW:100, dH:100, w:1080, h:1920 }] }
+        };
+
+        function initGrid() {
+            const layout = layouts[currentLayoutKey];
+            const container = document.getElementById('gridContainer');
+            container.innerHTML = ''; 
+            container.style.aspectRatio = `${layout.displayW} / ${layout.displayH}`;
+            
+            // Global Drop on Container
+            container.ondragover = (e) => { e.preventDefault(); container.classList.add('global-drag-over'); };
+            container.ondragleave = (e) => { e.preventDefault(); container.classList.remove('global-drag-over'); };
+            container.ondrop = (e) => { 
+                e.preventDefault(); 
+                container.classList.remove('global-drag-over');
+                if(e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+            };
+
+            const guideBox = document.getElementById('layout-guide-fb');
+            const guideTitle = document.getElementById('guide-title-fb');
+            const guideDesc = document.getElementById('guide-desc-fb');
+            
+            if (currentLayoutKey.startsWith('fb_')) { 
+                guideBox.classList.remove('hidden'); 
+                guideTitle.innerText = layout.title || "";
+                guideDesc.innerHTML = layout.guide || "";
+            } else { 
+                guideBox.classList.add('hidden'); 
+            }
+            
+            const oldImages = slotsData.map(s => s.img).filter(img => img !== null);
+            slotsData = [];
+
+            layout.slots.forEach((cfg, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'slot-wrapper';
+                wrapper.style.left = cfg.dX + '%'; wrapper.style.top = cfg.dY + '%'; 
+                wrapper.style.width = cfg.dW + '%'; wrapper.style.height = cfg.dH + '%';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = cfg.w; canvas.height = cfg.h;
+                
+                // Swap Handle
+                const swapHandle = document.createElement('div');
+                swapHandle.className = 'swap-handle';
+                swapHandle.innerHTML = '<i class="fas fa-exchange-alt"></i>';
+                
+                // === DRAG & DROP FILES (Native Desktop) ===
+                wrapper.addEventListener('dragover', (e) => { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    e.dataTransfer.dropEffect = 'copy'; 
+                    wrapper.classList.add('drag-highlight'); 
+                });
+                wrapper.addEventListener('dragleave', (e) => { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    wrapper.classList.remove('drag-highlight'); 
+                });
+                wrapper.addEventListener('drop', (e) => { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    wrapper.classList.remove('drag-highlight'); 
+                    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files, index); 
+                });
+
+                // === SWAP LOGIC (Touch & Mouse) ===
+                // Touch
+                swapHandle.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); startSwap(index, wrapper); }, {passive: false});
+                swapHandle.addEventListener('touchmove', (e) => { 
+                    e.preventDefault(); 
+                    const t=e.touches[0]; const el=document.elementFromPoint(t.clientX, t.clientY); 
+                    highlightSwapTarget(el, wrapper);
+                }, {passive: false});
+                swapHandle.addEventListener('touchend', (e) => { 
+                    endSwap(e.changedTouches[0].clientX, e.changedTouches[0].clientY, wrapper);
+                });
+
+                // Mouse (Desktop Swap)
+                swapHandle.addEventListener('mousedown', (e) => { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    startSwap(index, wrapper);
+                    
+                    const moveHandler = (ev) => {
+                        ev.preventDefault();
+                        const el = document.elementFromPoint(ev.clientX, ev.clientY);
+                        highlightSwapTarget(el, wrapper);
+                    };
+                    const upHandler = (ev) => {
+                        window.removeEventListener('mousemove', moveHandler);
+                        window.removeEventListener('mouseup', upHandler);
+                        endSwap(ev.clientX, ev.clientY, wrapper);
+                    };
+                    window.addEventListener('mousemove', moveHandler);
+                    window.addEventListener('mouseup', upHandler);
+                });
+
+                // === PANNING LOGIC (Touch & Mouse) ===
+                const startPan = (cx, cy) => { 
+                    if (!slotsData[index].img) return; 
+                    isDragging = true; activeSlotIndex = index; lastX = cx; lastY = cy; 
+                    cancelAnimationFrame(rafId); rafId = requestAnimationFrame(animateDrag); 
+                };
+                
+                canvas.addEventListener('touchstart', e => { 
+                    if(e.touches.length===1) { 
+                        e.preventDefault(); startPan(e.touches[0].clientX, e.touches[0].clientY); 
+                        window.addEventListener('touchmove', onTouchMove, {passive:false}); 
+                        window.addEventListener('touchend', onTouchEnd); 
+                    } 
+                }, {passive:false});
+                
+                canvas.addEventListener('mousedown', e => { 
+                    startPan(e.clientX, e.clientY); 
+                    window.addEventListener('mousemove', onMouseMove); 
+                    window.addEventListener('mouseup', onMouseUp); 
+                });
+                
+                // === ZOOMING ===
+                canvas.addEventListener('wheel', e => { 
+                    e.preventDefault(); 
+                    const s=slotsData[index]; if(!s.img) return; 
+                    // Adjust sensitivity for Mac Trackpad
+                    const delta = e.deltaY;
+                    const factor = delta > 0 ? 0.95 : 1.05; 
+                    
+                    const ns = s.scale * factor; 
+                    if (ns < 0.1 || ns > 10) return; 
+                    
+                    const cx = s.x + (s.img.width*s.scale)/2; 
+                    const cy = s.y + (s.img.height*s.scale)/2; 
+                    s.x = cx - (s.img.width*ns)/2; 
+                    s.y = cy - (s.img.height*ns)/2; 
+                    s.scale = ns; 
+                    drawSlot(index); 
+                }, {passive: false});
+
+                wrapper.appendChild(canvas); wrapper.appendChild(swapHandle); container.appendChild(wrapper);
+                slotsData.push({ canvas, ctx: canvas.getContext('2d'), cfg, img: null, x:0, y:0, scale:1 });
+                drawSlot(index);
+            });
+            if (oldImages.length > 0) oldImages.forEach((img, i) => { if(i < slotsData.length) { slotsData[i].img = img; resetImagePosition(slotsData[i]); drawSlot(i); }});
+        }
+
+        // Swap Helpers
+        function startSwap(idx, wrapper) {
+            dragSourceIndex = idx; wrapper.style.opacity = '0.6'; wrapper.style.zIndex = '50';
+        }
+        function highlightSwapTarget(el, wrapper) {
+            const w=el?el.closest('.slot-wrapper'):null; 
+            document.querySelectorAll('.drag-highlight').forEach(x=>x.classList.remove('drag-highlight')); 
+            if(w&&w!==wrapper) w.classList.add('drag-highlight'); 
+        }
+        function endSwap(clientX, clientY, wrapper) {
+            wrapper.style.opacity = '1'; wrapper.style.zIndex = ''; 
+            const el=document.elementFromPoint(clientX, clientY); 
+            const w=el?el.closest('.slot-wrapper'):null; 
+            document.querySelectorAll('.drag-highlight').forEach(x=>x.classList.remove('drag-highlight')); 
+            if(w) { 
+                const l=w.style.left,tp=w.style.top; 
+                let ti=-1; 
+                slotsData.forEach((s,i)=>{if(s.cfg.dX+'%'===l&&s.cfg.dY+'%'===tp)ti=i;}); 
+                if(ti!==-1&&ti!==dragSourceIndex) swapSlots(dragSourceIndex, ti); 
+            } 
+            dragSourceIndex=null;
+        }
+
+        // Pan Event Handlers
+        function onMouseMove(e) { if(isDragging) { e.preventDefault(); lastX = e.clientX; lastY = e.clientY; } }
+        function onTouchMove(e) { if(isDragging) { e.preventDefault(); lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; } }
+        function onMouseUp() { stopDrag(); window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); }
+        function onTouchEnd() { stopDrag(); window.removeEventListener('touchmove', onTouchMove); window.removeEventListener('touchend', onTouchEnd); }
+        
+        function animateDrag() { 
+            if (!isDragging || activeSlotIndex === null) return; 
+            const s = slotsData[activeSlotIndex]; 
+            const container = document.getElementById('gridContainer');
+            if (s.lx !== undefined) { 
+                const rW = s.cfg.w/(container.clientWidth*(s.cfg.dW/100)); 
+                const rH = s.cfg.h/(container.clientHeight*(s.cfg.dH/100)); 
+                s.x += (lastX - s.lx) * rW; 
+                s.y += (lastY - s.ly) * rH; 
+            } 
+            s.lx = lastX; s.ly = lastY; 
+            drawSlot(activeSlotIndex); 
+            rafId = requestAnimationFrame(animateDrag); 
+        }
+        function stopDrag() { isDragging = false; cancelAnimationFrame(rafId); if(activeSlotIndex!==null && slotsData[activeSlotIndex]) { delete slotsData[activeSlotIndex].lx; delete slotsData[activeSlotIndex].ly; } activeSlotIndex = null; }
+
+        function drawSlot(index) {
+            const { ctx, canvas, img, x, y, scale } = slotsData[index];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!img) { 
+                ctx.fillStyle = "#f8fafc"; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+                ctx.fillStyle = "#cbd5e1"; ctx.font = "bold 80px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; 
+                ctx.fillText("+", canvas.width/2, canvas.height/2); 
+            } else { 
+                ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; 
+                ctx.drawImage(img, x, y, img.width*scale, img.height*scale); 
+            }
+            if (logoImg) drawLogo(ctx, canvas.width, canvas.height);
+            if (currentUserType !== 'VIP' && img) { 
+                ctx.save(); ctx.translate(canvas.width/2, canvas.height/2); ctx.rotate(-45*Math.PI/180); 
+                ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle="rgba(0,0,0,0.2)"; 
+                ctx.font = "bold "+(canvas.width/10)+"px sans-serif"; ctx.fillText("SOCIAL GRID PRO", 0, 0); ctx.restore(); 
+            }
+        }
+
+        function drawLogo(ctx, w, h) { if (!logoImg) return; const sizeP = parseFloat(document.getElementById('logoSize').value); const lW = w * sizeP; const lH = lW / (logoImg.width/logoImg.height); const pad = w * 0.05; const pos = document.getElementById('logoPos').value; let lx, ly; if(pos==='tl') { lx=pad; ly=pad; } else if(pos==='tc') { lx=(w-lW)/2; ly=pad; } else if(pos==='tr') { lx=w-lW-pad; ly=pad; } else if(pos==='ml') { lx=pad; ly=(h-lH)/2; } else if(pos==='c') { lx=(w-lW)/2; ly=(h-lH)/2; } else if(pos==='mr') { lx=w-lW-pad; ly=(h-lH)/2; } else if(pos==='bl') { lx=pad; ly=h-lH-pad; } else if(pos==='bc') { lx=(w-lW)/2; ly=h-lH-pad; } else if(pos==='br') { lx=w-lW-pad; ly=h-lH-pad; } ctx.drawImage(logoImg, lx, ly, lW, lH); }
+        
+        function handleFiles(files, startIndex = -1) { 
+            let targetIdx = startIndex; 
+            if (targetIdx === -1) { 
+                targetIdx = slotsData.findIndex(s => !s.img); 
+                if (targetIdx === -1) targetIdx = 0; 
+            } 
+            const processFile = (file, idx) => { 
+                if (idx >= slotsData.length) return; 
+                const reader = new FileReader(); 
+                reader.onload = (e) => { 
+                    const img = new Image(); 
+                    img.onload = () => { 
+                        const maxDim = 1500; 
+                        if(img.width > maxDim || img.height > maxDim) { 
+                            const scale = Math.min(maxDim/img.width, maxDim/img.height); 
+                            const canvas = document.createElement('canvas'); 
+                            canvas.width = img.width * scale; canvas.height = img.height * scale; 
+                            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height); 
+                            const newImg = new Image(); 
+                            newImg.onload = () => { slotsData[idx].img=newImg; resetImagePosition(slotsData[idx]); drawSlot(idx); }; 
+                            newImg.src = canvas.toDataURL('image/jpeg', 0.85); 
+                        } else { 
+                            slotsData[idx].img=img; resetImagePosition(slotsData[idx]); drawSlot(idx); 
+                        } 
+                    }; 
+                    img.src = e.target.result; 
+                }; 
+                reader.readAsDataURL(file); 
+            }; 
+            for(let i=0; i<files.length; i++) { 
+                let currentSlot = (targetIdx + i) % slotsData.length; 
+                processFile(files[i], currentSlot); 
+            } 
+        }
+        
+        function handleSplitImage(file) { if(!file) return; const r = new FileReader(); r.onload = e => { const img=new Image(); img.onload=()=>{ const container=document.getElementById('gridContainer'); const gs = Math.max(container.clientWidth/img.width, container.clientHeight/img.height); const goX = (container.clientWidth - img.width*gs)/2; const goY = (container.clientHeight - img.height*gs)/2; slotsData.forEach((s, i) => { s.img=img; const rW = s.cfg.w/(container.clientWidth*(s.cfg.dW/100)); const rH = s.cfg.h/(container.clientHeight*(s.cfg.dH/100)); s.scale = gs * rW; s.x = (goX - (container.clientWidth*(s.cfg.dX/100))) * rW; s.y = (goY - (container.clientHeight*(s.cfg.dY/100))) * rH; drawSlot(i); }); }; img.src=e.target.result; }; r.readAsDataURL(file); }
+        function handleLogoUpload(f) { if(!f) return; const r=new FileReader(); r.onload=e=>{ logoImg=new Image(); logoImg.onload=()=>drawAllSlots(); logoImg.src=e.target.result; }; r.readAsDataURL(f); }
+        function resetImagePosition(s) { if(!s.img) return; s.scale = Math.max(s.cfg.w/s.img.width, s.cfg.h/s.img.height); s.x = (s.cfg.w - s.img.width*s.scale)/2; s.y = (s.cfg.h - s.img.height*s.scale)/2; }
+        function removeLogo() { logoImg=null; document.getElementById('logoInput').value=""; drawAllSlots(); }
+        function drawAllSlots() { slotsData.forEach((_,i)=>drawSlot(i)); }
+        function swapSlots(i1, i2) { const s1=slotsData[i1]; const s2=slotsData[i2]; const tmp={img:s1.img, x:s1.x, y:s1.y, sc:s1.scale}; s1.img=s2.img; s1.x=s2.x; s1.y=s2.y; s1.scale=s2.scale; s2.img=tmp.img; s2.x=tmp.x; s2.y=tmp.y; s2.scale=tmp.sc; if(s1.img) resetImagePosition(s1); if(s2.img) resetImagePosition(s2); drawSlot(i1); drawSlot(i2); }
+        function setPlatform(pf) { 
+            const tabs = ['tab-fb','tab-ig','tab-tt']; const panels = ['panel-fb','panel-ig','panel-tt']; 
+            tabs.forEach(t => { 
+                const el = document.getElementById(t);
+                el.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+                el.classList.add('text-slate-500', 'hover:bg-white/50');
+            }); 
+            panels.forEach(p => document.getElementById(p).classList.add('hidden')); 
+            
+            const actTab = document.getElementById('tab-'+pf);
+            actTab.classList.remove('text-slate-500', 'hover:bg-white/50');
+            actTab.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
+            
+            document.getElementById('panel-'+pf).classList.remove('hidden'); 
+            const title = document.getElementById('layoutTitle'); 
+            if(pf==='fb') { title.innerText = "Facebook Layouts"; selectLayout('fb_t2'); } 
+            else if(pf==='ig') { title.innerText = "Instagram Layouts"; selectLayout('ig_sq'); } 
+            else { title.innerText = "TikTok Layouts"; selectLayout('tt_mode'); } 
+        }
+        function selectLayout(key) { currentLayoutKey=key; document.querySelectorAll('.template-card').forEach(c=>c.classList.remove('active')); const btn = document.getElementById('btn_'+key); if(btn) btn.classList.add('active'); initGrid(); }
+        function fitAllImages() { slotsData.forEach((s, i) => { if(s.img) { resetImagePosition(s); drawSlot(i); } }); }
+
+        function showDownloadModal() {
+            const list = document.getElementById('dl-list');
+            list.innerHTML = '';
+            let hasImages = false;
+            slotsData.forEach((s, i) => {
+                if(s.img) {
+                    hasImages = true;
+                    const dataUrl = s.canvas.toDataURL('image/png', 1.0);
+                    list.innerHTML += `
+                    <div class="dl-card">
+                        <div class="dl-img-wrap">
+                            <img src="${dataUrl}" class="dl-img-large">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-xs text-gray-600">รูปที่ ${i+1} (${s.cfg.w}x${s.cfg.h})</span>
+                            <a href="${dataUrl}" download="image-${i+1}.png" class="dl-btn">
+                                <i class="fas fa-download"></i> บันทึก
+                            </a>
+                        </div>
+                    </div>`;
+                }
+            });
+            if(!hasImages) return alert('กรุณาใส่รูปภาพก่อนกดดาวน์โหลด');
+            document.getElementById('download-modal').classList.remove('hidden');
+        }
+        function closeDownloadModal() { document.getElementById('download-modal').classList.add('hidden'); }
+
+        initGrid();
+    </script>
+</body>
+</html>

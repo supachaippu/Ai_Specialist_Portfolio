@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Engine Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
+        
+        body { font-family: 'Prompt', sans-serif; background-color: #0f172a; color: white; height: 100vh; overflow: hidden; }
+        
+        /* Map Area */
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #1e293b;
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Table Style */
+        .table-node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: #334155;
+            border: 2px solid #475569;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            color: #94a3b8;
+        }
+
+        /* Table States */
+        .table-node:hover { transform: translate(-50%, -50%) scale(1.1); border-color: #94a3b8; }
+        
+        .table-node.selected {
+            background: #EAB308; /* Gold */
+            color: black;
+            border-color: #FACC15;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.6);
+            z-index: 20;
+        }
+
+        .table-node.dimmed {
+            opacity: 0.2;
+            pointer-events: none; /* ห้ามกด */
+            filter: grayscale(100%);
+        }
+
+        .table-node.neighbor {
+            background: #3b82f6; /* Blue Highlight */
+            color: white;
+            border-color: #60a5fa;
+            animation: pulse 1.5s infinite;
+            z-index: 15;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* Connector (Motion Effect) */
+        .connector-line {
+            position: absolute;
+            height: 10px;
+            background: #EAB308;
+            border-radius: 5px;
+            z-index: 5;
+            transform-origin: left center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+        .connector-line.active { opacity: 1; }
+
+    </style>
+</head>
+<body class="flex">
+
+    <div class="w-80 flex-shrink-0 bg-slate-900 border-r border-slate-700 p-4 flex flex-col gap-4 overflow-y-auto">
+        <h1 class="text-2xl font-bold text-yellow-500">🧪 Booking Testbed</h1>
+        
+        <div class="space-y-2">
+            <label class="text-xs text-gray-400">1. Paste JSON from Map Editor:</label>
+            <textarea id="json-input" class="w-full h-40 bg-slate-800 text-xs text-green-400 font-mono p-2 rounded border border-slate-600 focus:outline-none focus:border-yellow-500">
+{
+  "tables": [
+    { "id": "A1", "x": 20, "y": 30, "neighbors": ["A2", "B1"] },
+    { "id": "A2", "x": 35, "y": 30, "neighbors": ["A1", "A3", "B2"] },
+    { "id": "A3", "x": 50, "y": 30, "neighbors": ["A2"] },
+    { "id": "B1", "x": 20, "y": 50, "neighbors": ["A1", "B2"] },
+    { "id": "B2", "x": 35, "y": 50, "neighbors": ["B1", "A2"] }
+  ]
+}
+            </textarea>
+            <button onclick="loadMap()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-sm font-bold transition">Load Map</button>
+        </div>
+
+        <div class="border-t border-slate-700 pt-4 space-y-3">
+            <label class="text-xs text-gray-400">2. Simulate Scenario:</label>
+            <div>
+                <label class="text-sm">จำนวนลูกค้า (Pax):</label>
+                <input type="number" id="pax-input" value="1" min="1" max="20" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-center text-xl font-bold text-yellow-400" onchange="updateRequirements()">
+            </div>
+            <div class="bg-slate-800 p-3 rounded text-center">
+                <div class="text-xs text-gray-400">ต้องการโต๊ะ</div>
+                <div id="req-tables" class="text-2xl font-bold text-blue-400">1</div>
+                <div class="text-xs text-gray-500">โต๊ะ</div>
+            </div>
+            <button onclick="resetSelection()" class="w-full border border-red-500 text-red-500 hover:bg-red-500/10 py-2 rounded text-sm transition">Reset Selection</button>
+        </div>
+
+        <div class="mt-auto">
+            <div id="debug-log" class="text-[10px] text-gray-500 font-mono bg-black/50 p-2 rounded h-32 overflow-y-auto">Logs...</div>
+        </div>
+    </div>
+
+    <div class="flex-1 p-4 relative">
+        <div id="map-container">
+            </div>
+        
+        <div id="status-bar" class="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur px-6 py-3 rounded-full border border-yellow-500/30 shadow-2xl transition-all opacity-0 translate-y-[-20px]">
+            <span id="status-text" class="text-yellow-400 font-bold">กรุณาเลือก 1 โต๊ะ</span>
+        </div>
+    </div>
+
+    <script>
+        let mapData = [];
+        let selectedTables = [];
+        let requiredTables = 1;
+        let neighborsMap = {}; // id -> [neighbors]
+
+        // Init
+        window.onload = () => { loadMap(); updateRequirements(); };
+
+        function log(msg) {
+            const el = document.getElementById('debug-log');
+            el.innerHTML += `<div>> ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function updateRequirements() {
+            const pax = parseInt(document.getElementById('pax-input').value) || 1;
+            requiredTables = Math.ceil(pax / 4);
+            document.getElementById('req-tables').innerText = requiredTables;
+            
+            // Show Status
+            const statusBar = document.getElementById('status-bar');
+            const statusText = document.getElementById('status-text');
+            statusBar.classList.remove('opacity-0', 'translate-y-[-20px]');
+            
+            if(requiredTables > 1) {
+                statusText.innerText = `กรุณาเลือก ${requiredTables} โต๊ะที่ติดกัน`;
+                statusText.className = "text-yellow-400 font-bold";
+            } else {
+                statusText.innerText = "เลือกโต๊ะที่ต้องการ";
+                statusText.className = "text-white font-bold";
+            }
+            
+            resetSelection();
+        }
+
+        function loadMap() {
+            try {
+                const raw = document.getElementById('json-input').value;
+                const json = JSON.parse(raw);
+                mapData = json.tables || [];
+                
+                // Build Lookup Map
+                neighborsMap = {};
+                mapData.forEach(t => { neighborsMap[t.id] = t.neighbors || []; });
+
+                renderMap();
+                log("Map loaded: " + mapData.length + " tables");
+            } catch(e) {
+                log("Error parsing JSON: " + e.message);
+                alert("JSON ผิดพลาด! ตรวจสอบรูปแบบข้อมูล");
+            }
+        }
+
+        function renderMap() {
+            const container = document.getElementById('map-container');
+            container.innerHTML = ""; // Clear old
+
+            mapData.forEach(t => {
+                const el = document.createElement('div');
+                el.className = 'table-node';
+                el.id = `table-${t.id}`;
+                el.innerText = t.label || t.id;
+                
+                // Responsive Position
+                el.style.left = `${t.x}%`;
+                el.style.top = `${t.y}%`;
+                
+                el.onclick = () => onTableClick(t);
+                container.appendChild(el);
+            });
+        }
+
+        function onTableClick(targetTable) {
+            const el = document.getElementById(`table-${targetTable.id}`);
+            
+            // 1. กรณี: ยกเลิกการเลือก (ถ้ากดซ้ำตัวเดิม)
+            if(selectedTables.includes(targetTable.id)) {
+                // ให้ Reset ใหม่หมดเลยเพื่อง่ายต่อ Logic
+                resetSelection(); 
+                return;
+            }
+
+            // 2. กรณี: เลือกโต๊ะแรก
+            if (selectedTables.length === 0) {
+                selectTable(targetTable);
+                
+                if (requiredTables > 1) {
+                    highlightNeighbors(targetTable);
+                    log(`Start Chain: ${targetTable.id} (Need ${requiredTables})`);
+                } else {
+                    finishSelection();
+                }
+            } 
+            // 3. กรณี: เลือกโต๊ะถัดไป (Chain)
+            else if (selectedTables.length < requiredTables) {
+                // เช็คว่าโต๊ะที่กด เป็นเพื่อนบ้านของโต๊ะล่าสุดหรือไม่?
+                const lastTableId = selectedTables[selectedTables.length - 1];
+                const validNeighbors = neighborsMap[lastTableId];
+
+                if (validNeighbors.includes(targetTable.id)) {
+                    // Valid! เชื่อมต่อได้
+                    drawConnector(lastTableId, targetTable.id);
+                    selectTable(targetTable);
+                    
+                    if (selectedTables.length === requiredTables) {
+                        finishSelection();
+                    } else {
+                        // ไปต่อ... Highlight เพื่อนบ้านของตัวใหม่
+                        highlightNeighbors(targetTable);
+                    }
+                } else {
+                    // Invalid!
+                    log(`Invalid! ${targetTable.id} is not connected to ${lastTableId}`);
+                    // Shake animation or alert could go here
+                    el.style.borderColor = "red";
+                    setTimeout(() => el.style.borderColor = "", 300);
+                }
+            }
+        }
+
+        function selectTable(t) {
+            selectedTables.push(t.id);
+            const el = document.getElementById(`table-${t.id}`);
+            el.classList.add('selected');
+            el.classList.remove('neighbor', 'dimmed');
+        }
+
+        function highlightNeighbors(centerTable) {
+            const container = document.getElementById('map-container');
+            const validNeighbors = neighborsMap[centerTable.id];
+
+            // Loop ทุกโต๊ะเพื่อจัดการ State
+            mapData.forEach(t => {
+                const el = document.getElementById(`table-${t.id}`);
+                
+                // ถ้าเป็นตัวที่ถูกเลือกไปแล้ว -> ข้าม
+                if (selectedTables.includes(t.id)) return;
+
+                // ถ้าเป็นเพื่อนบ้าน -> Highlight
+                if (validNeighbors.includes(t.id)) {
+                    el.classList.add('neighbor');
+                    el.classList.remove('dimmed');
+                } else {
+                    // ถ้าไม่ใช่เพื่อนบ้าน -> Dim ทิ้ง
+                    el.classList.add('dimmed');
+                    el.classList.remove('neighbor');
+                }
+            });
+        }
+
+        function drawConnector(id1, id2) {
+            // Find positions
+            const t1 = mapData.find(t => t.id === id1);
+            const t2 = mapData.find(t => t.id === id2);
+            const container = document.getElementById('map-container');
+            
+            // คำนวณความยาวและมุมของเส้น
+            // หมายเหตุ: ใน Web จริงต้องคำนวณจาก pixel จริง (getBoundingClientRect)
+            // แต่ใน Prototype นี้เราใช้ % position ซึ่งอาจเพี้ยนถ้ารูปสัดส่วนต่างกัน
+            // เพื่อความแม่นยำใน Prototype ขอใช้ offsetLeft/Top
+            
+            const el1 = document.getElementById(`table-${id1}`);
+            const el2 = document.getElementById(`table-${id2}`);
+            
+            const x1 = el1.offsetLeft;
+            const y1 = el1.offsetTop;
+            const x2 = el2.offsetLeft;
+            const y2 = el2.offsetTop;
+            
+            const length = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+            
+            const line = document.createElement('div');
+            line.className = 'connector-line';
+            line.style.width = `${length}px`;
+            line.style.left = `${x1}px`;
+            line.style.top = `${y1}px`;
+            line.style.transform = `translateY(-50%) rotate(${angle}deg)`; // Center anchor
+            
+            container.appendChild(line);
+            
+            // Animation Trigger
+            setTimeout(() => line.classList.add('active'), 50);
+        }
+
+        function resetSelection() {
+            selectedTables = [];
+            // Reset UI
+            document.querySelectorAll('.table-node').forEach(el => {
+                el.classList.remove('selected', 'dimmed', 'neighbor');
+            });
+            // Remove connectors
+            document.querySelectorAll('.connector-line').forEach(el => el.remove());
+            
+            const statusText = document.getElementById('status-text');
+            statusText.innerText = requiredTables > 1 ? `กรุณาเลือก ${requiredTables} โต๊ะที่ติดกัน` : "เลือกโต๊ะที่ต้องการ";
+            statusText.className = requiredTables > 1 ? "text-yellow-400 font-bold" : "text-white font-bold";
+            
+            log("Selection Reset");
+        }
+
+        function finishSelection() {
+            // Clear dimming
+            document.querySelectorAll('.table-node').forEach(el => {
+                el.classList.remove('dimmed', 'neighbor');
+            });
+            
+            const statusText = document.getElementById('status-text');
+            statusText.innerHTML = `✅ เลือกสำเร็จ: <span class="text-white">${selectedTables.join(" + ")}</span>`;
+            statusText.className = "text-green-400 font-bold";
+            log("FINISHED: " + JSON.stringify(selectedTables));
+        }
+
+    </script>
+</body>
+</html>

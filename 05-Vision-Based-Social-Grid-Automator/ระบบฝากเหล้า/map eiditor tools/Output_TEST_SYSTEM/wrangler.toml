@@ -1,0 +1,18 @@
+name = "nightlife-app"
+main = "worker.js"
+compatibility_date = "2023-10-30"
+
+[vars]
+LINE_TOKEN = "PENDING"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nightlife-db"
+database_id = "7d1db510-e4c0-479d-8f47-d0eb7eb5babb"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "nightlife-bucket"
+
+[triggers]
+crons = ["0 7 * * *"]

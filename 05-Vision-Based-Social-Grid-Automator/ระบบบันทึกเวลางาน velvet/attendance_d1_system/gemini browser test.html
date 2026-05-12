@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+    <h2>🕵️ Velvet Connection Tester</h2>
+    <p>URL: <b id="url">...</b></p>
+    <button onclick="test()">กดเพื่อทดสอบ</button>
+    <hr>
+    <div id="result">...</div>
+
+    <script>
+        // URL ของคุณ
+        const API = "https://checkinstaffvelvet.velvetbangsaen.workers.dev";
+        document.getElementById('url').innerText = API;
+
+        async function test() {
+            const div = document.getElementById('result');
+            div.innerHTML = "กำลังทดสอบ... (ถ้าค้างตรงนี้นานเกิน 5 วิ แปลว่า Worker พัง)";
+            
+            try {
+                // 1. ลองยิง Home
+                div.innerHTML += "<br>1. Ping Server... ";
+                let r = await fetch(API);
+                let t = await r.text();
+                div.innerHTML += "✅ OK! ตอบกลับว่า: " + t.substring(0, 20) + "...";
+
+                // 2. ลองยิง Database
+                div.innerHTML += "<br>2. Check Database... ";
+                r = await fetch(API + "/api/check_uid?uid=TEST_DEBUG");
+                if(r.status !== 200) throw new Error("Status " + r.status);
+                let j = await r.json();
+                div.innerHTML += "✅ OK! DB ตอบกลับปกติ";
+
+            } catch(e) {
+                div.innerHTML += "<br>❌ ERROR: " + e.message;
+                div.innerHTML += "<br><br><b>วิธีแก้:</b> ไปดูที่ Cloudflare > Settings > Variables ว่าผูก D1 ชื่อตัวแปร 'DB' หรือยัง?";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APPROVAL PORTAL | BLC SYSTEM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #cfaf34; --purple: #57005f; --bg: #0a0a0a; --card: #151515; --text: #ffffff; --success: #22c55e; --danger: #ef4444; --border: #cfaf3433; }
+        * { box-sizing: border-box !important; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; overflow-x: hidden; }
+        header { width: 100%; padding: 25px; background: linear-gradient(to right, #000, var(--purple), #000); border-bottom: 2px solid var(--primary); text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        
+        .tabs { display: flex; gap: 15px; margin-bottom: 40px; justify-content: center; }
+        .tab { padding: 15px 40px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 50px; cursor: pointer; font-weight: 900; color: #666; transition: 0.3s; }
+        .tab.active { background: var(--purple); color: var(--primary); border-color: var(--primary); box-shadow: 0 0 20px rgba(207,175,52,0.2); }
+        
+        .slide-card { background: var(--card); border-radius: 30px; padding: 40px; border: 1px solid var(--border); margin-bottom: 60px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .slide-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; }
+        .subject { font-size: 1.8rem; font-weight: 900; color: var(--primary); }
+        
+        .layout { display: grid; grid-template-columns: 1fr 300px; gap: 40px; }
+        @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+        
+        .caption-area { background: #fff; border-radius: 20px; padding: 30px; min-height: 300px; color: #000; font-size: 1.2rem; line-height: 1.6; outline: none; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1); }
+        .video-box { width: 100%; aspect-ratio: 9/16; background: #000; border-radius: 20px; overflow: hidden; border: 2px solid var(--primary); position: relative; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .actions { margin-top: 30px; display: flex; gap: 15px; }
+        .btn { flex: 1; padding: 20px; border-radius: 15px; border: none; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-approve { background: var(--success); color: #fff; box-shadow: 0 10px 20px rgba(34,197,94,0.3); }
+        .btn-reject { background: var(--danger); color: #fff; box-shadow: 0 10px 20px rgba(239,68,68,0.3); }
+        .btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        .btn:active { transform: translateY(0); }
+
+        #global-loader { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; color: var(--primary); gap: 20px; }
+        .spinner { width: 50px; height: 50px; border: 5px solid rgba(207,175,52,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="project-title" style="margin:0; font-size:1.8rem; letter-spacing:5px; color:var(--primary);">PROJECT APPROVAL</h1>
+        <div style="font-size:0.9rem; opacity:0.6; margin-top:5px; letter-spacing:2px;">BLC PREMIUM PORTAL</div>
+    </header>
+
+    <div id="global-loader"><div class="spinner"></div><div>AUTHENTICATING...</div></div>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('WAIT')" id="tab-wait">WAIT</div>
+            <div class="tab" onclick="switchTab('APPROVED')" id="tab-approved">✅ APPROVED</div>
+        </div>
+        <div id="feed"></div>
+    </div>
+
+    <script>
+        const API_BASE = "https://blc-check-slide.supachai-ppu.workers.dev";
+        const urlParams = new URLSearchParams(window.location.search);
+        const pToken = urlParams.get('p');
+        const gToken = urlParams.get('g');
+        let currentStatus = 'WAIT';
+        let allData = [];
+
+        async function init() {
+            const token = pToken || gToken;
+            if (!token) { document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:100px;'>⚠️ ACCESS DENIED: Invalid Token</h1>"; return; }
+            
+            // --- v132: Decode and show Name immediately ---
+            try {
+                const nameStr = decodeURIComponent(escape(atob(token)));
+                const names = nameStr.split(',').map(n => n.trim());
+                if (gToken) {
+                    document.getElementById('project-title').innerText = `GROUP: ${nameStr.toUpperCase()}`;
+                } else if (names.length > 1) {
+                    document.getElementById('project-title').innerText = "COMBINED VIEW";
+                    document.getElementById('project-title').style.fontSize = "1.2rem";
+                } else {
+                    document.getElementById('project-title').innerText = names[0].toUpperCase();
+                }
+            } catch(e) { console.log("Token decode error", e); }
+
+            await loadData();
+        }
+
+        async function loadData() {
+            setLoader(true, "📡 FETCHING YOUR VIDEOS...");
+            try {
+                const url = gToken ? `${API_BASE}/api/approval/slides?g=${gToken}` : `${API_BASE}/api/approval/slides?token=${pToken}`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Invalid Token or Data not found");
+                allData = await res.json();
+                updateCounts();
+                render();
+            } catch (e) {
+                alert(e.message);
+                document.body.innerHTML = `<h1 style='color:white; text-align:center; margin-top:100px;'>❌ ERROR: ${e.message}</h1>`;
+            } finally { setLoader(false); }
+        }
+
+        function updateCounts() {
+            const wait = allData.filter(s => s.status === 'WAIT').length;
+            const approved = allData.filter(s => s.status === 'APPROVED').length;
+            document.getElementById('tab-wait').innerText = `WAIT (${wait})`;
+            document.getElementById('tab-approved').innerText = `✅ APPROVED (${approved})`;
+        }
+
+        function switchTab(status) {
+            currentStatus = status;
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.id === `tab-${status.toLowerCase()}`));
+            render();
+        }
+
+        function render() {
+            const filtered = allData.filter(s => s.status === currentStatus);
+            const feed = document.getElementById('feed');
+            if (filtered.length === 0) { feed.innerHTML = "<div style='text-align:center; padding:100px; opacity:0.3; font-weight:900;'>NO CLIPS IN THIS CATEGORY</div>"; return; }
+            
+            feed.innerHTML = filtered.map(s => `
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <div>
+                            <div style="color:var(--primary); font-size:0.7rem; font-weight:900; margin-bottom:5px;">📂 ${s.folder_name}</div>
+                            <div class="subject">${s.subject}</div>
+                        </div>
+                        <div style="font-size:0.8rem; opacity:0.5; font-weight:900;">ID: ${s.id}</div>
+                    </div>
+                    <div class="layout">
+                        <div class="caption-side">
+                            <div style="color:var(--primary); font-size:0.7rem; font-weight:900; margin-bottom:10px; letter-spacing:2px;">EDIT CAPTION:</div>
+                            <div class="caption-area" id="caption-${s.id}" contenteditable="${currentStatus === 'WAIT'}">${s.caption || ''}</div>
+                            ${currentStatus === 'WAIT' ? `
+                                <div class="actions">
+                                    <button class="btn btn-approve" onclick="handleAction('${s.id}', 'APPROVE')">✅ APPROVE</button>
+                                    <button class="btn btn-reject" onclick="handleAction('${s.id}', 'REJECT')">❌ REJECT</button>
+                                </div>
+                            ` : `
+                                <div style="margin-top:20px; color:var(--success); font-weight:900; text-align:center; border:2px solid var(--success); padding:15px; border-radius:15px;">✅ CLIP APPROVED</div>
+                            `}
+                        </div>
+                        <div class="video-side">
+                            <div class="video-box">
+                                <video src="${s.video_url || `https://v.opus.pro/c.${s.id}/VIDEO_PREVIEW_720.mp4`}" loop muted controls playsinline></video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function handleAction(id, action) {
+            let reason = "";
+            if (action === 'REJECT') {
+                reason = prompt("❌ Please provide a reason for rejection:");
+                if (reason === null) return;
+            }
+            
+            const caption = document.getElementById(`caption-${id}`).innerText.trim();
+            setLoader(true, action === 'APPROVE' ? "✅ APPROVING..." : "❌ REJECTING...");
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/approval/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, action, caption, reason, user: 'CLIENT-EXTERNAL' })
+                });
+                if (res.ok) {
+                    alert(action === 'APPROVE' ? "✅ CLIP APPROVED!" : "❌ CLIP REJECTED & SENT BACK");
+                    await loadData();
+                }
+            } catch (e) { alert("❌ ERROR: " + e.message); }
+            finally { setLoader(false); }
+        }
+
+        function setLoader(show, text = "") {
+            const l = document.getElementById('global-loader');
+            l.style.display = show ? 'flex' : 'none';
+            if (text) l.querySelector('div:last-child').innerText = text;
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V88 Restaurant Manager Configurator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --accent: #c5a059;
+            --bg: #001f2f;
+            --card-bg: #00334e;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', 'Prompt', sans-serif;
+            background-color: var(--bg);
+            color: #ddd;
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(197, 160, 89, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(0, 77, 116, 0.2) 0%, transparent 50%);
+            min-height: 100vh;
+        }
+
+        .glass {
+            background: rgba(0, 51, 78, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+
+        .tier-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .tier-card.active {
+            border-color: var(--accent);
+            background: rgba(197, 160, 89, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px rgba(197, 160, 89, 0.4);
+        }
+
+        .tier-card.active .check-icon {
+            opacity: 1;
+        }
+
+        .accent-text {
+            color: var(--accent);
+        }
+
+        .gradient-btn {
+            background: linear-gradient(135deg, #c5a059 0%, #8e6d30 100%);
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+        }
+
+        .input-dark {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-dark:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="text-center space-y-2">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white">RESTAURANT <span
+                    class="accent-text">V88</span></h1>
+            <p class="text-gray-400 font-medium italic">เครื่องมือปรับแต่งระบบ สำหรับร้านอาหาร & จัดเลี้ยง</p>
+        </header>
+
+        <!-- Main Configurator -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            <!-- Step 1: Shop Details -->
+            <div class="glass p-6 rounded-3xl space-y-6">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-amber-500/20 text-accent flex items-center justify-center font-bold">
+                        1</div>
+                    <h2 class="text-xl font-bold text-white">ข้อมูลร้านอาหาร</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">ชื่อร้าน (Restaurant
+                            Name)</label>
+                        <input type="text" id="shop-name" placeholder="เช่น Ocean V88 Seafood" class="input-dark mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">LIFF ID</label>
+                        <input type="text" id="liff-id" placeholder="200xxxxxxx-xxxxxxxx" class="input-dark mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">API Endpoint (Worker
+                            URL)</label>
+                        <input type="text" id="worker-url" placeholder="https://your-rest-api.workers.dev"
+                            class="input-dark mt-1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Tier Selection -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-amber-500/20 text-accent flex items-center justify-center font-bold">
+                        2</div>
+                    <h2 class="text-xl font-bold text-white">เลือกระดับฟีเจอร์ (Tiers)</h2>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- Tier 1 -->
+                    <div onclick="selectTier(1)" id="tier-1"
+                        class="tier-card active glass p-4 rounded-2xl flex items-center justify-between border-2 border-transparent">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl">🗓️</div>
+                            <div>
+                                <h3 class="font-bold text-white">Tier 1: Basic Booking</h3>
+                                <p class="text-xs text-gray-400">บันทึกการจอง + ประวัติลูกค้าเบื้องต้น</p>
+                            </div>
+                        </div>
+                        <div class="check-icon opacity-0 text-accent">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Tier 2 -->
+                    <div onclick="selectTier(2)" id="tier-2"
+                        class="tier-card glass p-4 rounded-2xl flex items-center justify-between border-2 border-transparent">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl">🦞</div>
+                            <div>
+                                <h3 class="font-bold text-white">Tier 2: Event Photo</h3>
+                                <p class="text-xs text-gray-400">แนบรูปผังโต๊ะ + บันทึกข้อมูลการแพ้อาหาร</p>
+                            </div>
+                        </div>
+                        <div class="check-icon opacity-0 text-accent">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Tier 3 -->
+                    <div onclick="selectTier(3)" id="tier-3"
+                        class="tier-card glass p-4 rounded-2xl flex items-center justify-between border-2 border-transparent">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl">🎤</div>
+                            <div>
+                                <h3 class="font-bold text-white">Tier 3: Corporate CRM</h3>
+                                <p class="text-xs text-gray-400">จัดการห้องคาราโอเกะ + สะสมแต้มบริษัท</p>
+                            </div>
+                        </div>
+                        <div class="check-icon opacity-0 text-accent">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col md:flex-row gap-4 justify-center pt-4">
+            <button onclick="generateConfig()"
+                class="gradient-btn px-10 py-4 rounded-2xl text-white font-black text-lg transition-all active:scale-95 shadow-2xl">
+                🚀 GENERATE RESTAURANT CONFIG
+            </button>
+            <button onclick="saveProfile()"
+                class="glass px-10 py-4 rounded-2xl text-white font-bold transition-all hover:bg-white/10 active:scale-95">
+                💾 SAVE PROFILE
+            </button>
+        </div>
+
+        <!-- History/Profiles List -->
+        <div class="space-y-4">
+            <h3 class="text-lg font-bold text-white px-2">รายชื่อร้านที่จัดการล่าสุด</h3>
+            <div id="profiles-list" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTier = 1;
+
+        function selectTier(t) {
+            currentTier = t;
+            document.querySelectorAll('.tier-card').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tier-${t}`).classList.add('active');
+        }
+
+        async function saveProfile() {
+            const name = document.getElementById('shop-name').value;
+            const liff = document.getElementById('liff-id').value;
+            const worker = document.getElementById('worker-url').value;
+
+            if (!name || !liff || !worker) return Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกรายละเอียดให้ครบถ้วน', 'warning');
+
+            const profile = {
+                id: Date.now().toString(),
+                shopName: name,
+                liffId: liff,
+                workerUrl: worker,
+                tier: currentTier,
+                timestamp: new Date().toLocaleString()
+            };
+
+            let profiles = JSON.parse(localStorage.getItem('v88_restaurant_profiles') || '[]');
+            profiles.unshift(profile);
+            localStorage.setItem('v88_restaurant_profiles', JSON.stringify(profiles));
+
+            Swal.fire('บันทึกสำเร็จ!', 'Profile ร้านอาหารบันทึกเรียบร้อย', 'success');
+            loadProfiles();
+        }
+
+        function loadProfiles() {
+            const container = document.getElementById('profiles-list');
+            const profiles = JSON.parse(localStorage.getItem('v88_restaurant_profiles') || '[]');
+
+            if (profiles.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-10 text-center text-gray-600 italic">ไม่มีข้อมูลร้านอาหารที่บันทึกไว้</div>`;
+                return;
+            }
+
+            container.innerHTML = profiles.slice(0, 6).map(p => `
+                <div class="glass p-4 rounded-2xl border-white/5 space-y-2 hover:border-accent/30 transition-all cursor-pointer" onclick="selectProfile('${p.id}')">
+                    <div class="flex justify-between items-center">
+                        <p class="font-bold text-white text-sm truncate w-32">${p.shopName}</p>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold">Tier ${p.tier}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 truncate">${p.workerUrl}</p>
+                    <p class="text-[9px] text-gray-400 mt-2">${p.timestamp}</p>
+                </div>
+            `).join('');
+        }
+
+        function selectProfile(id) {
+            const profiles = JSON.parse(localStorage.getItem('v88_restaurant_profiles') || '[]');
+            const p = profiles.find(it => it.id === id);
+            if (!p) return;
+
+            document.getElementById('shop-name').value = p.shopName;
+            document.getElementById('liff-id').value = p.liffId;
+            document.getElementById('worker-url').value = p.workerUrl;
+            selectTier(p.tier);
+
+            Swal.fire({
+                title: 'โหลดข้อมูลสำเร็จ',
+                text: `เลือก ${p.shopName} แล้ว`,
+                icon: 'success',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+
+        function generateConfig() {
+            const name = document.getElementById('shop-name').value;
+            const liff = document.getElementById('liff-id').value;
+            const worker = document.getElementById('worker-url').value;
+
+            if (!name || !liff || !worker) return Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกรายละเอียดให้ครบถ้วน', 'warning');
+
+            const template = `
+const CFG = {
+    shopName: "${name}",
+    tier: ${currentTier},
+    liffId: "${liff}",
+    workerUrl: "${worker}"
+};
+            `;
+
+            Swal.fire({
+                title: 'Generate สำเร็จ!',
+                html: `<p class='text-xs text-left mb-2 text-gray-400'>คัดลอกส่วนนี้ไปวางในส่วน const CFG ของไฟล์ master_app.html</p><textarea class="w-full h-40 bg-black/50 text-accent font-mono text-xs p-3 rounded-lg border border-white/10" readonly>${template}</textarea>`,
+                icon: 'success',
+                confirmButtonText: 'คัดลอกโค้ด',
+                preConfirm: () => {
+                    navigator.clipboard.writeText(template);
+                    Swal.fire({ title: 'COPIED!', icon: 'success', toast: true, position: 'top', timer: 1000, showConfirmButton: false });
+                }
+            });
+        }
+
+        window.onload = loadProfiles;
+    </script>
+</body>
+
+</html>

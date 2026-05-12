@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLC OMNI VAULT | RESTORED v65</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #1a001c; color: white; }
+        .glass { background: rgba(61, 0, 66, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(207, 175, 52, 0.2); }
+        .drop-zone { border: 3px dashed rgba(207, 175, 52, 0.3); transition: 0.3s; }
+        .drop-zone.drag-over { border-color: #cfaf34; background: rgba(207, 175, 52, 0.1); transform: scale(1.01); }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-4xl mx-auto text-center">
+        <header class="mb-12">
+            <h1 class="text-5xl font-black text-[#cfaf34] italic tracking-tighter uppercase mb-2">👑 OMNI VAULT</h1>
+            <p class="text-white/60 font-bold tracking-widest uppercase text-sm italic">RESTORED SCANNER v65 (BASED ON v54)</p>
+        </header>
+
+        <!-- SECTION 1: BOOKMARKLET -->
+        <div class="glass p-10 rounded-[3rem] shadow-2xl mb-12">
+            <h2 class="text-xl font-black text-[#cfaf34] mb-6 uppercase tracking-widest">STEP 1: GET THE RESTORED SCANNER</h2>
+            <a id="bm-btn" href="#" 
+               class="inline-block bg-gradient-to-br from-[#57005f] to-[#cfaf34] px-12 py-6 rounded-3xl text-2xl font-black shadow-xl hover:shadow-[#cfaf34]/30 transition-all active:scale-95 cursor-move border-t border-white/20">
+                🚀 OMNI SCAN v65
+            </a>
+            <p class="mt-6 text-xs text-white/50 font-bold italic">"กู้ระบบสแกน v54 ตัวเดิมที่พี่ใช้ได้กลับมาแล้วครับ! เพิ่มแค่ปุ่มโหลดวิดีโอเข้าไปเท่านั้นครับ"</p>
+        </div>
+
+        <!-- SECTION 2: BULK UPLOAD -->
+        <div class="glass p-10 rounded-[3rem] shadow-2xl">
+            <h2 class="text-xl font-black text-[#cfaf34] mb-6 uppercase tracking-widest text-center">STEP 2: PERMANENT VIDEO SYNC</h2>
+            <div id="drop-zone" class="drop-zone h-64 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer mb-8">
+                <div class="text-6xl mb-4">📤</div>
+                <p class="text-lg font-black uppercase tracking-widest text-white/80">DRAG VIDEOS HERE</p>
+                <input type="file" id="file-input" multiple accept="video/mp4" class="hidden">
+            </div>
+            <div id="status-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 text-left"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://blc-check-slide.supachai-ppu.workers.dev";
+        
+        function generateBookmarklet() {
+            const script = "javascript:(function(){" +
+                "var API='" + API_BASE + "/api/slides',m=new Map();" +
+                "var div=document.createElement('div');" +
+                "div.style='position:fixed;inset:20px;z-index:999999;background:#1a001c;color:#fff;padding:30px;border-radius:40px;border:3px solid #cfaf34;box-shadow:0 30px 60px rgba(0,0,0,1);display:flex;flex-direction:column;font-family:sans-serif;';" +
+                "div.innerHTML='<h2 style=\"margin:0 0 10px 0;color:#cfaf34;font-weight:900;text-align:center;font-size:24px\">👑 OMNI SCAN v65</h2>'+" +
+                "'<div id=\"harvest-list\" style=\"flex-grow:1;overflow-y:auto;background:#000;border-radius:20px;padding:20px;border:1px solid #cfaf3433\"></div>'+" +
+                "'<div style=\"display:flex;gap:15px;margin-top:20px\">'+" +
+                "'<button id=\"scan-btn\" style=\"flex:1;padding:20px;background:#57005f;color:#fff;border:2px solid #cfaf34;border-radius:20px;font-weight:900;cursor:pointer\">🔍 START SCAN</button>'+" +
+                "'<button id=\"sync-btn\" style=\"flex:1.5;padding:20px;background:linear-gradient(to right,#cfaf34,#fde047);color:#000;border:none;border-radius:20px;font-weight:900;cursor:pointer;display:none\">🚀 SYNC DATA</button>'+" +
+                "'<button onclick=\"this.parentElement.parentElement.remove()\" style=\"padding:20px;background:#333;color:#fff;border:none;border-radius:20px;font-weight:900;cursor:pointer\">❌</button></div>';" +
+                "document.body.appendChild(div);" +
+                
+                "function add(id,clipNum,sj,sc,v,y){" +
+                    "if(!id)return;" +
+                    "m.set(id,{real_id:id,clip_num:clipNum,score:sc,subject:sj,video_url:v,opus_url:window.location.href.split(\"#\")[0],y:y});" +
+                    "render();" +
+                "}" +
+                
+                "function render(){" +
+                    "var list=document.getElementById('harvest-list');" +
+                    "var clips=Array.from(m.values()).sort((a,b)=>a.y-b.y);" +
+                    "list.innerHTML='<table style=\"width:100%;border-collapse:collapse;font-size:12px\">' + " +
+                        "clips.map(v=>'<tr style=\"border-bottom:1px solid #222\">'+" +
+                            "'<td style=\"padding:8px;color:#666\">'+v.clip_num+'</td>'+" +
+                            "'<td style=\"padding:8px;color:#cfaf34;font-weight:900\">'+v.score+'</td>'+" +
+                            "'<td style=\"padding:8px\">'+v.subject+'</td>'+" +
+                            "'<td style=\"padding:8px;text-align:right;display:flex;gap:5px;justify-content:flex-end\">'+" +
+                                "(v.video_url ? '<button onclick=\"window.cloudSync(\\''+v.real_id+'\\',\\''+v.video_url+'\\',this)\" style=\"background:#57005f;color:#fff;padding:3px 8px;border-radius:5px;border:1px solid #cfaf34;cursor:pointer;font-weight:900;font-size:10px\">☁️ SYNC TO R2</button>' : '⏳')+" +
+                                "(v.video_url ? '<a href=\"'+API.replace('/api/slides','')+'/api/download-proxy?id='+v.real_id+'&url='+encodeURIComponent(v.video_url)+'\" target=\"_blank\" style=\"background:#cfaf34;color:#000;padding:3px 8px;border-radius:5px;text-decoration:none;font-weight:900;font-size:10px\">⬇️ LOAD ('+v.real_id+')</a>' : '')+" +
+                            "'</td></tr>').join('') + '</table>';" +
+                    "document.getElementById('sync-btn').style.display='block';" +
+                "}" +
+                
+                "window.cloudSync=async function(id,url,btn){" +
+                    "btn.innerText='⏳ SAVING...'; btn.disabled=true;" +
+                    "try{" +
+                        "var res=await fetch(\"" + API_BASE + "/api/archive-proxy?id=\"+id+\"&url=\"+encodeURIComponent(url));" +
+                        "var data=await res.json();" +
+                        "if(data.success){" +
+                            "await fetch(\"" + API_BASE + "/api/update\",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,video_url:data.videoUrl,user:'ONE-CLICK-VAULT',msg:'Archived via Cloud Sync'})});" +
+                            "btn.innerText='✅ SAVED'; btn.style.background='#22c55e';" +
+                        "}else{ btn.innerText='❌ FAIL'; btn.disabled=false; }" +
+                    "}catch(e){ btn.innerText='❌ ERR'; btn.disabled=false; }" +
+                "};" +
+                
+                "document.getElementById('scan-btn').onclick=async function(){" +
+                    "this.innerText='🔄 SCANNING...'; var t=document.querySelector('[class*=\"scroll-area\"]')||window;" +
+                    "for(var i=0;i<15;i++){" +
+                        "if(t===window)window.scrollBy(0,1000);else t.scrollTop+=1000;" +
+                        "await new Promise(r=>setTimeout(r,1500));" +
+                        "/* --- v54 ORIGINAL SELECTORS --- */" +
+                        "document.querySelectorAll(\"[data-state], .flex-col.items-center\").forEach(container=>{" +
+                            "var idSpan=container.querySelector('span[id]') || container.querySelector('[id*=\"radix-\"]');" +
+                            "var id=idSpan?idSpan.id:(container.id && container.id.length>5?container.id:null);" +
+                            "if(!id) return;" +
+                            "var titleEl=container.querySelector('.text-2xl.font-semibold.text-foreground') || container.querySelector('.text-2xl.font-semibold');" +
+                            "if(!titleEl) return;" +
+                            "var text=titleEl.innerText.trim();" +
+                            "var clipMatch=text.match(/#(\\\\d+)/); var clipNum=clipMatch?clipMatch[0]:'#?';" +
+                            "var subject=text.replace(clipNum,'').trim();" +
+                            "var scoreEl=container.querySelector('.text-success') || container.querySelector('.font-bold.text-2xl') || container.querySelector('[class*=\"text-success\"]');" +
+                            "var score=scoreEl?scoreEl.innerText.trim():'??';" +
+                            "container.dispatchEvent(new MouseEvent('mouseover', {bubbles:true}));" +
+                            "var vE=container.querySelector('video source')||container.querySelector('video');" +
+                            "add(id,clipNum,subject,score,vE?vE.src||vE.currentSrc:'',container.getBoundingClientRect().top+(t===window?window.scrollY:t.scrollTop));" +
+                        "});" +
+                    "}" +
+                    "this.innerText='✅ DONE';" +
+                "};" +
+                
+                "document.getElementById('sync-btn').onclick=async function(){" +
+                    "var pj=prompt('📝 Project Name:','New Project'); if(!pj) return;" +
+                    "var clips=Array.from(m.values());" +
+                    "var res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clips:clips,folder_name:pj})});" +
+                    "if(res.ok){alert('✅ SUCCESS!');}else alert('❌ FAILED');" +
+                "};" +
+            "})();";
+            document.getElementById('bm-btn').href = script;
+        }
+
+        // --- BULK UPLOAD LOGIC ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const statusList = document.getElementById('status-list');
+
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+        dropZone.ondrop = (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); };
+        fileInput.onchange = () => handleFiles(fileInput.files);
+
+        async function handleFiles(files) {
+            for (let file of files) {
+                if (!file.name.endsWith('.mp4')) continue;
+                const id = file.name.split('.')[0];
+                addStatusItem(id, file);
+            }
+        }
+
+        async function addStatusItem(id, file) {
+            const item = document.createElement('div');
+            item.className = "flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5";
+            item.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-[#cfaf34]/20 rounded-full flex items-center justify-center text-xs font-black text-[#cfaf34]">ID</div>
+                    <div><div class="font-black text-sm tracking-widest">${id}</div><div class="text-[10px] text-white/40 uppercase font-bold">${(file.size / 1024 / 1024).toFixed(2)} MB</div></div>
+                </div>
+                <div id="progress-${id}" class="text-[10px] font-black text-[#cfaf34] uppercase tracking-widest italic animate-pulse">⏳ QUEUED</div>
+            `;
+            statusList.prepend(item);
+            try {
+                document.getElementById(`progress-${id}`).innerText = "🔍 CHECKING ID...";
+                
+                const checkRes = await fetch(`${API_BASE}/api/slides`);
+                const slides = await checkRes.json();
+                
+                // --- CASE-INSENSITIVE SMART MATCH ---
+                const target = slides.find(s => s.id.toLowerCase() === id.toLowerCase());
+                
+                if (!target) {
+                    document.getElementById(`progress-${id}`).innerText = "❌ ID NOT FOUND IN DB";
+                    document.getElementById(`progress-${id}`).classList.add('text-red-500');
+                    return;
+                }
+                
+                const realId = target.id;
+                document.getElementById(`progress-${id}`).innerText = `✅ MATCHED: ${realId}`;
+
+                document.getElementById(`progress-${id}`).innerText = "🚀 UPLOADING MP4...";
+                const upRes = await fetch(`${API_BASE}/api/upload-video?id=${realId}`, { method: 'POST', headers: { 'Content-Type': 'video/mp4' }, body: file });
+                const upData = await upRes.json();
+                
+                if (upData.success) {
+                    document.getElementById(`progress-${id}`).innerText = "📡 LINKING TO DASHBOARD...";
+                    const dbRes = await fetch(`${API_BASE}/api/update`, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ id: realId, video_url: upData.videoUrl, user: 'VAULT-ARCHIVER', msg: 'Video Permanently Archived' }) 
+                    });
+                    
+                    if (dbRes.ok) { 
+                        document.getElementById(`progress-${id}`).innerText = "✅ PERMANENTLY ARCHIVED"; 
+                        document.getElementById(`progress-${id}`).classList.remove('animate-pulse');
+                        document.getElementById(`progress-${id}`).classList.add('text-green-500');
+                    } else throw new Error("DB Link Failed");
+                } else throw new Error("Upload Failed");
+            } catch (e) { 
+                document.getElementById(`progress-${id}`).innerText = "❌ ERROR: " + e.message;
+                document.getElementById(`progress-${id}`).classList.add('text-red-500');
+            }
+        }
+        generateBookmarklet();
+    </script>
+</body>
+</html>

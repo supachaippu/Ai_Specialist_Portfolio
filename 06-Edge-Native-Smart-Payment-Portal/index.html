@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ศูนย์รวมคนดี Special</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #111827; color: white; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .main { padding: 20px; width: 100%; max-width: 480px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        .hidden { display: none !important; }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; margin-bottom: 10px; }
+        .btn-main { background: #FACC15; color: #000; border-radius: 12px; padding: 12px; width: 100%; font-weight: bold; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-sec { background: rgba(255,255,255,0.1); color: #fff; border-radius: 12px; padding: 12px; width: 100%; font-weight: bold; }
+        input, select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 10px; width: 100%; color: white; outline: none; margin-bottom: 10px; }
+        .qty-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <div onclick="secretTap()"><h1 class="text-2xl font-bold">ศูนย์รวมคนดี Special</h1><p class="text-xs opacity-70">Ticketing System</p></div>
+            <div class="flex gap-2">
+                <button onclick="verifyManager()" class="bg-white/10 p-2 rounded-full text-[10px]">👑 Manager</button>
+                <button id="btn-staff-toggle" onclick="toggleStaff()" class="hidden bg-blue-600 p-2 rounded-full text-[10px] font-bold">🔄 Staff Mode</button>
+            </div>
+        </div>
+
+        <div id="page-home" class="flex-1 flex flex-col">
+            <div class="flex items-center gap-3 mb-6 bg-white/5 p-4 rounded-2xl">
+                <img id="u-img" class="w-12 h-12 rounded-full border-2 border-white">
+                <div><h3 id="u-name" class="font-bold">Guest</h3><p class="text-xs text-gray-400">Welcome</p></div>
+            </div>
+            
+            <button onclick="nav('page-buy')" class="btn-main h-24 text-left flex items-center px-6 gap-4 text-xl">
+                <span>🛒</span><div><div>ซื้อบัตร</div><div class="text-xs opacity-60 font-normal">Buy Ticket</div></div>
+            </button>
+            <button onclick="nav('page-wallet'); loadWallet();" class="btn-sec h-20 text-left flex items-center px-6 gap-4 text-lg">
+                <span>🎫</span><div><div>กระเป๋าบัตร</div><div class="text-xs opacity-60 font-normal">My Wallet</div></div>
+            </button>
+        </div>
+
+        <div id="page-buy" class="hidden flex-col h-full">
+            <div class="flex items-center mb-4"><button onclick="nav('page-home')" class="mr-3 text-xl">←</button><h2 class="text-xl font-bold">ซื้อบัตร</h2></div>
+            <div class="flex-1 overflow-y-auto">
+                <div id="poster-container" class="mb-4 hidden">
+                    <img id="concert-poster" class="w-full h-auto rounded-2xl shadow-xl border border-white/10" style="aspect-ratio: 1/1; object-fit: cover;">
+                </div>
+                <div class="glass">
+                    <label class="text-xs text-gray-400 mb-1 block">เลือกโซน (Zone)</label>
+                    <select id="buy-zone" onchange="calcPrice()" class="bg-black">
+                        <option value="" disabled selected>-- Select Zone --</option>
+                        <option value="Early">Early</option>
+                        <option value="Online">Online</option>
+                        <option value="Door">Door</option>
+                        <option value="Test">Test (1 ฿)</option>
+                    </select>
+                    
+                    <div class="mb-4">
+                        <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">ตารางราคา (Ticket Pricing)</div>
+                        <div class="space-y-1">
+                            <div id="price-row-early" class="flex justify-between items-center bg-yellow-400/10 p-2 rounded-lg border border-yellow-400/20">
+                                <span class="text-xs font-bold text-yellow-400">🔥 Early Ticket (จำกัด 100 ใบ)</span>
+                                <span class="text-xs font-bold text-yellow-400">399 ฿</span>
+                            </div>
+                            <div id="price-row-online" class="flex justify-between items-center opacity-40 p-2">
+                                <span class="text-xs">Online Ticket (1-30 เม.ย.)</span>
+                                <span class="text-xs">499 ฿</span>
+                            </div>
+                            <div id="price-row-door" class="flex justify-between items-center opacity-40 p-2">
+                                <span class="text-xs">หน้างาน (1 พ.ค. เป็นต้นไป)</span>
+                                <span class="text-xs">599 ฿</span>
+                            </div>
+                            <div id="price-row-test" class="flex justify-between items-center opacity-40 p-2">
+                                <span class="text-xs">Test Ticket (สำหรับทดสอบ)</span>
+                                <span class="text-xs">1 ฿</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 space-y-2">
+                        <label class="text-xs text-gray-400 block ml-1">เบอร์โทรศัพท์ (Phone Number)</label>
+                        <input type="tel" id="buy-phone" placeholder="ระบุเบอร์โทรศัพท์" maxlength="10" class="mb-0 text-lg tracking-widest text-center">
+                        <input type="tel" id="buy-phone-conf" placeholder="ยืนยันเบอร์โทรศัพท์อีกครั้ง" maxlength="10" class="text-lg tracking-widest text-center">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs text-gray-400 block ml-1">รหัสส่วนลด (Promo Code)</label>
+                        <input type="text" id="buy-promo" placeholder="ระบุรหัสส่วนลด (ถ้ามี)" oninput="calcPrice()" class="text-center font-bold uppercase tracking-widest border-yellow-500/50">
+                    </div>
+
+                    <div class="flex justify-between items-center mt-2 mb-4">
+                        <label class="text-xs text-gray-400">จำนวน (Qty)</label>
+                        <div class="flex items-center gap-4">
+                            <button onclick="updateQty(-1)" class="qty-btn">-</button>
+                            <span id="qty-show" class="font-bold text-xl">1</span>
+                            <button onclick="updateQty(1)" class="qty-btn">+</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 pt-2 border-t border-white/5 space-y-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-400">ประหยัดไป (Savings)</span>
+                            <span id="saving-show" class="text-xs font-bold text-green-400 animate-pulse">ประหยัด 0 ฿</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">ยอดชำระสุทธิ</span>
+                            <span id="price-show" class="font-bold text-xl text-yellow-400">0 ฿</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass border-l-4 border-yellow-500">
+                    <div class="flex items-center gap-3 mb-2">
+                        <img src="krungsri.png" class="w-10 h-10 rounded-lg">
+                        <div>
+                            <div class="text-xs text-gray-400">โอนเงินไปที่ (Bank Transfer)</div>
+                            <div class="text-sm font-bold">ธนาคาร กรุงศรี</div>
+                        </div>
+                    </div>
+                    <div class="font-bold text-2xl tracking-wider mb-2">6981106634</div>
+                    <button onclick="copyBank()" class="w-full text-xs bg-white/10 py-2 rounded-lg font-bold border border-white/5 active:bg-white/20">คัดลอกเลขบัญชี</button>
+                    
+                     <div class="mt-4 pt-4 border-t border-white/5">
+                          <div class="text-sm font-bold text-yellow-500 mb-1">นายศุภชัย พุ่มพวง</div>
+                          <div class="text-[10px] text-gray-400 mb-3">สามารถกดคัดเลข เลขบัญชีได้เลย</div>
+                          <div class="text-[10px] text-red-400 bg-red-400/10 p-2 rounded-lg leading-relaxed border border-red-400/20">
+                             *กรุณาตรวจสอบชื่อบัญชีให้ถูกต้องก่อนโอน ทางร้านขายช่องทางเดียวคือ ใน Line และที่ร้านเร้กเก้ เท่านั้น
+                          </div>
+                     </div>
+                 </div>
+                <div class="glass text-center cursor-pointer" onclick="document.getElementById('slip-file').click()">
+                    <input type="file" id="slip-file" hidden accept="image/*" onchange="previewSlip(this)">
+                    <div id="slip-holder" class="py-4"><span class="text-3xl">📤</span><p class="text-xs mt-2">แนบสลิป (Upload Slip)</p></div>
+                    <img id="slip-img" class="hidden w-full h-40 object-contain rounded">
+                </div>
+            </div>
+            <button onclick="submitBuy()" class="btn-main">ยืนยันการซื้อ</button>
+        </div>
+
+        <div id="page-wallet" class="hidden flex-col h-full">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center"><button onclick="nav('page-home')" class="mr-3 text-xl">←</button><h2 class="text-xl font-bold">My Wallet</h2></div>
+                <button onclick="loadWallet()" class="text-xs bg-white/10 px-3 py-1 rounded-full">↻ Refresh</button>
+            </div>
+            <div id="wallet-list" class="space-y-3 flex-1 overflow-y-auto">Loading...</div>
+        </div>
+
+        <div id="page-staff" class="hidden flex-col h-full bg-gray-900 absolute inset-0 z-40 p-5">
+            <div class="flex justify-between mb-6">
+                <h2 class="text-xl font-bold text-blue-400">🛡️ Staff Mode</h2>
+                <button onclick="toggleStaff()" class="text-xs bg-white/10 px-3 py-1 rounded">Close</button>
+            </div>
+            <button onclick="openScan()" class="btn-main h-32 flex flex-col items-center justify-center gap-2" style="background: #3b82f6; color: white;">
+                <span class="text-4xl">📸</span><span class="text-lg">สแกนบัตร (Scan QR)</span>
+            </button>
+            <div class="glass mt-4 text-center">
+                <p class="text-xs text-gray-400">เมื่อสแกนแล้ว ระบบจะตัดบัตรลูกค้าทันที</p>
+            </div>
+        </div>
+
+        <div id="page-mgr" class="hidden flex-col h-full bg-black absolute inset-0 z-50 p-5">
+            <div class="flex justify-between mb-4"><h2 class="text-xl font-bold text-yellow-500">👑 Manager</h2><button onclick="location.reload()" class="text-xs text-red-400">Logout</button></div>
+            
+            <div class="flex gap-2 mb-4">
+                <button onclick="mgrTab('sales')" class="flex-1 bg-white/10 py-2 rounded text-xs active-tab" id="tab-sales">ยอดขาย</button>
+                <button onclick="mgrTab('staff')" class="flex-1 bg-white/10 py-2 rounded text-xs" id="tab-staff">พนักงาน</button>
+                <button onclick="mgrTab('settings')" class="flex-1 bg-white/10 py-2 rounded text-xs" id="tab-settings">ตั้งค่า</button>
+            </div>
+
+            <div id="mgr-sales" class="flex-1 overflow-y-auto space-y-2">Loading...</div>
+            <div id="mgr-staff" class="hidden flex-1 overflow-y-auto space-y-2">Loading...</div>
+            <div id="mgr-settings" class="hidden flex-1 overflow-y-auto space-y-4">
+                <div class="glass">
+                    <h3 class="font-bold text-sm mb-4">🖼️ อัปโหลดรูปคอนเสิร์ต (1920x1920)</h3>
+                    <input type="file" id="poster-file" accept="image/*" class="text-xs">
+                    <button onclick="uploadPoster()" class="btn-main mt-2">อัปโหลดรูปภาพ</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-scan" class="fixed inset-0 z-[60] hidden flex-col bg-black p-4"><div class="flex justify-between mb-4"><h2 class="text-xl font-bold">Scanner</h2><button onclick="closeModal('modal-scan')" class="text-gray-400">✕</button></div><div id="reader" class="rounded-xl overflow-hidden bg-black h-64 border border-white/20"></div></div>
+        
+        <div id="modal-req-staff" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/90 p-6">
+            <div class="glass w-full text-center">
+                <h2 class="text-xl font-bold mb-2">Request Staff Access</h2>
+                <input id="req-name" placeholder="ชื่อเล่นของคุณ (Nickname)" class="text-center">
+                <button onclick="sendStaffReq()" class="btn-main mt-2">ส่งคำขอ</button>
+                <button onclick="closeModal('modal-req-staff')" class="text-xs text-gray-400 mt-2">ยกเลิก</button>
+            </div>
+        </div>
+        
+        <div id="loading" class="fixed inset-0 z-[99] hidden flex items-center justify-center bg-black/80"><div class="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div></div>
+
+    </div>
+
+    <script>
+        const CFG = { 
+            liff: "2009069818-bd6WQOHC", 
+            worker: "https://craftopiacore.craftopiacafe.workers.dev", 
+            r2: "https://pub-92ca7762b88a4cbba4b88459fd336462.r2.dev", 
+            prices: {
+                "Early": "399", 
+                "Online": "499",
+                "Door": "599",
+                "Test": "1"
+            } 
+        };
+        let profile = {}, isStaff = false, tapCount = 0;
+        let scannerInstance = null;
+        let mgrToken = ""; 
+        let currentPosterUrl = ""; 
+        let earlyCount = 0; 
+
+        const esc = (s) => (s||"").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+
+        async function main() {
+            await liff.init({ liffId: CFG.liff });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            profile = await liff.getProfile();
+            document.getElementById('u-img').src = profile.pictureUrl;
+            document.getElementById('u-name').innerText = profile.displayName;
+            checkRole();
+            initTicketSelection();
+            loadPoster();
+        }
+
+        // --- Core & Nav ---
+        function nav(id) { 
+            const overlays = ['page-staff', 'page-mgr'];
+            document.querySelectorAll('[id^="page-"]').forEach(e => {
+                if (!overlays.includes(e.id)) e.classList.add('hidden');
+            });
+            document.getElementById(id).classList.remove('hidden'); 
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+        function showLoad() { document.getElementById('loading').classList.remove('hidden'); }
+        function hideLoad() { document.getElementById('loading').classList.add('hidden'); }
+        
+        function initTicketSelection() {
+            const now = new Date();
+            const select = document.getElementById('buy-zone');
+            
+            // Define Ranges (Year 2026)
+            let isEarly = now >= new Date('2026-03-17') && now <= new Date('2026-03-31T23:59:59');
+            let isOnline = now >= new Date('2026-04-01') && now <= new Date('2026-04-30T23:59:59');
+            let isDoor = now >= new Date('2026-05-01');
+
+            // --- Business Logic: Switch Early to Online if Quota Full (30 tickets) ---
+            if (isEarly && earlyCount >= 30) {
+                isEarly = false;
+                isOnline = true;
+            }
+
+            let activeZone = "";
+            let label = "";
+
+            if (isEarly) {
+                activeZone = "Early";
+                label = "Early Ticket (399 ฿)";
+            } else if (isOnline) {
+                activeZone = "Online";
+                label = "Online Ticket (499 ฿)";
+            } else if (isDoor) {
+                activeZone = "Door";
+                label = "หน้างาน (599 ฿)";
+            }
+
+            if (activeZone) {
+                // Show ONLY the valid option for today + Test Option
+                select.innerHTML = `
+                    <option value="${activeZone}" selected>${label}</option>
+                    <option value="Test">Test Ticket (1 ฿)</option>
+                `;
+                
+                // Highlight current pricing in UI
+                document.querySelectorAll('[id^="price-row-"]').forEach(el => el.className = "flex justify-between items-center opacity-40 p-2");
+                const currentId = `price-row-${activeZone.toLowerCase()}`;
+                const row = document.getElementById(currentId);
+                if(row) row.className = "flex justify-between items-center bg-yellow-400/10 p-2 rounded-lg border border-yellow-400/20 text-yellow-400 font-bold";
+                
+                calcPrice();
+            } else {
+                // Out of range handling
+                if (now < new Date('2026-03-17')) {
+                    select.innerHTML = '<option value="" disabled selected>Coming Soon (17 มี.ค. 2569)</option>';
+                } else {
+                    select.innerHTML = '<option value="" disabled selected>ปิดจำหน่ายออนไลน์แล้ว</option>';
+                }
+                document.getElementById('price-show').innerText = "0 ฿";
+            }
+        }
+
+        // --- Staff Role & Request ---
+        async function checkRole() {
+            try {
+                const res = await fetch(`${CFG.worker}/api/me?uid=${profile.userId}`);
+                const d = await res.json();
+                if(d.role === 'staff' || d.role === 'manager') {
+                    document.getElementById('btn-staff-toggle').classList.remove('hidden');
+                    isStaff = true;
+                }
+            } catch(e) {}
+        }
+        function secretTap() { if(++tapCount >= 5) { document.getElementById('modal-req-staff').classList.remove('hidden'); document.getElementById('modal-req-staff').classList.add('flex'); tapCount=0; } }
+        async function sendStaffReq() {
+            const name = document.getElementById('req-name').value;
+            if(!name) return;
+            showLoad();
+            try {
+                const res = await fetch(`${CFG.worker}/api/staff-req`, { method:'POST', body:JSON.stringify({uid:profile.userId, name}) });
+                const d = await res.json();
+                hideLoad();
+                if(d.success) Swal.fire("ส่งคำขอแล้ว", "กรุณาแจ้งผู้จัดการให้อนุมัติ", "success");
+                else Swal.fire("Error", d.error || d.msg || "Unknown Error", "error");
+            } catch(e) { hideLoad(); Swal.fire("System Error", e.message, "error"); }
+        }
+        function toggleStaff() { 
+            const p = document.getElementById('page-staff');
+            p.classList.toggle('hidden');
+        }
+
+        // --- Customer Buy ---
+        let currentQty = 1;
+        function updateQty(v) {
+            currentQty = Math.max(1, currentQty + v);
+            document.getElementById('qty-show').innerText = currentQty;
+            calcPrice();
+        }
+
+        function calcPrice() { 
+            const z = document.getElementById('buy-zone').value;
+            const promo = document.getElementById('buy-promo').value.trim().toUpperCase();
+            
+            let singlePrice = Number(CFG.prices[z] || 0);
+            let isPromo = false;
+
+            // Promo Code Logic
+            if (promo === 'HEE') {
+                singlePrice = 399;
+                isPromo = true;
+            }
+
+            const total = singlePrice * currentQty;
+            document.getElementById('price-show').innerText = total.toLocaleString() + " ฿";
+            
+            // Calc Savings (Compare with Door Price 599)
+            const doorPrice = 599;
+            const savings = (doorPrice - singlePrice) * currentQty;
+            
+            let savingText = `ประหยัด ${savings.toLocaleString()} ฿`;
+            if (isPromo) {
+                savingText = `✨ ใช้โค้ดลดเหลือ 399.- (ประหยัด ${savings.toLocaleString()} ฿)`;
+            }
+            document.getElementById('saving-show').innerText = savingText;
+        }
+
+        function copyBank() {
+            navigator.clipboard.writeText("6981106634");
+            Swal.fire("คัดลอกแล้ว", "คัดลอกเลขบัญชีเรียบร้อย", "success");
+        }
+
+        function openApp(app) {
+            let url = "";
+            if(app === 'kbank') url = "kbank://";
+            else if(app === 'scb') url = "scbeasy://";
+            else if(app === 'krungsri') url = "krungsri://";
+            
+            if (liff.isInClient()) {
+                liff.openWindow({ url: url, external: true });
+            } else {
+                window.location.href = url;
+            }
+        }
+
+        async function sendTicketFlex(qty, total) {
+            if (!liff.isInClient()) return;
+            const poster = currentPosterUrl || "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80";
+            const qtyText = qty ? `จำนวนบัตร: ${qty} ใบ` : "ชำระเสร็จสิ้น";
+            const totalText = total ? `ยอดชำระ: ${total.toLocaleString()} ฿` : "";
+
+            try {
+                await liff.sendMessages([{
+                    type: "flex",
+                    altText: "ยืนยันการชำระเงิน - ศูนย์รวมคนดี Special",
+                    contents: {
+                        type: "bubble",
+                        body: {
+                            type: "box",
+                            layout: "vertical",
+                            paddingAll: "0px",
+                            contents: [
+                                {
+                                    type: "image",
+                                    url: poster,
+                                    size: "full",
+                                    aspectMode: "cover",
+                                    aspectRatio: "1:1",
+                                    gravity: "center"
+                                },
+                                {
+                                    type: "box",
+                                    layout: "vertical",
+                                    paddingAll: "20px",
+                                    backgroundColor: "#111827",
+                                    contents: [
+                                        {
+                                            type: "text",
+                                            text: "ชำระเสร็จสิ้น",
+                                            color: "#e11d48",
+                                            size: "xl",
+                                            weight: "bold"
+                                        },
+                                        {
+                                            type: "text",
+                                            text: qtyText,
+                                            color: "#ffffff",
+                                            size: "sm",
+                                            margin: "md"
+                                        },
+                                        {
+                                            type: "text",
+                                            text: totalText,
+                                            color: "#ffffff",
+                                            size: "sm",
+                                            margin: "xs"
+                                        },
+                                        {
+                                            type: "text",
+                                            text: "พบกันวันที่ 1 พฤษภาคม 2569",
+                                            color: "#9ca3af",
+                                            size: "xs",
+                                            margin: "md"
+                                        },
+                                        {
+                                            type: "text",
+                                            text: "หมายเหตุ : กรุณาอย่าลืมพกเก้าอี้แคมป์มาด้วย",
+                                            color: "#facc15",
+                                            size: "xs",
+                                            margin: "sm",
+                                            wrap: true
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }]);
+            } catch (e) { console.error("Send Flex Failed", e); }
+            if (liff.isInClient()) liff.closeWindow();
+        }
+
+        function previewSlip(el) {
+            if(el.files[0]) {
+                document.getElementById('slip-img').src = URL.createObjectURL(el.files[0]);
+                document.getElementById('slip-img').classList.remove('hidden');
+                document.getElementById('slip-holder').classList.add('hidden');
+            }
+        }
+
+        async function submitBuy() {
+            const z = document.getElementById('buy-zone').value;
+            const phone = document.getElementById('buy-phone').value.trim();
+            const phoneConf = document.getElementById('buy-phone-conf').value.trim();
+            const f = document.getElementById('slip-file').files[0];
+
+            if(!z) return Swal.fire("ข้อมูลไม่ครบ", "กรุณาเลือกโซนที่ต้องการ", "warning");
+            if(!/^[0-9]{10}$/.test(phone)) return Swal.fire("เบอร์โทรไม่ถูกต้อง", "กรุณาระบุตัวเลข 10 หลัก", "warning");
+            if(phone !== phoneConf) return Swal.fire("ข้อมูลไม่ตรงกัน", "เบอร์โทรศัพท์ที่คุณระบุทั้ง 2 ช่องไม่ตรงกัน", "error");
+            if(!f) return Swal.fire("ข้อมูลไม่ครบ", "กรุณาแนบภาพสลิปการโอนเงิน", "warning");
+            
+            showLoad();
+            const fd = new FormData();
+            fd.append('uid', profile.userId); 
+            fd.append('name', profile.displayName);
+            fd.append('phone', phone);
+            fd.append('zone', z); 
+            fd.append('slip', f);
+            fd.append('qty', currentQty);
+            fd.append('promoCode', document.getElementById('buy-promo').value.trim().toUpperCase());
+            
+            try {
+                const res = await fetch(`${CFG.worker}/api/buy`, { method:'POST', body:fd });
+                const d = await res.json();
+                hideLoad();
+                if(d.success) {
+                    Swal.fire({
+                        title: "สำเร็จ", 
+                        html: `ตรวจสอบสลิปเรียบร้อย<br>ยอดเงิน: <b>${d.amount.toLocaleString()} ฿</b><br>ได้รับบัตรจำนวน: <b>${d.qty} ใบ</b>`, 
+                        icon: "success"
+                    }).then(() => { 
+                        sendTicketFlex(d.qty, d.amount);
+                        nav('page-wallet'); 
+                        loadWallet(); 
+                    });
+                } else {
+                    Swal.fire("ตรวจสอบใบโอนไม่สำเร็จ", d.msg || "Unknown error", "error");
+                }
+            } catch(e) { 
+                hideLoad(); 
+                Swal.fire("Connection Error", e.message, "error"); 
+            }
+        }
+
+        // --- Wallet ---
+        async function loadWallet() {
+            showLoad();
+            const div = document.getElementById('wallet-list');
+            try {
+                const res = await fetch(`${CFG.worker}/api/wallet?uid=${profile.userId}`);
+                const d = await res.json();
+                div.innerHTML = "";
+                if(d.length === 0) div.innerHTML = "<p class='text-center opacity-50 py-10'>ยังไม่มีบัตรในกระเป๋า</p>";
+                d.forEach(t => {
+                    div.innerHTML += `<div class="glass flex border-l-4 ${t.status==='used'?'border-gray-500':'border-yellow-400'} items-center gap-4">
+                        <div class="flex-1">
+                            <div class="font-bold text-lg">${esc(t.item_name)}</div>
+                            <div class="text-[10px] opacity-60">จำนวน: ${t.qty} ใบ | ยอดชำระ: ${t.total_paid} ฿</div>
+                            <div class="text-[10px] opacity-50">${new Date(t.created_at).toLocaleDateString()}</div>
+                            <div class="grid grid-cols-3 gap-2 mt-2">
+                                <button onclick="showQR('${esc(t.deposit_code)}')" class="bg-yellow-400/10 text-yellow-400 text-[10px] py-1 rounded border border-yellow-400/20 font-bold whitespace-nowrap text-center">QR เข้างาน</button>
+                                <button onclick="sendTicketFlex(${t.qty}, ${t.total_paid})" class="bg-white/5 text-gray-300 text-[10px] py-1 rounded border border-white/10 font-bold whitespace-nowrap text-center">ดูข้อมูล</button>
+                                <button onclick="viewSlip('${esc(t.image_key)}')" class="bg-blue-600/10 text-blue-400 text-[10px] py-1 rounded border border-blue-600/20 font-bold whitespace-nowrap text-center">ดูสลิป</button>
+                            </div>
+                        </div>
+                        <div class="text-xs uppercase font-bold ${t.status==='used'?'text-gray-500':'text-yellow-400'}">${esc(t.status)}</div>
+                    </div>`;
+                });
+            } catch(e) { div.innerHTML = "Error loading wallet"; }
+            finally { hideLoad(); }
+        }
+        function showQR(code) {
+            Swal.fire({ title: 'Scan to Enter', html: `<div class="flex justify-center my-2"><div id="qr-box"></div></div><h3 class="font-mono text-xl">${code}</h3>`, didOpen: () => { new QRCode(document.getElementById("qr-box"), {text:code, width:180, height:180}); } });
+        }
+
+        // --- Manager ---
+        async function verifyManager() {
+            const {value:p} = await Swal.fire({title:'Password', input:'password', showCancelButton:true});
+            if(p) {
+                const res = await fetch(`${CFG.worker}/api/login`, {method:'POST', body:JSON.stringify({pass:p})});
+                const d = await res.json();
+                if(d.success) { 
+                    mgrToken = d.token; // Store the token
+                    document.getElementById('page-mgr').classList.remove('hidden'); 
+                    loadMgrSales(); 
+                }
+                else Swal.fire("Wrong Password");
+            }
+        }
+        function mgrTab(t) { 
+            document.getElementById('mgr-sales').classList.add('hidden');
+            document.getElementById('mgr-staff').classList.add('hidden');
+            document.getElementById('mgr-settings').classList.add('hidden');
+            document.getElementById('mgr-'+t).classList.remove('hidden');
+
+            document.getElementById('tab-sales').classList.remove('bg-yellow-500/20');
+            document.getElementById('tab-staff').classList.remove('bg-yellow-500/20');
+            document.getElementById('tab-settings').classList.remove('bg-yellow-500/20');
+            document.getElementById('tab-'+t).classList.add('bg-yellow-500/20');
+
+            if(t==='sales') loadMgrSales(); 
+            else if(t==='staff') loadMgrStaff();
+        }
+        async function loadPoster() {
+            try {
+                const res = await fetch(`${CFG.worker}/api/poster`);
+                const d = await res.json();
+                if(d.poster) {
+                    currentPosterUrl = `${CFG.worker}/api/image/${d.poster}`;
+                    document.getElementById('concert-poster').src = currentPosterUrl;
+                    document.getElementById('poster-container').classList.remove('hidden');
+                }
+                if(d.early_count !== undefined) {
+                    earlyCount = d.early_count;
+                    initTicketSelection();
+                }
+            } catch(e) {}
+        }
+        async function uploadPoster() {
+            const f = document.getElementById('poster-file').files[0];
+            if(!f) return Swal.fire("Error", "กรุณาเลือกไฟล์รูปภาพ", "error");
+            showLoad();
+            const fd = new FormData();
+            fd.append('poster', f);
+            const res = await fetch(`${CFG.worker}/api/mgr/upload-poster`, { 
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${mgrToken}` },
+                body: fd 
+            });
+            const d = await res.json();
+            hideLoad();
+            if(d.success) {
+                Swal.fire("สำเร็จ", "อัปโหลดรูปภาพเรียบร้อย", "success");
+                loadPoster();
+            } else Swal.fire("Error", d.msg, "error");
+        }
+        async function loadMgrSales() {
+            try {
+                const res = await fetch(`${CFG.worker}/api/mgr/sales`, {
+                    headers: { 'Authorization': `Bearer ${mgrToken}` }
+                });
+                const d = await res.json();
+                const div = document.getElementById('mgr-sales');
+                div.innerHTML = "";
+                let grandTotal = 0;
+                let ticketTotal = 0;
+                let listHtml = "";
+                
+                d.forEach(s => {
+                    grandTotal += Number(s.total_paid);
+                    ticketTotal += Number(s.qty);
+                    listHtml += `<div class="glass flex flex-col gap-1 text-xs">
+                        <div class="flex justify-between font-bold">
+                            <span>${esc(s.item_name)} (${s.qty} ใบ)</span>
+                            <span class="text-yellow-400 font-bold">${s.total_paid}฿</span>
+                        </div>
+                        <div class="flex justify-between items-center opacity-70">
+                            <div>
+                                <div>👤 ${esc(s.owner_name)}</div>
+                                <div>📞 ${esc(s.owner_phone)}</div>
+                            </div>
+                            <button onclick="viewSlip('${esc(s.image_key)}')" class="bg-blue-600/20 text-blue-400 px-2 py-1 rounded border border-blue-600/30 font-bold">📂 ดูสลิป</button>
+                        </div>
+                    </div>`;
+                });
+
+                div.innerHTML = `
+                    <div class="glass bg-yellow-400/10 border-yellow-400/20 mb-4 text-center">
+                        <div class="text-[10px] uppercase text-gray-400">ยอดเงินรวมทั้งหมด</div>
+                        <div class="text-2xl font-bold text-yellow-400">${grandTotal.toLocaleString()} ฿</div>
+                        <div class="text-[10px] text-gray-500 mt-1">จำนวนบัตรที่ขายได้: ${ticketTotal} ใบ</div>
+                    </div>
+                    ${listHtml}
+                `;
+            } catch(e) { 
+                console.error(e);
+                document.getElementById('mgr-sales').innerHTML = `<div class="glass text-center text-red-500 py-10">Error: ${e.message}</div>`;
+            }
+        }
+        function viewSlip(key) {
+            Swal.fire({
+                imageUrl: `${CFG.worker}/api/image/${key}`,
+                imageWidth: 400,
+                imageAlt: 'Payment Slip',
+                background: '#111827',
+                color: '#fff',
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+        async function loadMgrStaff() {
+            try {
+                const res = await fetch(`${CFG.worker}/api/mgr/staff`, {
+                    headers: { 'Authorization': `Bearer ${mgrToken}` }
+                });
+                const d = await res.json();
+                const div = document.getElementById('mgr-staff');
+                div.innerHTML = "";
+                d.forEach(s => {
+                    const btn = s.status === 'pending' 
+                        ? `<button onclick="staffAct('${esc(s.user_id)}','approve')" class="text-green-400">✅ รับ</button>` 
+                        : `<button onclick="staffAct('${esc(s.user_id)}','remove')" class="text-red-400">❌ ลบ</button>`;
+                    div.innerHTML += `<div class="glass flex justify-between items-center text-xs"><span>${esc(s.name)} (${esc(s.status)})</span>${btn}</div>`;
+                });
+            } catch(e) { 
+                console.error(e);
+                document.getElementById('mgr-staff').innerHTML = `<div class="glass text-center text-red-500 py-10">Error: ${e.message}</div>`;
+            }
+        }
+        async function staffAct(uid, act) {
+            await fetch(`${CFG.worker}/api/staff-act`, {
+                method:'POST', 
+                headers: { 'Authorization': `Bearer ${mgrToken}` },
+                body:JSON.stringify({uid, act})
+            });
+            loadMgrStaff();
+        }
+
+        // --- Staff Scan ---
+        async function openScan() { 
+            document.getElementById('modal-scan').classList.remove('hidden'); 
+            document.getElementById('modal-scan').classList.add('flex'); 
+            
+            if (scannerInstance) {
+                try { await scannerInstance.stop(); } catch(e) { console.warn("Error stopping previous scanner instance:", e); }
+            }
+            
+            scannerInstance = new Html5Qrcode("reader"); 
+            scannerInstance.start({facingMode:"environment"}, {fps:10, qrbox:250}, async t => { 
+                await scannerInstance.stop(); 
+                scannerInstance = null;
+                doCheckIn(t); 
+            }).catch(()=>{}); 
+        }
+        async function doCheckIn(code) {
+            closeModal('modal-scan');
+            showLoad();
+            try {
+                const res = await fetch(`${CFG.worker}/api/checkin`, {method:'POST', body:JSON.stringify({code, staff:profile.userId})});
+                const d = await res.json();
+                hideLoad();
+                if(d.success) Swal.fire("ผ่าน (Pass)", "✅ ตัดบัตรเรียบร้อย", "success");
+                else Swal.fire("ไม่ผ่าน", d.error || d.msg || "Error", "error");
+            } catch(e) { hideLoad(); Swal.fire("Error", e.message, "error"); }
+        }
+
+        main();
+    </script>
+</body>
+</html>

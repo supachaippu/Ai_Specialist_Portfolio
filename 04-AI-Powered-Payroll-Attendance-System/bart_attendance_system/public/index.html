@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ลงเวลาเข้างาน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFF; --text: #1C1C1E; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { background: var(--card); padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; height: fit-content; margin-top: 20px; }
+        h1 { margin: 0 0 10px 0; font-weight: 600; }
+        .status { color: #8E8E93; margin-bottom: 25px; font-size: 0.9rem; }
+        .upload-box { position: relative; margin-bottom: 20px; }
+        #imageInput { display: none; }
+        .preview-label { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 250px; background: #F9F9F9; border: 2px dashed #D1D1D6; border-radius: 16px; cursor: pointer; overflow: hidden; }
+        .preview-label:hover { border-color: var(--primary); background: #F0F8FF; }
+        #preview { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn:disabled { background: #C7C7CC; cursor: not-allowed; }
+        .loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 99; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ลงเวลาเข้างาน</h1>
+        <div id="userInfo" class="status">กำลังโหลดข้อมูล...</div>
+        <form id="form">
+            <div class="upload-box">
+                <input type="file" id="imageInput" accept="image/*" required>
+                <label for="imageInput" class="preview-label">
+                    <div id="placeholder">📸 แตะเพื่อถ่ายรูป Timestamp</div>
+                    <img id="preview" src="#">
+                </label>
+            </div>
+            <button type="submit" class="btn" id="submitBtn" disabled>ยืนยันการลงเวลา</button>
+        </form>
+    </div>
+    <div class="loading" id="loader"><div class="spinner"></div><p>กำลังอ่านข้อมูลจากภาพ...</p></div>
+
+    <script>
+        const CONFIG = { LIFF_ID: "ใส่-LIFF-ID-ของคุณ-ที่นี่", WORKER_URL: "ใส่-URL-WORKER-ของคุณ-ที่นี่" };
+        
+        let profile = null;
+        const els = { info: document.getElementById('userInfo'), input: document.getElementById('imageInput'), preview: document.getElementById('preview'), placeholder: document.getElementById('placeholder'), btn: document.getElementById('submitBtn'), loader: document.getElementById('loader') };
+
+        async function init() {
+            await liff.init({ liffId: CONFIG.LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            profile = await liff.getProfile();
+            els.info.textContent = `สวัสดีคุณ ${profile.displayName}`;
+        }
+        init();
+
+        els.input.onchange = e => {
+            const file = e.target.files[0];
+            if (file) {
+                els.preview.src = URL.createObjectURL(file);
+                els.preview.style.display = 'block';
+                els.placeholder.style.display = 'none';
+                els.btn.disabled = false;
+            }
+        };
+
+        document.getElementById('form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!profile) return;
+            els.loader.style.display = 'flex';
+            els.btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', els.input.files[0]);
+            formData.append('uid', profile.userId);
+            formData.append('name', profile.displayName);
+
+            try {
+                const res = await fetch(CONFIG.WORKER_URL, { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('สำเร็จ!\n' + data.text);
+                    liff.closeWindow();
+                } else throw new Error(data.message);
+            } catch (err) { alert('Error: ' + err.message); }
+            finally { els.loader.style.display = 'none'; els.btn.disabled = false; }
+        };
+    </script>
+</body>
+</html>

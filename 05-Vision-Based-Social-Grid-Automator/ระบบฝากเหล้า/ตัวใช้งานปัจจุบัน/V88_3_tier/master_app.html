@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>V88 Nightlife CRM</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --accent: #EAB308;
+            --bg: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --grad-start: #1e3a8a;
+            --grad-end: #1e293b;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            min-height: 100dvh;
+            font-size: 14px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-grad {
+            background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-menu {
+            background: linear-gradient(145deg, var(--grad-start), var(--grad-end));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-menu:active {
+            transform: scale(0.98);
+        }
+
+        .icon {
+            font-size: 42px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .label {
+            font-size: 18px;
+            font-weight: 600;
+            display: block;
+        }
+
+        .sub-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 18px;
+            width: 100%;
+            color: white;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 10px;
+            gap: 2px;
+        }
+
+        .nav-active {
+            color: var(--accent);
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px;
+            border-radius: 99px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-btn {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 10px;
+            font-weight: 800;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: black;
+            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+        }
+
+        /* Tier Management Classes */
+        .tier-3-only {
+            display: none;
+        }
+
+        .tier-2-up {
+            display: none;
+        }
+
+        /* Dark mode for SweetAlert */
+        .swal2-popup {
+            background: #1e293b !important;
+            color: white !important;
+            border-radius: 24px !important;
+        }
+
+        .swal2-title,
+        .swal2-html-container {
+            color: white !important;
+        }
+
+        .swal2-input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+        }
+
+        .swal2-confirm {
+            background: linear-gradient(135deg, #1e3a8a, #1e293b) !important;
+            border-radius: 12px !important;
+        }
+    </style>
+</head>
+
+<body class="safe-area-inset">
+
+    <div id="loading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent border-[var(--accent)]"></div>
+    </div>
+
+    <!-- Registration Screen -->
+    <div id="view-phone-link"
+        class="hidden fixed inset-0 z-[85] bg-black/95 p-6 flex items-center justify-center animate-fade">
+        <div class="glass w-full max-w-sm p-8 rounded-3xl text-center">
+            <h2 class="text-xl font-bold mb-6 italic">ลงทะเบียนสมาชิก</h2>
+            <div class="space-y-4">
+                <input type="tel" id="link-phone" placeholder="เลขหมายโทรศัพท์..."
+                    class="glass-input text-center font-bold">
+                <input type="tel" id="link-phone-confirm" placeholder="ยืนยันเบอร์เดิมอีกครั้ง..."
+                    class="glass-input text-center font-bold">
+                <button onclick="linkPhoneToUID()"
+                    class="btn-grad w-full p-4 rounded-xl font-bold">ยืนยันการสมัคร</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Wrapper -->
+    <div class="relative max-w-md mx-auto w-full p-5 pb-32 min-h-screen">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6 pt-4">
+            <div>
+                <h1 class="text-xl font-black uppercase text-white" id="display-shop">V88 CRM</h1>
+                <p id="display-phone" class="text-[10px] text-white/50 font-mono"></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <div id="top-mode-toggle" class="mode-toggle hidden">
+                    <div id="btn-mode-user" onclick="show('view-customer')" class="mode-btn active">USER</div>
+                    <div id="btn-mode-staff" onclick="show('view-staff'); setStaffTab('deposit');" class="mode-btn">
+                        STAFF</div>
+                </div>
+                <div id="badge-tier-display"
+                    class="text-[9px] font-black bg-white/5 border border-white/10 px-2 py-1 rounded-md text-gray-400">
+                    TIER ?</div>
+            </div>
+        </div>
+
+        <!-- VIEW: Customer Dashboard -->
+        <div id="view-customer" class="hidden animate-fade space-y-6">
+            <!-- Profile & Points -->
+            <div id="profile-card"
+                class="flex flex-col gap-3 bg-white/5 p-4 rounded-2xl border border-white/5 transition-all">
+                <div class="flex items-center gap-4">
+                    <img id="user-img" class="w-12 h-12 rounded-full border-2 border-[var(--accent)]" src="">
+                    <div class="flex-1">
+                        <h2 id="user-name" class="font-bold text-sm">Guest</h2>
+                        <p class="text-[10px] text-gray-400">ยินดีต้อนรับ กรุณาเลือกบริการ</p>
+                    </div>
+                </div>
+                <!-- Points (Tier 3 Only) -->
+                <div id="section-points" class="hidden tier-3-only w-full border-t border-white/5 pt-3">
+                    <div class="flex justify-between items-center bg-[var(--accent)]/10 p-3 rounded-xl border border-[var(--accent)]/20 cursor-pointer hover:bg-[var(--accent)]/20 transition-all"
+                        onclick="show('view-rewards'); loadRewards();">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">🏆</span>
+                            <div>
+                                <p class="text-[9px] text-gray-300">คะแนนสะสมของคุณ</p>
+                                <p class="text-lg font-black text-[var(--accent)] leading-none"><span
+                                        id="user-points">0</span> <span class="text-[10px] text-white">แต้ม</span></p>
+                            </div>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold bg-[var(--accent)] text-black px-3 py-1.5 rounded-lg shadow uppercase">แลกรางวัล</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <div onclick="show('view-booking')" class="btn-menu">
+                    <span class="icon">📅</span>
+                    <span class="label">จองโต๊ะ</span>
+                    <span class="sub-label">สำรองที่นั่งล่วงหน้า</span>
+                </div>
+                <div onclick="show('view-wallet'); loadWallet();" class="btn-menu">
+                    <span class="icon">🥃</span>
+                    <span class="label">ระบบฝากเหล้า</span>
+                    <span class="sub-label">เช็ครายการฝากเหล้าของคุณ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: Table Booking -->
+        <div id="view-booking" class="hidden animate-fade space-y-4">
+            <div class="flex items-center gap-3">
+                <button onclick="show('view-customer')"
+                    class="w-10 h-10 glass rounded-xl flex items-center justify-center">←</button>
+                <h2 class="font-bold">สำรองที่นั่ง</h2>
+            </div>
+            <div class="glass p-6 rounded-3xl space-y-4">
+                <input type="text" id="bk-name" placeholder="ชื่อผู้จอง..." class="glass-input">
+                <div>
+                    <label
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">วันที่ต้องการจอง</label>
+                    <input type="date" id="bk-date" class="glass-input mt-1 font-bold text-white text-base">
+                </div>
+                <div>
+                    <label
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">เวลาที่ต้องการ</label>
+                    <input type="time" id="bk-time" value="20:00"
+                        class="glass-input mt-1 font-bold text-white text-xl text-center">
+                </div>
+                <input type="number" id="bk-pax" placeholder="จำนวนคน..." class="glass-input text-center font-bold">
+                <div
+                    class="glass p-3 rounded-xl border-l-4 border-yellow-500 bg-yellow-500/5 text-[10px] text-yellow-400 font-bold">
+                    ⚠️ กรุณามารับโต๊ะก่อน 20:00 น. เพื่อรักษาสิทธิ์ของท่าน
+                </div>
+                <button onclick="submitBooking()" class="btn-grad w-full p-4 rounded-xl font-bold">ยืนยันการจอง</button>
+            </div>
+        </div>
+
+        <!-- VIEW: Liquor Wallet -->
+        <div id="view-wallet" class="hidden animate-fade space-y-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <button onclick="show('view-customer')"
+                        class="w-10 h-10 glass rounded-xl flex items-center justify-center">←</button>
+                    <h2 class="font-bold">รายการเหล้าของคุณ</h2>
+                </div>
+                <button onclick="manualClaimInput()"
+                    class="bg-[var(--accent)] text-black text-[10px] font-black px-4 py-2 rounded-xl border-b-2 border-orange-600 shadow-lg active:scale-95 transition-all">🔑
+                    กรอกรหัสรับของ</button>
+            </div>
+            <div id="wallet-list" class="space-y-4"></div>
+        </div>
+
+        <!-- VIEW: Rewards (Tier 3 Only) -->
+        <div id="view-rewards" class="hidden tier-3-only animate-fade space-y-4">
+            <div class="flex items-center gap-3">
+                <button onclick="show('view-customer')"
+                    class="w-10 h-10 glass rounded-xl flex items-center justify-center">←</button>
+                <h2 class="font-bold">แลกของรางวัล</h2>
+            </div>
+            <div class="glass p-4 rounded-2xl flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] text-gray-400">แต้มคงเหลือ</p>
+                    <p class="text-[var(--accent)] font-black text-2xl" id="rw-points-display">0</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h3 class="font-bold text-sm mb-2 px-2">🎟️ คูปองของฉัน</h3>
+                <div id="my-coupons-list" class="space-y-3"></div>
+            </div>
+            <div class="mt-4 border-t border-white/10 pt-4">
+                <h3 class="font-bold text-sm mb-3 px-2">🎁 ของรางวัล</h3>
+                <div id="rewards-list" class="grid grid-cols-2 gap-3"></div>
+            </div>
+        </div>
+
+        <!-- VIEW: Staff Access Area -->
+        <div id="view-staff" class="hidden animate-fade space-y-6">
+            <div
+                class="flex justify-between items-center text-[10px] font-bold uppercase text-[var(--accent)] tracking-widest px-2">
+                <span id="staff-name-status">🔧 Staff Access</span>
+                <button onclick="show('view-customer')" class="text-white hover:underline">Exit Staff Mode</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/5 flex-wrap">
+                <button id="tab-dep" onclick="setStaffTab('deposit')"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold btn-grad shadow-lg">ฝากเหล้า</button>
+                <button id="tab-src" onclick="setStaffTab('search')"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass">เบิก/เช็ค</button>
+                <button id="tab-stk" onclick="setStaffTab('stock')"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass">สต็อก</button>
+                <button id="tab-manager-bk" onclick="setStaffTab('booking')"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass tier-3-only">คิวจอง</button>
+                <button id="tab-manager-rw" onclick="setStaffTab('rewards')"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass tier-3-only">รางวัล</button>
+                <button id="tab-manager-set" onclick="handleSettingsTabClick()"
+                    class="flex-1 py-3 rounded-lg text-xs font-bold glass relative">พนักงาน</button>
+            </div>
+
+            <!-- TAB: Deposit -->
+            <div id="staff-deposit" class="glass p-6 rounded-3xl space-y-4">
+                <div class="bg-black/40 border border-[var(--accent)]/30 rounded-2xl p-4 text-center space-y-2">
+                    <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">รหัสฝาก 5 หลัก</p>
+                    <div class="flex items-center justify-center gap-4">
+                        <span id="pre-gen-code"
+                            class="text-4xl font-black text-[var(--accent)] tracking-[0.2em] drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]">-----</span>
+                        <button onclick="genNewCode()"
+                            class="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-xl hover:bg-white/10 active:rotate-180 transition-all duration-300">↻</button>
+                    </div>
+                </div>
+                <input type="tel" id="dep-phone" placeholder="เบอร์โทรศัพท์ลูกค้า (ถ้ามี)..." class="glass-input">
+                <input type="text" id="dep-brand" placeholder="ยี่ห้อเหล้า (Brand) *" class="glass-input">
+                <input type="number" id="dep-amount" placeholder="ปริมาณเหล้า (%) *" class="glass-input" value="100">
+
+                <!-- Photo (Tier 2-3) -->
+                <div id="staff-photo-section" class="tier-2-up space-y-2">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest px-1">แนบรูปถ่ายเหล้า</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label
+                            class="glass p-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer border border-white/10 active:scale-95 transition-all">
+                            <input type="file" accept="image/*" capture="environment" id="dep-file-camera"
+                                class="hidden" onchange="previewImg(this)">
+                            <span class="text-2xl">📷</span><span class="text-[10px] font-bold">ถ่ายรูป</span>
+                        </label>
+                        <label
+                            class="glass p-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer border border-white/10 active:scale-95 transition-all">
+                            <input type="file" accept="image/*" id="dep-file-gallery" class="hidden"
+                                onchange="previewImg(this)">
+                            <span class="text-2xl">🖼️</span><span class="text-[10px] font-bold">แนบรูป</span>
+                        </label>
+                    </div>
+                    <div id="dep-preview-container" class="hidden relative h-32 rounded-2xl overflow-hidden mt-2">
+                        <img id="dep-preview" class="w-full h-full object-cover">
+                        <button onclick="clearPhoto()"
+                            class="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold">✕</button>
+                    </div>
+                </div>
+
+                <!-- Points (Tier 3) -->
+                <div id="staff-points-section" class="tier-3-only">
+                    <div class="flex items-center justify-between text-xs text-gray-400 px-1">
+                        <span>แต้มที่จะให้:</span>
+                        <input type="number" id="dep-points" value="0"
+                            class="w-16 bg-black p-1 rounded text-center text-[var(--accent)] font-bold">
+                    </div>
+                </div>
+
+                <button onclick="submitDepositStaff()"
+                    class="btn-grad w-full p-4 rounded-xl font-bold shadow-xl">บันทึกรายการ</button>
+            </div>
+
+            <!-- TAB: Search & Withdraw -->
+            <div id="staff-search" class="hidden space-y-4">
+                <div class="flex gap-2">
+                    <input type="tel" id="src-phone" placeholder="เบอร์โทร หรือ รหัส 5 หลัก..."
+                        class="flex-1 glass-input font-bold">
+                    <button onclick="searchByPhone()" class="btn-grad px-6 rounded-xl font-bold">ค้นหา</button>
+                </div>
+                <div id="user-info-section" class="hidden space-y-3">
+                    <div
+                        class="glass p-4 rounded-2xl border border-white/5 flex justify-between items-center tier-3-only">
+                        <div>
+                            <p class="font-bold text-sm" id="info-name">-</p>
+                            <p class="text-[10px] text-gray-500" id="info-phone-display">-</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-400 uppercase">แต้มสะสม</p>
+                            <p class="text-[var(--accent)] font-black text-xl" id="info-points">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="search-result-list" class="space-y-4"></div>
+            </div>
+
+            <!-- TAB: Stock Logs -->
+            <div id="staff-stock" class="hidden space-y-3">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="font-bold text-xs uppercase text-gray-400 tracking-widest">สต็อกทั้งหมด (ล่าสุด)</h3>
+                    <button onclick="triggerExpiryNotify()"
+                        class="text-[9px] bg-red-500/10 text-red-500 px-3 py-1 rounded-full border border-red-500/20 font-bold">📢
+                        เตือนหมดอายุทั้งหมด</button>
+                </div>
+                <div id="staff-stock-list" class="space-y-3"></div>
+            </div>
+
+            <!-- TAB: Table Bookings (Tier 3) -->
+            <div id="staff-booking" class="hidden tier-3-only space-y-3">
+                <div id="staff-booking-list" class="space-y-3"></div>
+            </div>
+
+            <!-- TAB: Rewards Manager (Tier 3) -->
+            <div id="staff-rewards" class="hidden tier-3-only space-y-4">
+                <div class="glass p-6 rounded-3xl space-y-4 border border-white/5">
+                    <p class="text-center text-[10px] font-black text-[var(--accent)] uppercase">เพิ่มของรางวัลใหม่</p>
+                    <input type="text" id="rw-name" placeholder="ชื่อของรางวัล *" class="glass-input">
+                    <input type="number" id="rw-points" placeholder="คะแนนที่ใช้แลก *" class="glass-input">
+                    <div class="space-y-2">
+                        <p class="text-[10px] text-gray-400 uppercase font-bold px-1">รูปภาพของรางวัล</p>
+                        <input type="file" id="rw-file" accept="image/*" class="w-full text-xs text-gray-500">
+                    </div>
+                    <button onclick="createReward()"
+                        class="btn-grad w-full p-4 rounded-xl font-bold">บันทึกของรางวัล</button>
+                </div>
+                <div id="staff-rewards-list" class="grid grid-cols-1 gap-3"></div>
+            </div>
+
+            <!-- TAB: Team Settings -->
+            <div id="staff-settings" class="hidden space-y-4">
+                <div class="glass p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-xs uppercase tracking-widest text-gray-400">Team Management</h3>
+                        <button onclick="loadStaffList()" class="text-[10px] text-gray-500">↻ Refresh</button>
+                    </div>
+                    <div id="staff-list-container" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav id="nav-bar"
+            class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md glass border-t border-white/5 p-4 flex justify-around items-center z-40 rounded-t-3xl hidden">
+            <button onclick="show('view-customer')" class="nav-item nav-active"
+                id="nav-home">🏠<span>Home</span></button>
+            <button onclick="show('view-wallet'); loadWallet();" class="nav-item"
+                id="nav-cabinet">🥃<span>Cabinet</span></button>
+            <button onclick="show('view-booking')" class="nav-item" id="nav-booking-btn">📅<span>Booking</span></button>
+            <button id="nav-rewards-btn" onclick="show('view-rewards'); loadRewards();"
+                class="nav-item tier-3-only">🎁<span>Rewards</span></button>
+        </nav>
+    </div>
+
+    <script>
+        /** V88 MASTER CRM LOGIC **/
+        const CFG = {
+            liff: "",
+            worker: "",
+            shopName: "V88 CRM",
+            tier: 3
+        };
+
+        let profile = {}, myPhone = "", currentTier = 0;
+        let managerVerified = false;
+        let currentSearchPhone = "";
+
+        // Initialization
+        async function init() {
+            // Load config from injected values or system
+            currentTier = CFG.tier || 1;
+            document.getElementById('display-shop').innerText = CFG.shopName || "V88 CRM";
+            updateTierUI();
+
+            try {
+                if (!CFG.liff) return document.getElementById('loading').classList.add('hidden');
+
+                await liff.init({ liffId: CFG.liff });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+
+                profile = await liff.getProfile();
+                document.getElementById('user-img').src = profile.pictureUrl;
+                document.getElementById('user-name').innerText = profile.displayName;
+
+                await checkUser();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').classList.add('hidden');
+                Swal.fire("System Error", "ไม่สามารถเริ่มระบบ LIFF ได้", "error");
+            }
+        }
+
+        function updateTierUI() {
+            document.getElementById('badge-tier-display').innerText = `TIER ${currentTier}`;
+
+            if (currentTier >= 2) {
+                document.querySelectorAll('.tier-2-up').forEach(el => {
+                    el.classList.remove('hidden');
+                    el.style.display = 'block';
+                });
+            }
+            if (currentTier >= 3) {
+                document.querySelectorAll('.tier-3-only').forEach(el => {
+                    el.classList.remove('hidden');
+                    el.style.display = 'block';
+                    if (el.tagName === 'NAV') el.style.display = 'flex';
+                });
+            }
+        }
+
+        async function checkUser() {
+            const res = await fetch(`${CFG.worker}/api/me?uid=${profile.userId}`);
+            const data = await res.json();
+
+            document.getElementById('loading').classList.add('hidden');
+
+            if (!data.phone) {
+                show('view-phone-link');
+            } else {
+                myPhone = data.phone;
+                if (document.getElementById('display-phone')) document.getElementById('display-phone').innerText = `Phone: ${myPhone}`;
+                if (document.getElementById('user-points')) document.getElementById('user-points').innerText = (data.points || 0).toLocaleString();
+
+                if (data.role === 'staff' && data.status === 'active') {
+                    if (document.getElementById('top-mode-toggle')) document.getElementById('top-mode-toggle').classList.remove('hidden');
+                    if (document.getElementById('staff-name-status')) document.getElementById('staff-name-status').innerText = `🔧 Staff (${data.name || 'ไม่ระบุ'})`;
+                    show('view-customer');
+                } else {
+                    show('view-customer');
+                }
+            }
+        }
+
+        function show(id) {
+            document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+
+            const noNav = ['view-staff', 'view-phone-link'];
+            const nav = document.getElementById('nav-bar');
+            if (nav) nav.classList.toggle('hidden', noNav.includes(id));
+
+            document.querySelectorAll('.nav-item').forEach(i => {
+                i.classList.remove('nav-active');
+                if (id === 'view-customer' && i.id === 'nav-home') i.classList.add('nav-active');
+                if (id === 'view-wallet' && i.id === 'nav-cabinet') i.classList.add('nav-active');
+                if (id === 'view-booking' && i.id === 'nav-booking-btn') i.classList.add('nav-active');
+                if (id === 'view-rewards' && i.id === 'nav-rewards-btn') i.classList.add('nav-active');
+            });
+
+            // Update mode toggle buttons
+            const isStaffView = id === 'view-staff';
+            if (document.getElementById('btn-mode-user')) document.getElementById('btn-mode-user').classList.toggle('active', !isStaffView);
+            if (document.getElementById('btn-mode-staff')) document.getElementById('btn-mode-staff').classList.toggle('active', isStaffView);
+        }
+
+        function setStaffTab(tab) {
+            const managerOnly = ['stock', 'booking', 'rewards', 'settings'];
+            if (managerOnly.includes(tab) && !managerVerified) {
+                verifyManager(tab);
+                return;
+            }
+
+            document.getElementById('staff-deposit').classList.toggle('hidden', tab !== 'deposit');
+            document.getElementById('staff-search').classList.toggle('hidden', tab !== 'search');
+            document.getElementById('staff-stock').classList.toggle('hidden', tab !== 'stock');
+            document.getElementById('staff-booking').classList.toggle('hidden', tab !== 'booking');
+            document.getElementById('staff-rewards').classList.toggle('hidden', tab !== 'rewards');
+            document.getElementById('staff-settings').classList.toggle('hidden', tab !== 'settings');
+
+            const tabMap = { deposit: 'tab-dep', search: 'tab-src', stock: 'tab-stk', booking: 'tab-manager-bk', rewards: 'tab-manager-rw', settings: 'tab-manager-set' };
+            Object.entries(tabMap).forEach(([t, elId]) => {
+                const el = document.getElementById(elId);
+                if (el) {
+                    el.className = (t === tab)
+                        ? "flex-1 py-3 rounded-lg text-xs font-bold btn-grad shadow-lg scale-105 transition-all text-white"
+                        : "flex-1 py-3 rounded-lg text-xs font-bold glass text-gray-400";
+                }
+            });
+
+            if (tab === 'booking') loadStaffBookings();
+            if (tab === 'stock') loadStaffStock();
+            if (tab === 'rewards') loadManagerRewards();
+            if (tab === 'settings') loadStaffList();
+        }
+
+        async function verifyManager(targetTab = 'stock') {
+            const { value: pass } = await Swal.fire({
+                title: 'Manager Login',
+                input: 'password',
+                inputPlaceholder: 'ใส่รหัสร้าน...',
+                showCancelButton: true,
+                confirmButtonText: 'Login'
+            });
+            if (!pass) return;
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/staff-login`, {
+                    method: 'POST',
+                    body: JSON.stringify({ password: pass.trim() })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    managerVerified = true;
+                    if (document.getElementById('staff-name-status')) document.getElementById('staff-name-status').innerText = "👑 Manager Mode";
+                    Swal.fire({ title: 'Success', icon: 'success', timer: 1000, showConfirmButton: false });
+                    setStaffTab(targetTab);
+                } else {
+                    Swal.fire('Error', 'รหัสไม่ถูกต้อง', 'error');
+                }
+            } catch (e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        async function handleSettingsTabClick() {
+            if (managerVerified) setStaffTab('settings');
+            else verifyManager('settings');
+        }
+
+        /** CORE FUNCTIONALITIES **/
+
+        // Deposit
+        async function submitDepositStaff() {
+            const phone = document.getElementById('dep-phone').value;
+            const brand = document.getElementById('dep-brand').value;
+            const amt = document.getElementById('dep-amount').value;
+            const pts = document.getElementById('dep-points') ? document.getElementById('dep-points').value : 0;
+            const file = document.getElementById('dep-file-camera').files[0] || document.getElementById('dep-file-gallery').files[0];
+
+            if (!brand || !amt) return Swal.fire("Error", "กรุณากรอกข้อมูลให้ครบ", "warning");
+
+            Swal.showLoading();
+            const fd = new FormData();
+            if (file) fd.append('image', file);
+            fd.append('phone', phone);
+            fd.append('brand', brand);
+            fd.append('amount', amt);
+            fd.append('points', pts);
+            fd.append('staff_uid', profile.userId);
+            fd.append('deposit_code', document.getElementById('pre-gen-code').innerText);
+
+            try {
+                const res = await fetch(`${CFG.worker}/api/deposit`, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire("สำเร็จ", "บันทึกรายการ เรียบร้อย", "success").then(() => location.reload());
+                } else {
+                    Swal.fire("Error", data.error || "Unknown error", "error");
+                }
+            } catch (e) { Swal.fire("Error", e.message, "error"); }
+        }
+
+        // Search & Withdraw
+        async function searchByPhone() {
+            const query = document.getElementById('src-phone').value.trim();
+            if (query.length < 5) return Swal.fire("Error", "ระบุอย่างน้อย 5 หลัก", "warning");
+
+            const list = document.getElementById('search-result-list');
+            list.innerHTML = "<div class='text-center py-10 opacity-30'>Searching...</div>";
+            document.getElementById('user-info-section').classList.remove('hidden');
+
+            try {
+                const isCode = /^\d{5}$/.test(query);
+                const param = isCode ? `code=${query}` : `phone=${query}`;
+                const res = await fetch(`${CFG.worker}/api/staff-search?${param}`);
+                const data = await res.json();
+
+                if (data.user) {
+                    currentSearchPhone = data.user.phone;
+                    document.getElementById('info-name').innerText = data.user.name || 'Anonymous';
+                    document.getElementById('info-phone-display').innerText = data.user.phone;
+                    document.getElementById('info-points').innerText = (data.user.points || 0).toLocaleString();
+                }
+
+                if (!data.deposits || data.deposits.length === 0) {
+                    list.innerHTML = "<div class='glass p-10 rounded-3xl text-center opacity-30 font-bold'>ไม่พบรายการฝาก</div>";
+                    return;
+                }
+
+                if (data.deposits && data.deposits.length > 0) {
+                    html += data.deposits.map(it => `
+                        <div class="glass p-5 rounded-3xl border border-white/5 space-y-4">
+                            <div class="flex items-center gap-4">
+                                ${it.image_url ? `<img src="${it.image_url}" class="w-16 h-20 rounded-xl object-cover bg-black cursor-pointer" onclick="viewFullImage('${it.image_url}')">` : `<div class="w-16 h-20 bg-white/5 rounded-xl flex items-center justify-center text-xl">🥃</div>`}
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-black text-white text-base truncate">${it.item_name}</p>
+                                    <p class="text-xs text-[var(--accent)] font-bold uppercase tracking-tight">คงเหลือ ${it.amount}%</p>
+                                    <p class="text-[10px] text-gray-500 mt-2 font-mono">CODE: ${it.deposit_code || '-'}</p>
+                                </div>
+                                <button onclick="withdrawStaff(${it.id})" class="bg-red-500/10 text-red-500 font-black px-4 py-3 rounded-2xl border border-red-500/20 active:scale-95 transition-all text-xs">เบิก</button>
+                            </div>
+                            <div class="flex justify-between border-t border-white/5 pt-3 text-[9px] text-gray-500 font-bold uppercase">
+                                <span>Owner: ${it.customer_name || it.owner_phone || 'Unclaimed'}</span>
+                                <span>Expiry: ${it.expiry_date || '-'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                if (data.coupons && data.coupons.length > 0) {
+                    html += `<p class="text-[9px] font-black text-gray-500 uppercase px-2 mb-2 mt-4 tracking-widest">Available Coupons</p>`;
+                    data.coupons.forEach(c => {
+                        html += `
+                            <div class="bg-[var(--accent)]/5 p-4 rounded-3xl flex items-center gap-4 border border-[var(--accent)]/20 shadow-lg animate-fade">
+                                ${c.image_url ? `<img src="${c.image_url}" class="w-12 h-12 rounded-2xl object-cover ring-2 ring-[var(--accent)]/20 shadow-md">` : '<div class="w-12 h-12 bg-black/20 rounded-2xl flex items-center justify-center text-xl">🎁</div>'}
+                                <div class="flex-1">
+                                    <p class="font-black text-xs text-white">${c.reward_name}</p>
+                                    <p class="text-[8px] text-[var(--accent)] font-bold uppercase mt-1">Ready to use</p>
+                                </div>
+                                <button onclick="useCouponByStaff(${c.id})" class="bg-[var(--accent)] text-black font-black px-4 py-3 rounded-2xl border-b-2 border-orange-600 active:scale-95 transition-all text-[9px] shadow-lg">COLLECT</button>
+                            </div>
+                        `;
+                    });
+                }
+                list.innerHTML = html || "<div class='glass p-10 rounded-3xl text-center opacity-30 font-bold'>ไม่พบรายการฝาก</div>";
+            } catch (e) { list.innerHTML = "Error loading results"; }
+        }
+
+        async function useCouponByStaff(id) {
+            const conf = await Swal.fire({ title: 'ยืนยันการจ่ายของ?', icon: 'warning', showCancelButton: true });
+            if (!conf.isConfirmed) return;
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/use-coupon`, {
+                method: 'POST',
+                body: JSON.stringify({ coupon_id: id, staff_uid: profile.userId })
+            });
+            if (await res.json().then(d => d.success)) {
+                Swal.fire('Success', 'ตัดคูปองเรียบร้อย', 'success').then(() => searchByPhone());
+            }
+        }
+
+        async function withdrawStaff(id) {
+            const conf = await Swal.fire({
+                title: 'ยืนยันการเบิก?',
+                text: 'รายการนี้จะถูกทำเครื่องหมายว่าเบิกแล้ว',
+                icon: 'warning',
+                showCancelButton: true
+            });
+            if (!conf.isConfirmed) return;
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/staff-withdraw`, {
+                    method: 'POST',
+                    body: JSON.stringify({ deposit_id: id, staff_uid: profile.userId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire({ title: 'Success', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => searchByPhone());
+                } else {
+                    Swal.fire('Error', data.error, "error");
+                }
+            } catch (e) { Swal.fire('Error', e.message, "error"); }
+        }
+
+        // Wallet (Customer)
+        async function loadWallet() {
+            const list = document.getElementById('wallet-list');
+            list.innerHTML = "<div class='text-center py-10 opacity-30 animate-pulse'>Loading Cabinet...</div>";
+            const res = await fetch(`${CFG.worker}/api/my-wallet?uid=${profile.userId}`);
+            const data = await res.json();
+
+            if (!data.length) {
+                list.innerHTML = "<div class='text-center py-20 glass rounded-3xl opacity-30 font-bold italic'>ตู้ฝากเหล้าว่างเปล่า</div>";
+                return;
+            }
+
+            list.innerHTML = data.map(it => {
+                const isWithdrawn = it.status === 'withdrawn';
+                return `
+                <div class="glass p-5 rounded-3xl border border-white/5 shadow-xl transition-all ${isWithdrawn ? 'opacity-30 grayscale' : ''}">
+                    <div class="flex items-center gap-4">
+                        ${it.image_url ? `<img src="${it.image_url}" class="w-16 h-20 rounded-xl object-cover bg-black cursor-pointer" onclick="viewFullImage('${it.image_url}')">` : `<div class="w-16 h-20 bg-white/5 rounded-xl flex items-center justify-center text-xl">🥃</div>`}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-black text-white text-base truncate">${it.item_name}</p>
+                            <div class="w-full bg-white/10 h-1 rounded-full mt-2 overflow-hidden">
+                                <div class="bg-[var(--accent)] h-full" style="width:${it.amount}%"></div>
+                            </div>
+                            <p class="text-[10px] text-[var(--accent)] font-bold mt-1 uppercase">Remains: ${it.amount}%</p>
+                            <div class="mt-2 text-[9px] text-gray-500 font-bold grid grid-cols-2 gap-y-1">
+                                <span>Deposit: ${it.created_at.split(' ')[0]}</span>
+                                <span>Exp: ${it.expiry_date || '-'}</span>
+                                <span class="col-span-2">By: ${it.depositor_name || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ${!isWithdrawn ? `
+                    <button onclick="shareDepositToLine('${it.item_name}', ${it.amount}, '${it.expiry_date || '-'}', '${it.image_url || ''}')" 
+                            class="w-full mt-4 bg-[#06C755]/10 border border-[#06C755]/20 text-[#06C755] py-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-2">
+                            <span>💬</span> SHARE TO LINE FRIEND
+                    </button>` : ''}
+                </div>
+                `;
+            }).join('');
+        }
+
+        function viewFullImage(url) {
+            Swal.fire({
+                imageUrl: url,
+                imageAlt: 'Bottle Image',
+                showConfirmButton: false,
+                background: 'transparent',
+                backdrop: 'rgba(0,0,0,0.9)'
+            });
+        }
+
+        async function shareDepositToLine(itemName, amount, expiryDate, imageUrl) {
+            if (!liff.isApiAvailable('shareTargetPicker')) return Swal.fire('Error', 'Feature not supported', 'warning');
+
+            const flexPayload = {
+                type: "bubble", size: "mega",
+                header: { type: "box", layout: "vertical", backgroundColor: "#111111", paddingAll: "20px", contents: [{ type: "text", text: "🥃 Liquor Bank Deposit", color: "#ffffff", weight: "bold", size: "lg" }] },
+                body: {
+                    type: "box", layout: "vertical", spacing: "md", contents: [
+                        { type: "box", layout: "horizontal", contents: [{ type: "text", text: "Brand", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: itemName, weight: "bold", size: "sm", flex: 4 }] },
+                        { type: "box", layout: "horizontal", contents: [{ type: "text", text: "Remains", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: `${amount}%`, weight: "bold", size: "sm", flex: 4 }] },
+                        { type: "box", layout: "horizontal", contents: [{ type: "text", text: "Expires", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: expiryDate || '-', weight: "bold", size: "sm", flex: 4 }] }
+                    ]
+                },
+                footer: { type: "box", layout: "vertical", backgroundColor: "#FEF3C7", paddingAll: "16px", contents: [{ type: "text", text: "Show this message to staff at shop", size: "xs", color: "#92400E", weight: "bold", align: "center" }] }
+            };
+            if (imageUrl) flexPayload.hero = { type: "image", url: imageUrl, size: "full", aspectRatio: "1:1", aspectMode: "cover" };
+
+            try {
+                const res = await liff.shareTargetPicker([{ type: "flex", altText: `Share Liquor Deposit: ${itemName}`, contents: flexPayload }]);
+                if (res) Swal.fire('Success', 'Shared successfully', 'success');
+            } catch (e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        async function manualClaimInput() {
+            const { value: code } = await Swal.fire({
+                title: 'กรอกรหัสรับสิทธิ์',
+                text: 'รหัส 5 หลักที่เขียนข้างขวด',
+                input: 'text',
+                inputPlaceholder: '00000',
+                showCancelButton: true
+            });
+            if (!code || !/^\d{5}$/.test(code)) return;
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/claim`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, uid: profile.userId, name: profile.displayName })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('สำเร็จ', 'รับเหล้าเข้า Cabinet เรียบร้อย', 'success').then(() => loadWallet());
+                } else {
+                    Swal.fire('ผิดพลาด', data.error, 'error');
+                }
+            } catch (e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        // Gen Code
+        async function genNewCode() {
+            const el = document.getElementById('pre-gen-code');
+            el.innerText = ".....";
+            try {
+                const res = await fetch(`${CFG.worker}/api/get-next-code`);
+                const data = await res.json();
+                if (data.success) {
+                    el.innerText = data.code;
+                    localStorage.setItem('v88_last_code', data.code);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Booking
+        async function submitBooking() {
+            const n = document.getElementById('bk-name').value;
+            const d = document.getElementById('bk-date').value;
+            const t = document.getElementById('bk-time').value;
+            const p = document.getElementById('bk-pax').value || 1;
+            if (!n || !d) return Swal.fire("Error", "กรุณากรอกข้อมูลให้ครบ", "warning");
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/book-table`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: n, phone: myPhone, date: d, time: t, pax: p })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    try {
+                        await liff.sendMessages([{
+                            type: "text",
+                            text: `📅 จองโต๊ะสำเร็จ! \nชื่อ: ${n}\nวันที่: ${d}\nเวลา: ${t}\nจำนวน: ${p} ท่าน`
+                        }]);
+                    } catch (e) { }
+                    Swal.fire("สำเร็จ", "ส่งยืนยันคิวแล้ว", "success").then(() => show('view-customer'));
+                } else { Swal.fire("Error", data.error, "error"); }
+            } catch (e) { Swal.fire("Error", e.message, "error"); }
+        }
+
+        async function loadStaffBookings() {
+            const list = document.getElementById('staff-booking-list');
+            list.innerHTML = "<div class='text-center py-6 opacity-20'>Loading...</div>";
+            try {
+                const res = await fetch(`${CFG.worker}/api/bookings-list`);
+                const data = await res.json();
+                if (!data.length) {
+                    list.innerHTML = "<div class='text-center py-10 opacity-30'>ไม่มีรายการจอง</div>";
+                    return;
+                }
+                list.innerHTML = data.map(bk => `
+                    <div class="glass p-5 rounded-3xl border ${bk.status === 'confirmed' ? 'border-green-500/30 bg-green-500/5' : 'border-white/5'}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="font-black text-white">${bk.name}</p>
+                                <p class="text-amber-500 text-[10px] font-bold">${bk.date} @ ${bk.time}</p>
+                                <p class="text-gray-500 text-[9px]">${bk.pax} ท่าน \u2022 ${bk.phone || '-'}</p>
+                            </div>
+                            <span class="text-[9px] font-bold px-2 py-1 rounded-full ${bk.status === 'confirmed' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">
+                                ${bk.status === 'confirmed' ? 'CONFIRMED' : 'WAITING'}
+                            </span>
+                        </div>
+                        ${bk.status !== 'confirmed' ? `<button onclick="confirmBooking(${bk.id})" class="w-full bg-green-500/20 text-green-400 py-2 rounded-xl text-[10px] font-bold border border-green-500/20">CONFIRM THIS BOOKING</button>` : ''}
+                    </div>
+                `).join('');
+            } catch (e) { list.innerHTML = "Error loading bookings"; }
+        }
+
+        async function confirmBooking(id) {
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/confirm-booking`, {
+                method: 'POST',
+                body: JSON.stringify({ booking_id: id, staff_uid: profile.userId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('Confirmed!', '', 'success').then(() => loadStaffBookings());
+            }
+        }
+
+        // Rewards (Tier 3 Only)
+        async function loadRewards() {
+            const rList = document.getElementById('rewards-list');
+            rList.innerHTML = "<div class='col-span-2 text-center py-10 opacity-30'>Loading Rewards...</div>";
+            const res = await fetch(`${CFG.worker}/api/rewards`);
+            const data = await res.json();
+
+            // Re-fetch user points
+            const meRes = await fetch(`${CFG.worker}/api/me?uid=${profile.userId}`);
+            const meData = await meRes.json();
+            document.getElementById('rw-points-display').innerText = (meData.points || 0).toLocaleString();
+            document.getElementById('user-points').innerText = (meData.points || 0).toLocaleString();
+
+            if (!data.length) {
+                rList.innerHTML = "<div class='col-span-2 text-center py-10 opacity-30'>No Rewards Available</div>";
+            } else {
+                rList.innerHTML = data.map(r => `
+                    <div class="glass p-4 rounded-3xl flex flex-col items-center gap-2 border border-white/5 transition-all active:scale-95">
+                        ${r.image_url ? `<img src="${r.image_url}" class="w-full h-24 object-cover rounded-2xl">` : `<div class="w-full h-24 bg-white/5 rounded-2xl flex items-center justify-center">🎁</div>`}
+                        <h4 class="font-bold text-xs mt-1 truncate w-full text-center">${r.name}</h4>
+                        <button onclick="redeemReward(${r.id}, ${r.points}, '${r.name}')" class="w-full bg-[var(--accent)] text-black font-black text-[10px] py-2 rounded-xl border-b-2 border-orange-600">
+                            USE ${r.points} PTS
+                        </button>
+                    </div>
+                `).join('');
+            }
+            loadMyCoupons();
+        }
+
+        async function loadMyCoupons() {
+            const cList = document.getElementById('my-coupons-list');
+            const res = await fetch(`${CFG.worker}/api/my-coupons?uid=${profile.userId}`);
+            const data = await res.json();
+
+            if (!data.unused || !data.unused.length) {
+                cList.innerHTML = "<div class='glass p-4 rounded-2xl text-center text-[10px] text-gray-500 border border-dashed border-white/10'>ยังไม่มีคูปองที่แลกไว้</div>";
+                return;
+            }
+
+            cList.innerHTML = data.unused.map(c => `
+                <div class="bg-[var(--accent)]/10 border border-[var(--accent)]/20 p-4 rounded-3xl flex items-center gap-4">
+                    ${c.image_url ? `<img src="${c.image_url}" class="w-12 h-12 rounded-2xl object-cover ring-2 ring-[var(--accent)]/20">` : `<div class="w-12 h-12 bg-black/20 rounded-2xl flex items-center justify-center">🎁</div>`}
+                    <div class="flex-1">
+                        <p class="font-black text-sm text-[var(--accent)]">${c.reward_name}</p>
+                        <p class="text-[9px] text-gray-400 font-bold uppercase mt-1 tracking-widest">Show this to staff</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function redeemReward(id, points, name) {
+            const current = parseInt(document.getElementById('rw-points-display').innerText.replace(/,/g, ''));
+            if (current < points) return Swal.fire("Point mismatch", "แต้มไม่พอแลกรายการนี้", "warning");
+
+            const conf = await Swal.fire({
+                title: 'ยืนยันการแลก?',
+                text: `ใช้ ${points} แต้ม แลก ${name}`,
+                icon: 'question',
+                showCancelButton: true
+            });
+            if (!conf.isConfirmed) return;
+
+            Swal.showLoading();
+            try {
+                const res = await fetch(`${CFG.worker}/api/redeem`, {
+                    method: 'POST',
+                    body: JSON.stringify({ uid: profile.userId, reward_id: id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire("แลกสำเร็จ!", "ไปรับของรางวัลได้ที่หน้าร้านเลยครับ", "success").then(() => loadRewards());
+                } else { Swal.fire("Error", data.error, "error"); }
+            } catch (e) { Swal.fire("Error", e.message, "error"); }
+        }
+
+        /** UTILS **/
+        function previewImg(input) {
+            if (input.files && input.files[0]) {
+                const r = new FileReader();
+                r.onload = e => {
+                    document.getElementById('dep-preview').src = e.target.result;
+                    document.getElementById('dep-preview-container').classList.remove('hidden');
+                };
+                r.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearPhoto() {
+            document.getElementById('dep-file-camera').value = '';
+            document.getElementById('dep-file-gallery').value = '';
+            document.getElementById('dep-preview-container').classList.add('hidden');
+        }
+
+        async function linkPhoneToUID() {
+            const phone = document.getElementById('link-phone').value;
+            const confirm = document.getElementById('link-phone-confirm').value;
+            if (phone.length < 9 || phone !== confirm) return Swal.fire("Error", "ข้อมูลไม่ถูกต้อง", "warning");
+
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/link-phone`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: profile.userId, phone, name: profile.displayName })
+            });
+            if (await res.json().then(d => d.success)) {
+                Swal.fire("Success", "Welcome Member!", "success").then(() => checkUser());
+            }
+        }
+
+        // Staff Settings / List Management
+        async function loadStaffList() {
+            const container = document.getElementById('staff-list-container');
+            container.innerHTML = "<div class='text-center py-4 opacity-30'>Loading...</div>";
+            const res = await fetch(`${CFG.worker}/api/staff-list`);
+            const data = await res.json();
+
+            const active = data.filter(it => it.status === 'active');
+            const pending = data.filter(it => it.status === 'pending');
+
+            let html = "";
+            if (pending.length > 0) {
+                html += `<p class="text-[9px] font-black text-amber-500 uppercase tracking-widest px-1 mb-2">Pending Approval (${pending.length})</p>`;
+                html += pending.map(it => `
+                    <div class="bg-amber-500/10 p-4 rounded-2xl flex items-center justify-between border border-amber-500/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[10px] font-bold">⏳</div>
+                            <p class="font-bold text-sm text-white">${it.name || 'Anonymous'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="approveStaff('${it.uid}')" class="bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black">Approve</button>
+                            <button onclick="revokeStaff('${it.uid}')" class="text-red-500 p-2">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            html += `<p class="text-[9px] font-black text-gray-500 uppercase tracking-widest px-1 mb-2 mt-4">Active Staff (${active.length})</p>`;
+            html += active.map(it => `
+                <div class="glass p-4 rounded-2xl flex items-center justify-between border border-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center text-[10px] font-bold">✓</div>
+                        <p class="font-bold text-sm text-white">${it.name || 'Anonymous'}</p>
+                    </div>
+                    <button onclick="revokeStaff('${it.uid}')" class="bg-red-500/20 text-red-500 px-3 py-2 rounded-xl text-[10px] font-bold">Revoke</button>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        async function approveStaff(uid) {
+            Swal.showLoading();
+            await fetch(`${CFG.worker}/api/approve-staff`, { method: 'POST', body: JSON.stringify({ uid }) });
+            loadStaffList();
+            Swal.close();
+        }
+
+        async function revokeStaff(uid) {
+            const conf = await Swal.fire({ title: 'ยืนยันการถอนสิทธิ์?', icon: 'warning', showCancelButton: true });
+            if (!conf.isConfirmed) return;
+            Swal.showLoading();
+            await fetch(`${CFG.worker}/api/revoke-staff`, { method: 'POST', body: JSON.stringify({ uid }) });
+            loadStaffList();
+            Swal.close();
+        }
+
+        async function loadStaffStock() {
+            const list = document.getElementById('staff-stock-list');
+            list.innerHTML = "<div class='text-center py-6 opacity-20'>Loading Stock...</div>";
+            try {
+                const res = await fetch(`${CFG.worker}/api/all-deposits`);
+                const data = await res.json();
+                if (!data.length) {
+                    list.innerHTML = "<div class='text-center py-10 glass rounded-3xl opacity-30 font-bold'>STOCK IS EMPTY</div>";
+                    return;
+                }
+                list.innerHTML = data.map(it => `
+                    <div class="glass p-4 rounded-3xl border border-white/5 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="font-black text-sm text-white">${it.item_name}</p>
+                                <p class="text-[10px] text-[var(--accent)] font-bold">REMAINS: ${it.amount}%</p>
+                            </div>
+                            <span class="text-[8px] font-black bg-white/10 px-2 py-1 rounded-md text-gray-400">#${it.deposit_code || '---'}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-[9px] text-gray-400 font-bold uppercase">
+                            <span>Owner: <span class="text-white">${it.customer_name || '-'}</span></span>
+                            <span>Phone: <span class="text-white">${it.owner_phone || '-'}</span></span>
+                            <span>Exp: <span class="text-white">${it.expiry_date || '-'}</span></span>
+                        </div>
+                        <button onclick="notifyDeposit(${it.id})" class="w-full glass border border-amber-500/20 text-amber-500 text-[9px] py-1.5 rounded-xl font-bold">🔔 NOTIFY EXPIRING</button>
+                    </div>
+                `).join('');
+            } catch (e) { list.innerHTML = "Error loading stock"; }
+        }
+
+        async function triggerExpiryNotify() {
+            const conf = await Swal.fire({ title: 'ส่งแจ้งเตือนเหล้าใกล้หมดอายุทั้งหมด?', icon: 'question', showCancelButton: true });
+            if (!conf.isConfirmed) return;
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/notify-expiring`);
+            const data = await res.json();
+            Swal.fire('Success', `Sent ${data.sent || 0} notifications`, 'success');
+        }
+
+        async function notifyDeposit(id) {
+            Swal.showLoading();
+            const res = await fetch(`${CFG.worker}/api/notify-deposit`, { method: 'POST', body: JSON.stringify({ deposit_id: id }) });
+            if (await res.json().then(d => d.success)) {
+                Swal.fire('Notification Sent', '', 'success');
+            }
+        }
+
+        /** REWARDS MANAGER (TIER 3) **/
+        async function loadManagerRewards() {
+            const list = document.getElementById('staff-rewards-list');
+            list.innerHTML = "<div class='text-center py-6 opacity-20'>Loading Rewards...</div>";
+            try {
+                const res = await fetch(`${CFG.worker}/api/rewards`);
+                const data = await res.json();
+                list.innerHTML = data.map(r => `
+                    <div class="glass p-4 rounded-3xl flex items-center gap-4 border border-white/5">
+                        ${r.image_url ? `<img src="${r.image_url}" class="w-12 h-12 rounded-2xl object-cover">` : `<div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center">🎁</div>`}
+                        <div class="flex-1">
+                            <p class="font-bold text-xs text-white">${r.name}</p>
+                            <p class="text-[9px] text-[var(--accent)] font-bold">${r.points} PTS</p>
+                        </div>
+                        <button onclick="deleteReward(${r.id})" class="text-red-500 p-2 text-xs">ลบ</button>
+                    </div>
+                `).join('');
+            } catch (e) { list.innerHTML = "Error loading rewards"; }
+        }
+
+        async function createReward() {
+            const name = document.getElementById('rw-name').value;
+            const pts = document.getElementById('rw-points').value;
+            const file = document.getElementById('rw-file').files[0];
+            if (!name || !pts) return Swal.fire("Error", "กรุณากรอกข้อมูลให้ครบ", "warning");
+
+            Swal.showLoading();
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('points', pts);
+            if (file) fd.append('image', file);
+
+            try {
+                const res = await fetch(`${CFG.worker}/api/create-reward`, { method: 'POST', body: fd });
+                if (await res.json().then(d => d.success)) {
+                    Swal.fire('Success', 'เพิ่มของรางวัลแล้ว', 'success').then(() => {
+                        document.getElementById('rw-name').value = '';
+                        document.getElementById('rw-points').value = '';
+                        document.getElementById('rw-file').value = '';
+                        loadManagerRewards();
+                    });
+                }
+            } catch (e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        async function deleteReward(id) {
+            const conf = await Swal.fire({ title: 'ยืนยันการลบของรางวัล?', icon: 'warning', showCancelButton: true });
+            if (!conf.isConfirmed) return;
+            Swal.showLoading();
+            await fetch(`${CFG.worker}/api/delete-reward`, { method: 'POST', body: JSON.stringify({ reward_id: id }) });
+            loadManagerRewards();
+            Swal.close();
+        }
+
+        // Initialize Call
+        document.addEventListener('DOMContentLoaded', () => {
+            const lastCode = localStorage.getItem('v88_last_code');
+            if (lastCode && document.getElementById('pre-gen-code')) document.getElementById('pre-gen-code').innerText = lastCode;
+            init();
+        });
+    </script>
+</body>
+
+</html>
